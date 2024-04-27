@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "adl4cd-env"
+version = "0.1.0"
+description = ""
+authors = ["go98zoh <go98zoh@mytum.de>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.31.0"
+torch = "^2.3.0"
+pandas = "^2.2.2"
+numpy = "^1.26.4"
+tqdm = "^4.66.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
