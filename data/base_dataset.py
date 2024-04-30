@@ -2,7 +2,7 @@
 
 from torch.utils.data import Dataset
 
-from download_utils import download_dataset
+from data.download_utils import download_dataset
 
 
 class BaseDataset(Dataset):

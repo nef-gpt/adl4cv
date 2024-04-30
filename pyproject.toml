@@ -1,9 +1,10 @@
 [tool.poetry]
-name = "adl4cd-env"
+name = "adl4cv"
 version = "0.1.0"
 description = ""
-authors = ["go98zoh <go98zoh@mytum.de>"]
+authors = ["go98zoh <go98zoh@mytum.de>", "go68vog <go68vog@mytum.de>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -14,6 +15,8 @@ numpy = "^1.26.4"
 tqdm = "^4.66.2"
 h5py = "^3.11.0"
 matplotlib = "^3.8.4"
+notebook = "^7.1.3"
+torchvision = "^0.18.0"
 
 
 [build-system]

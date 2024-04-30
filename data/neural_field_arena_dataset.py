@@ -10,7 +10,7 @@ import h5py
 from glob import glob
 import json
 
-from base_dataset import BaseDataset
+from data.base_dataset import BaseDataset
 
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union
 from pathlib import Path
@@ -192,56 +192,3 @@ class NeuralFieldArenaDataset(BaseDataset):
             batch_item, self.rng = self.transform(batch_item, self.rng)
         return batch_item
     
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', "networks")))
-from siren import SIRENPytorch
-from siren_util import load_model_pytorch
-
-"""
-TODO: Da zu jupyter notebook machen und für alle datasets ein paar visualisierungen erstellen
-"""
-if __name__ == "__main__":
-
-    download_url = "https://zenodo.org/records/10392793/files/neural_field_arena.zip"
-    dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
-    data_root = os.path.join(dir_path, "datasets", "neural_field_arena")
-
-    train_dataset = NeuralFieldArenaDataset(
-        data_root,
-        "MNIST",
-        download_url=download_url,
-        data_keys=["params", "labels"]
-    )
-
-    idx = 20
-    label = train_dataset[idx]["labels"]
-
-    model = SIRENPytorch(input_dim=2, hidden_dim=32, num_layers=3, output_dim=1, omega_0=9.0)
-    load_model_pytorch(model, train_dataset.param_structure, train_dataset[idx]["params"])
-
-    import torch
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    # Assume `model` is your loaded neural field model and is set to evaluation mode
-    model.eval()
-
-    # Step 2: Generate coordinates for each pixel
-    coords = np.indices((28, 28)).reshape(2, -1).T  # Create coordinate grid for 28x28 image
-    x = np.linspace(-1, 1, 28)
-    y = np.linspace(-1, 1, 28)
-    x, y = np.meshgrid(x, y)
-    coords = np.stack([x, y], axis=-1)
-    coords = torch.tensor(coords, dtype=torch.float32)  # Convert to float tensor
-
-    # Step 3: Feed coordinates to the model
-    # Make sure your model can handle the batch size or process them in smaller batches
-    with torch.no_grad():
-        output = model(coords)
-
-    # Step 4: Visualize the output
-    output_image = output.view(28, 28).numpy()  # Reshape output to 28x28 for visualization
-    plt.imshow(output_image, cmap='gray')
-    plt.title(f'Reconstructed MNIST Image - Label: {label}')
-    plt.colorbar()
-    plt.show()
