@@ -1,7 +1,6 @@
 abstract
 
 learn a vocabulary of latent embeddings - using some kind of neighbourhood encoding
-train an autoencoder to find an embedding that maps from a unordered representation to a ordered latent space
 find positional encoding based on graph structure of the neural network
 experiment with ordering of the weight
 
