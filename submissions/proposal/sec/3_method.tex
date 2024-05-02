@@ -1,17 +1,16 @@
 % Literature Review
 \section{Proposed Methods}
 \label{sec:method}
-
-Train nanoGPT to generate the MLP-weights in an autoregressive, unconditioned fashion.
-
-\subsection{Graph-based Embedding}
--learn a vocabulary of latent embeddings - using some kind of neighborhood encoding
--train an autoencoder to find an embedding that maps from an unstructured representation
-to a structured latent space by providing structure through neighborhood encoding
-
-\subsection{Graph-based Positional Encoding}
--use positional encoding to provide positional information
-
-
-
-\subsection{Problem Statement}
+% explanation of your planned methods
+We want to train a transformer-based architecor to generate the MLP-weights of novel
+NeF in an autoregressive, unconditioned fashion. This is first done using images as a 
+proof of concept and the extended to 3D structures. For this we want to try two/(three?) 
+different approaches.
+\subsection{First Approach (Graph-Based Embedding)}
+Learn a vocabulary of latent embeddings by using some kind of neighborhood encoding.
+For this we could train an autoencoder to find an embedding that maps from an 
+unstructured representation to a structured latent space by providing structure through 
+neighborhood encoding. This embedding is the used to train the transformer-based model.
+\subsection{Second Approach (Graph-based Positional Encoding)}
+Provide a positional encoding to encode needed positional information. In the following
+use the weights with positional encoding to train the transformer-based model
