@@ -2,15 +2,15 @@
 \section{Proposed Methods}
 \label{sec:method}
 % explanation of your planned methods
-We want to train a transformer-based architecor to generate the MLP-weights of novel
-NeF in an autoregressive, unconditioned fashion. This is first done using images as a 
-proof of concept and the extended to 3D structures. For this we want to try two/(three?) 
-different approaches.
-\subsection{First Approach (Graph-Based Embedding)}
-Learn a vocabulary of latent embeddings by using some kind of neighborhood encoding.
-For this we could train an autoencoder to find an embedding that maps from an 
-unstructured representation to a structured latent space by providing structure through 
-neighborhood encoding. This embedding is the used to train the transformer-based model.
-\subsection{Second Approach (Graph-based Positional Encoding)}
-Provide a positional encoding to encode needed positional information. In the following
-use the weights with positional encoding to train the transformer-based model
+We want to train a transformer-based architecture to generate the MLP-weights of novel
+NeF in an autoregressive, unconditioned fashion. This is first done using images as a
+proof of concept and then extended to 3D structures.\\
+
+\noindent We propose the following approaches:
+\subsection*{Naive Approach}
+Directly perform a regression task on the MLP weights of the NeF and use a continuous loss function.
+Additionally, we also want to investigate the positional encoding to inform the model about the structure within the MLP.
+\subsection*{Learned Embedding}
+Since the MLP is a fully connected graph, we want to propose an encoder-decoder architecture that captures the underlying structure in the latent space, by for example using Graph-CNNs. This representation is then used to train the transformer on a regression task.
+\subsection*{Learned Vocabulary}
+Since transformers usually excel with predicting tokenized sequences we also want to investigate methods to quantize the input, either directly from the weights or the latent-space representation. Instead of a regression task the transformer would predict the probability distribution of the most likely next token.
