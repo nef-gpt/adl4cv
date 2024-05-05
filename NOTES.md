@@ -30,6 +30,18 @@ DiffGPT:
 - Undercondition
 - BeamSampling / Autoregressive sampling? 
 
+
+### 03.05 - Meeting
+
+- Introduction should end with our proposed method
+- Contribution should be "Neo Tokenizer for Neural Fields"
+- What was the problem in "Proposed Methods"
+  - why do we need the propesed approaches (which problem does it fix?)
+- Cut some of "Introduction" and "Proposed Methods" and "Experiments" Layout subsection in text
+- "Experiments" should be more detailed- also remove unnecassary newlines
+- Fastest option to get started with transformers: Huggingface
+
+
 ## Paper
 
 https://link.springer.com/chapter/10.1007/978-3-031-20068-7_13

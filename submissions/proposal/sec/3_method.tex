@@ -6,11 +6,13 @@ We want to train a transformer-based architecture to generate the MLP-weights of
 NeF in an autoregressive, unconditioned fashion. This is first done using images as a
 proof of concept and then extended to 3D structures.\\
 
-\noindent We propose the following approaches:
-\subsection*{Naive Approach}
+\noindent We propose the following approaches:\\
+\noindent \textbf{Naive Approach: }
 Directly perform a regression task on the MLP weights of the NeF and use a continuous loss function.
 Additionally, we also want to investigate the positional encoding to inform the model about the structure within the MLP.
-\subsection*{Learned Embedding}
+\\
+\textbf{Learned Embedding: }
 Since the MLP is a fully connected graph, we want to propose an encoder-decoder architecture that captures the underlying structure in the latent space, by for example using Graph-CNNs. This representation is then used to train the transformer on a regression task.
-\subsection*{Learned Vocabulary}
+\\
+\textbf{Learned Vocabulary: }
 Since transformers usually excel with predicting tokenized sequences we also want to investigate methods to quantize the input, either directly from the weights or the latent-space representation. Instead of a regression task the transformer would predict the probability distribution of the most likely next token.
