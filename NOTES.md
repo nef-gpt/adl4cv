@@ -36,7 +36,7 @@ DiffGPT:
 - Introduction should end with our proposed method
 - Contribution should be "Neo Tokenizer for Neural Fields"
 - What was the problem in "Proposed Methods"
-  - why do we need the propesed approaches (which problem does it fix?)
+  - why do we need the proposed approaches (which problem does it fix?)
 - Cut some of "Introduction" and "Proposed Methods" and "Experiments" Layout subsection in text
 - "Experiments" should be more detailed- also remove unnecassary newlines
 - Fastest option to get started with transformers: Huggingface

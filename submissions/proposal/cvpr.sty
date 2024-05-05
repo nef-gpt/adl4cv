@@ -77,32 +77,32 @@
 \newcommand{\@EveryShipout@Hook}{}
 \newcommand{\@EveryShipout@AtNextHook}{}
 \newcommand*{\EveryShipout}[1]
-   {\g@addto@macro\@EveryShipout@Hook{#1}}
+{\g@addto@macro\@EveryShipout@Hook{#1}}
 \newcommand*{\AtNextShipout}[1]
-   {\g@addto@macro\@EveryShipout@AtNextHook{#1}}
+{\g@addto@macro\@EveryShipout@AtNextHook{#1}}
 \newcommand{\@EveryShipout@Shipout}{%
-   \afterassignment\@EveryShipout@Test
-   \global\setbox\@cclv= %
-   }
+  \afterassignment\@EveryShipout@Test
+  \global\setbox\@cclv= %
+}
 \newcommand{\@EveryShipout@Test}{%
-   \ifvoid\@cclv\relax
-      \aftergroup\@EveryShipout@Output
-   \else
-      \@EveryShipout@Output
-   \fi%
-   }
+  \ifvoid\@cclv\relax
+    \aftergroup\@EveryShipout@Output
+  \else
+    \@EveryShipout@Output
+  \fi%
+}
 \newcommand{\@EveryShipout@Output}{%
-   \@EveryShipout@Hook%
-   \@EveryShipout@AtNextHook%
-      \gdef\@EveryShipout@AtNextHook{}%
-   \@EveryShipout@Org@Shipout\box\@cclv%
-   }
+  \@EveryShipout@Hook%
+  \@EveryShipout@AtNextHook%
+  \gdef\@EveryShipout@AtNextHook{}%
+  \@EveryShipout@Org@Shipout\box\@cclv%
+}
 \newcommand{\@EveryShipout@Org@Shipout}{}
 \newcommand*{\@EveryShipout@Init}{%
-   \message{ABD: EveryShipout initializing macros}%
-   \let\@EveryShipout@Org@Shipout\shipout
-   \let\shipout\@EveryShipout@Shipout
-   }
+  \message{ABD: EveryShipout initializing macros}%
+  \let\@EveryShipout@Org@Shipout\shipout
+  \let\shipout\@EveryShipout@Shipout
+}
 \AtBeginDocument{\@EveryShipout@Init}
 
 % ---------------------------------------------------------------
@@ -113,33 +113,33 @@
 
 \newcommand\AtPageUpperLeft[1]{%
   \begingroup
-    \@tempdima=0pt\relax\@tempdimb=\ESO@yoffsetI\relax
-    \put(\LenToUnit{\@tempdima},\LenToUnit{\@tempdimb}){#1}%
+  \@tempdima=0pt\relax\@tempdimb=\ESO@yoffsetI\relax
+  \put(\LenToUnit{\@tempdima},\LenToUnit{\@tempdimb}){#1}%
   \endgroup
 }
 \newcommand\AtPageLowerLeft[1]{\AtPageUpperLeft{%
-  \put(0,\LenToUnit{-\paperheight}){#1}}}
+    \put(0,\LenToUnit{-\paperheight}){#1}}}
 \newcommand\AtPageCenter[1]{\AtPageUpperLeft{%
-  \put(\LenToUnit{.5\paperwidth},\LenToUnit{-.5\paperheight}){#1}}%
+    \put(\LenToUnit{.5\paperwidth},\LenToUnit{-.5\paperheight}){#1}}%
 }
 \newcommand\AtTextUpperLeft[1]{%
   \begingroup
-    \setlength\@tempdima{1in}%
-    \ifodd\c@page%
-      \advance\@tempdima\oddsidemargin%
-    \else%
-      \advance\@tempdima\evensidemargin%
-    \fi%
-    \@tempdimb=\ESO@yoffsetI\relax\advance\@tempdimb-1in\relax%
-    \advance\@tempdimb-\topmargin%
-    \advance\@tempdimb-\headheight\advance\@tempdimb-\headsep%
-    \put(\LenToUnit{\@tempdima},\LenToUnit{\@tempdimb}){#1}%
+  \setlength\@tempdima{1in}%
+  \ifodd\c@page%
+    \advance\@tempdima\oddsidemargin%
+  \else%
+    \advance\@tempdima\evensidemargin%
+  \fi%
+  \@tempdimb=\ESO@yoffsetI\relax\advance\@tempdimb-1in\relax%
+  \advance\@tempdimb-\topmargin%
+  \advance\@tempdimb-\headheight\advance\@tempdimb-\headsep%
+  \put(\LenToUnit{\@tempdima},\LenToUnit{\@tempdimb}){#1}%
   \endgroup
 }
 \newcommand\AtTextLowerLeft[1]{\AtTextUpperLeft{%
-  \put(0,\LenToUnit{-\textheight}){#1}}}
+    \put(0,\LenToUnit{-\textheight}){#1}}}
 \newcommand\AtTextCenter[1]{\AtTextUpperLeft{%
-  \put(\LenToUnit{.5\textwidth},\LenToUnit{-.5\textheight}){#1}}}
+    \put(\LenToUnit{.5\textwidth},\LenToUnit{-.5\textheight}){#1}}}
 \newcommand{\ESO@HookI}{} \newcommand{\ESO@HookII}{}
 \newcommand{\ESO@HookIII}{}
 \newcommand{\AddToShipoutPicture}{%
@@ -149,33 +149,33 @@
 \@ifclassloaded{memoir}{\renewcommand\ESO@isMEMOIR[1]{#1}}{}
 \newcommand{\@ShipoutPicture}{%
   \bgroup
-    \@tempswafalse%
-    \ifx\ESO@HookI\@empty\else\@tempswatrue\fi%
-    \ifx\ESO@HookII\@empty\else\@tempswatrue\fi%
-    \ifx\ESO@HookIII\@empty\else\@tempswatrue\fi%
-    \if@tempswa%
-      \@tempdima=1in\@tempdimb=-\@tempdima%
-      \advance\@tempdimb\ESO@yoffsetI%
-      \ESO@isMEMOIR{%
-        \advance\@tempdima\trimedge%
-        \advance\@tempdima\paperwidth%
-        \advance\@tempdima-\stockwidth%
-        \if@twoside\ifodd\c@page\else%
+  \@tempswafalse%
+  \ifx\ESO@HookI\@empty\else\@tempswatrue\fi%
+  \ifx\ESO@HookII\@empty\else\@tempswatrue\fi%
+  \ifx\ESO@HookIII\@empty\else\@tempswatrue\fi%
+  \if@tempswa%
+    \@tempdima=1in\@tempdimb=-\@tempdima%
+    \advance\@tempdimb\ESO@yoffsetI%
+    \ESO@isMEMOIR{%
+      \advance\@tempdima\trimedge%
+      \advance\@tempdima\paperwidth%
+      \advance\@tempdima-\stockwidth%
+      \if@twoside\ifodd\c@page\else%
           \advance\@tempdima-2\trimedge%
           \advance\@tempdima-\paperwidth%
           \advance\@tempdima\stockwidth%
         \fi\fi%
-        \advance\@tempdimb\trimtop}%
-      \unitlength=1pt%
-      \global\setbox\@cclv\vbox{%
-        \vbox{\let\protect\relax
-          \pictur@(0,0)(\strip@pt\@tempdima,\strip@pt\@tempdimb)%
-            \ESO@HookIII\ESO@HookI\ESO@HookII%
-            \global\let\ESO@HookII\@empty%
-          \endpicture}%
-          \nointerlineskip%
-        \box\@cclv}%
-    \fi
+      \advance\@tempdimb\trimtop}%
+    \unitlength=1pt%
+    \global\setbox\@cclv\vbox{%
+      \vbox{\let\protect\relax
+        \pictur@(0,0)(\strip@pt\@tempdima,\strip@pt\@tempdimb)%
+        \ESO@HookIII\ESO@HookI\ESO@HookII%
+        \global\let\ESO@HookII\@empty%
+        \endpicture}%
+      \nointerlineskip%
+      \box\@cclv}%
+  \fi
   \egroup
 }
 \EveryShipout{\@ShipoutPicture}
@@ -202,7 +202,7 @@
 \newcommand\ESO@color[1]{}
 \newcommand\ESO@colorbox[3][]{%
   \begingroup
-    \fboxrule=0pt\fbox{#3}%
+  \fboxrule=0pt\fbox{#3}%
   \endgroup
 }
 \newcommand\gridSetup[6][]{%
@@ -292,49 +292,49 @@
 \fi
 \newcommand\ESO@gridpicture{%
   \begingroup
-    \setlength\unitlength{\ESO@gridunit}%
-    \ESO@color{\ESO@subgridcolor}%
-    \ESO@div{\paperheight}{\ESO@griddelta}%
-    \multiput(0,0)(0,\ESO@griddeltaY){\@tempcnta}%
-      {\ESO@hline{\LenToUnit{\paperwidth}}}%
-    \ESO@div{\paperwidth}{\ESO@griddelta}%
-    \multiput(0,\LenToUnit{\ESO@yoffsetII})(\ESO@griddelta,0){\@tempcnta}%
-      {\ESO@vline{\LenToUnit{\paperheight}}}%
-    \ESO@color{\ESO@gridcolor}%
-    \ESO@div{\paperheight}{\ESO@gridDelta}%
-    \multiput(0,0)(0,\ESO@gridDeltaY){\@tempcnta}%
-      {\ESO@Hline{\LenToUnit{\paperwidth}}}%
-    \ESO@div{\paperwidth}{\ESO@gridDelta}%
-    \multiput(0,\LenToUnit{\ESO@yoffsetII})(\ESO@gridDelta,0){\@tempcnta}%
-      {\ESO@Vline{\LenToUnit{\paperheight}}}%
-    \fontsize{10}{12}\normalfont%
-    \ESO@div{\paperwidth}{\ESO@gridDelta}%
-    \multiput(0,\ESO@gridDeltaY)(\ESO@gridDelta,0){\@tempcnta}{%
-      \@tempcntb=\@tempcnta\advance\@tempcntb-\@multicnt%
-      \ifnum\@tempcntb>1\relax
-        \multiply\@tempcntb by \ESO@gridDelta\relax%
-        \@tempdima=\@tempcntb sp\@tempdima=\ESO@labelfactor\@tempdima%
-        \@tempcntb=\@tempdima%
-        \makebox(0,0)[c]{\ESO@colorbox{white}{\the\@tempcntb}}%
-      \fi}%
-    \ifx\ESO@gridunitname\@empty\def\@tempa{0}\else\def\@tempa{1}\fi%
-    \ESO@div{\paperheight}{\ESO@gridDelta}%
-    \multiput(\ESO@gridDelta,0)(0,\ESO@gridDeltaY){\@tempcnta}{%
-      \@tempcntb=\@tempcnta\advance\@tempcntb-\@multicnt%
-      \ifnum\@tempcntb>\@tempa\relax
-        \multiply\@tempcntb by \ESO@gridDelta\relax%
-        \@tempdima=\@tempcntb sp\@tempdima=\ESO@labelfactor\@tempdima%
-        \@tempcntb=\@tempdima%
-        \makebox(0,0)[c]{\ESO@colorbox{white}{\the\@tempcntb}}%
-      \fi
-    }%
-    \ifx\ESO@gridunitname\@empty\else%
-      \thicklines\fboxrule=\@wholewidth%
-      \put(\ESO@gridDelta,\ESO@gridDeltaY){\makebox(0,0)[c]{%
+  \setlength\unitlength{\ESO@gridunit}%
+  \ESO@color{\ESO@subgridcolor}%
+  \ESO@div{\paperheight}{\ESO@griddelta}%
+  \multiput(0,0)(0,\ESO@griddeltaY){\@tempcnta}%
+  {\ESO@hline{\LenToUnit{\paperwidth}}}%
+  \ESO@div{\paperwidth}{\ESO@griddelta}%
+  \multiput(0,\LenToUnit{\ESO@yoffsetII})(\ESO@griddelta,0){\@tempcnta}%
+  {\ESO@vline{\LenToUnit{\paperheight}}}%
+  \ESO@color{\ESO@gridcolor}%
+  \ESO@div{\paperheight}{\ESO@gridDelta}%
+  \multiput(0,0)(0,\ESO@gridDeltaY){\@tempcnta}%
+  {\ESO@Hline{\LenToUnit{\paperwidth}}}%
+  \ESO@div{\paperwidth}{\ESO@gridDelta}%
+  \multiput(0,\LenToUnit{\ESO@yoffsetII})(\ESO@gridDelta,0){\@tempcnta}%
+  {\ESO@Vline{\LenToUnit{\paperheight}}}%
+  \fontsize{10}{12}\normalfont%
+  \ESO@div{\paperwidth}{\ESO@gridDelta}%
+  \multiput(0,\ESO@gridDeltaY)(\ESO@gridDelta,0){\@tempcnta}{%
+    \@tempcntb=\@tempcnta\advance\@tempcntb-\@multicnt%
+    \ifnum\@tempcntb>1\relax
+      \multiply\@tempcntb by \ESO@gridDelta\relax%
+      \@tempdima=\@tempcntb sp\@tempdima=\ESO@labelfactor\@tempdima%
+      \@tempcntb=\@tempdima%
+      \makebox(0,0)[c]{\ESO@colorbox{white}{\the\@tempcntb}}%
+    \fi}%
+  \ifx\ESO@gridunitname\@empty\def\@tempa{0}\else\def\@tempa{1}\fi%
+  \ESO@div{\paperheight}{\ESO@gridDelta}%
+  \multiput(\ESO@gridDelta,0)(0,\ESO@gridDeltaY){\@tempcnta}{%
+    \@tempcntb=\@tempcnta\advance\@tempcntb-\@multicnt%
+    \ifnum\@tempcntb>\@tempa\relax
+      \multiply\@tempcntb by \ESO@gridDelta\relax%
+      \@tempdima=\@tempcntb sp\@tempdima=\ESO@labelfactor\@tempdima%
+      \@tempcntb=\@tempdima%
+      \makebox(0,0)[c]{\ESO@colorbox{white}{\the\@tempcntb}}%
+    \fi
+  }%
+  \ifx\ESO@gridunitname\@empty\else%
+    \thicklines\fboxrule=\@wholewidth%
+    \put(\ESO@gridDelta,\ESO@gridDeltaY){\makebox(0,0)[c]{%
         \ESO@fcolorbox{\ESO@gridcolor}{white}{%
           \textbf{\ESO@gridunitname}}}}%
-    \fi
-    \normalcolor%
+  \fi
+  \normalcolor%
   \endgroup
 }
 \ifESO@grid\g@addto@macro\ESO@HookIII{\ESO@gridpicture}\fi
@@ -406,62 +406,63 @@
 }
 
 \def\@maketitle{
-   \newpage
-   \null
-   \iftoggle{cvprrebuttal}{\vspace*{-.3in}}{\vskip .375in}
-   \begin{center}
-      % smaller title font only for rebuttal
-      \iftoggle{cvprrebuttal}{{\large \bf \@title \par}}{{\Large \bf \@title \par}}
-      % additional two empty lines at the end of the title
-      \iftoggle{cvprrebuttal}{\vspace*{-22pt}}{\vspace*{24pt}}{
-        \large
-        \lineskip .5em
-        \begin{tabular}[t]{c}
-          \iftoggle{cvprfinal}{
-            \@author
-          }{
-            \iftoggle{cvprrebuttal}{}{
-              Anonymous \confName~submission\\
-              \vspace*{1pt}\\
-              Paper ID \paperID
-            }
+  \newpage
+  \null
+  \iftoggle{cvprrebuttal}{\vspace*{-.3in}}{\vskip 0in}
+  \begin{center}
+    % smaller title font only for rebuttal
+    \iftoggle{cvprrebuttal}{{\large \bf \@title \par}}{{\Large \bf \@title \par}}
+    % additional two empty lines at the end of the title
+    \iftoggle{cvprrebuttal}{\vspace*{-22pt}}{\vspace*{12pt}}{
+      \large
+      \lineskip .5em
+      \begin{tabular}[t]{c}
+        \iftoggle{cvprfinal}{
+          \@author
+        }{
+          \iftoggle{cvprrebuttal}{}{
+        Anonymous \confName~submission \\
+        \vspace*{1pt}                  \\
+            Paper ID \paperID
           }
-        \end{tabular}
-        \par
-      }
-      % additional small space at the end of the author name
-      \vskip .5em
-      % additional empty line at the end of the title block
-      \vspace*{12pt}
-   \end{center}
+        }
+      \end{tabular}
+      \par
+    }
+    % additional small space at the end of the author name
+    \vskip .5em
+    % additional empty line at the end of the title block
+    %\vspace*{12pt}
+    \vspace*{6pt}
+  \end{center}
 }
 
 \def\abstract{%
-   % Suppress page numbers when the appropriate option is given
-   \iftoggle{cvprpagenumbers}{}{%
-     \thispagestyle{empty}
-   }
-   \centerline{\large\bf Abstract}%
-   \vspace*{12pt}%
-   \it%
+  % Suppress page numbers when the appropriate option is given
+  \iftoggle{cvprpagenumbers}{}{%
+    \thispagestyle{empty}
+  }
+  \centerline{\large\bf Abstract}%
+  \vspace*{12pt}%
+  \it%
 }
 
 \def\endabstract{%
-   % additional empty line at the end of the abstract
-   \vspace*{12pt}
-   }
+  % additional empty line at the end of the abstract
+  % \vspace*{12pt}
+}
 
 \def\affiliation#1{\gdef\@affiliation{#1}} \gdef\@affiliation{}
 
 % correct heading spacing and type
 \def\cvprsection{\@startsection {section}{1}{\z@}
-   {-10pt plus -2pt minus -2pt}{7pt} {\large\bf}}
+  {-10pt plus -2pt minus -2pt}{7pt} {\large\bf}}
 \def\cvprssect#1{\cvprsection*{#1}}
 \def\cvprsect#1{\cvprsection{\hskip -1em.~#1}}
 \def\section{\@ifstar\cvprssect\cvprsect}
 
 \def\cvprsubsection{\@startsection {subsection}{2}{\z@}
-   {-8pt plus -2pt minus -2pt}{6pt} {\elvbf}}
+  {-8pt plus -2pt minus -2pt}{6pt} {\elvbf}}
 \def\cvprssubsect#1{\cvprsubsection*{#1}}
 \def\cvprsubsect#1{\cvprsubsection{\hskip -1em.~#1}}
 \def\subsection{\@ifstar\cvprssubsect\cvprsubsect}
@@ -481,12 +482,12 @@
 % NUMBER with left flushed zeros  \fillzeros[<WIDTH>]<NUMBER>
 \newcount\cv@tmpc@ \newcount\cv@tmpc
 \def\fillzeros[#1]#2{\cv@tmpc@=#2\relax\ifnum\cv@tmpc@<0\cv@tmpc@=-\cv@tmpc@\fi
-\cv@tmpc=1 %
-\loop\ifnum\cv@tmpc@<10 \else \divide\cv@tmpc@ by 10 \advance\cv@tmpc by 1 \fi
-   \ifnum\cv@tmpc@=10\relax\cv@tmpc@=11\relax\fi \ifnum\cv@tmpc@>10 \repeat
-\ifnum#2<0\advance\cv@tmpc1\relax-\fi
-\loop\ifnum\cv@tmpc<#1\relax0\advance\cv@tmpc1\relax\fi \ifnum\cv@tmpc<#1 \repeat
-\cv@tmpc@=#2\relax\ifnum\cv@tmpc@<0\cv@tmpc@=-\cv@tmpc@\fi \relax\the\cv@tmpc@}%
+  \cv@tmpc=1 %
+  \loop\ifnum\cv@tmpc@<10 \else \divide\cv@tmpc@ by 10 \advance\cv@tmpc by 1 \fi
+  \ifnum\cv@tmpc@=10\relax\cv@tmpc@=11\relax\fi \ifnum\cv@tmpc@>10 \repeat
+  \ifnum#2<0\advance\cv@tmpc1\relax-\fi
+  \loop\ifnum\cv@tmpc<#1\relax0\advance\cv@tmpc1\relax\fi \ifnum\cv@tmpc<#1 \repeat
+  \cv@tmpc@=#2\relax\ifnum\cv@tmpc@<0\cv@tmpc@=-\cv@tmpc@\fi \relax\the\cv@tmpc@}%
 \makeatother
 % ----- end of vruler
 
@@ -522,24 +523,24 @@
 
 %% Definition of \linenomathAMS depends on whether the mathlines option is provided
 \expandafter\ifx\linenomath\linenomathWithnumbers
-\let\linenomathAMS\linenomathWithnumbers
-%% The following line gets rid of an extra line numbers at the bottom:
-\patchcmd\linenomathAMS{\advance\postdisplaypenalty\linenopenalty}{}{}{}
+  \let\linenomathAMS\linenomathWithnumbers
+  %% The following line gets rid of an extra line numbers at the bottom:
+  \patchcmd\linenomathAMS{\advance\postdisplaypenalty\linenopenalty}{}{}{}
 \else
-\let\linenomathAMS\linenomathNonumbers
+  \let\linenomathAMS\linenomathNonumbers
 \fi
 
 \iftoggle{cvprfinal}{}{
-% Add the numbers
-\linenumbers
-\AtBeginDocument{%
-  \linenomathpatch{equation}%
-  \linenomathpatchAMS{gather}%
-  \linenomathpatchAMS{multline}%
-  \linenomathpatchAMS{align}%
-  \linenomathpatchAMS{alignat}%
-  \linenomathpatchAMS{flalign}%
-}
+  % Add the numbers
+  \linenumbers
+  \AtBeginDocument{%
+    \linenomathpatch{equation}%
+    \linenomathpatchAMS{gather}%
+    \linenomathpatchAMS{multline}%
+    \linenomathpatchAMS{align}%
+    \linenomathpatchAMS{alignat}%
+    \linenomathpatchAMS{flalign}%
+  }
 }
 
 % \makevruler[<SCALE>][<INITIAL_COUNT>][<STEP>][<DIGITS>][<HEIGHT>]
@@ -556,7 +557,7 @@
     }
     \AtTextUpperLeft{%confidential
       \put(0,\LenToUnit{1cm}){\parbox{\textwidth}{\centering\cvprtenhv
-      \confName~\confYear~Submission \#\paperID. CONFIDENTIAL REVIEW COPY.  DO NOT DISTRIBUTE.}}
+          \confName~\confYear~Submission \#\paperID. CONFIDENTIAL REVIEW COPY.  DO NOT DISTRIBUTE.}}
     }
   }
 }
@@ -596,27 +597,27 @@
 \let\titleold\title
 \renewcommand{\title}[1]{\titleold{#1}\newcommand{\thetitle}{#1}}
 \def\maketitlesupplementary
-   {
-   \newpage
-       \twocolumn[
-        \centering
-        \Large
-        \textbf{\thetitle}\\
-        \vspace{0.5em}Supplementary Material \\
-        \vspace{1.0em}
-       ] %< twocolumn
-   }
+{
+  \newpage
+  \twocolumn[
+    \centering
+    \Large
+    \textbf{\thetitle}\\
+    \vspace{0.5em}Supplementary Material \\
+    \vspace{1.0em}
+  ] %< twocolumn
+}
 
 % ---------------------------------------------------------------
 
 %% Support for easy cross-referencing (e.g. \cref{sec:intro}
 % configured with \AtEndPreamble as it needs to be called after hyperref
 \AtEndPreamble{
-    \usepackage[capitalize]{cleveref}
-    \crefname{section}{Sec.}{Secs.}
-    \Crefname{section}{Section}{Sections}
-    \Crefname{table}{Table}{Tables}
-    \crefname{table}{Tab.}{Tabs.}
+  \usepackage[capitalize]{cleveref}
+  \crefname{section}{Sec.}{Secs.}
+  \Crefname{section}{Section}{Sections}
+  \Crefname{table}{Table}{Tables}
+  \crefname{table}{Tab.}{Tabs.}
 }
 
 % ---------------------------------------------------------------

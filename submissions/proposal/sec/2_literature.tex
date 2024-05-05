@@ -1,13 +1,15 @@
 % Literature Review
 \section{Related Works}
 \label{sec:literature}
-
-To be completed...
-
 % In \cite{erkoç2023hyperdiffusion} it was shown that HyperDiffusion can be
-% used to generate novel MLP-weights for NeF. Furthermore in \cite{siddiqui2023meshgpt} a autoregressive transformer-based approach
+% used to generate novel MLP-weights for NeF. Furthermore, in \cite{siddiqui2023meshgpt} a autoregressive transformer-based approach
 % was used for the generation of novel 3D structure. For our approach we want to use a similar approach
-% as in \cite{siddiqui2023meshgpt} on a different domain. Instead of predicting the next most-likely triangle mesh we want to
-% predict the next most-likely MLP-weight.
+% as in \cite{siddiqui2023meshgpt} on a different domain, eg. polygon meshes vs. MLP-weights.
+% Furthermore, different attempts have been made that leverages the natural permutation symmetries in weight matrices to enable effective learning \cite{navon2023equivariant, navon2024equivariant}
+% and there has also been research into using the structure of neural networks to uncover underlying structures and find embeddings \cite{lim2023graph,andreis2023setbased}.
+% There have also been extensions to use transformers for graph-based \cite{diao2023relational} and for continuous data \cite{born2023regression,mao2022poseur}.
 
-% this is also very good [https://arxiv.org/abs/2301.12780]
+
+
+HyperDiffusion \cite{erkoç2023hyperdiffusion} demonstrated the generation of novel MLP-weights for NeF, while \cite{siddiqui2023meshgpt} employed an autoregressive transformer-based approach for novel 3D structure generation. We aim to adapt the methodology from \cite{siddiqui2023meshgpt} to a different domain, from polygon meshes to MLP weights.
+Additionally, interesting literature includes equivariant weight space representation\cite{navon2023equivariant, navon2024equivariant} which leveraged permutation symmetries in weight matrices for effective learning, utilizing neural network structure to uncover underlying patterns and embeddings \cite{lim2023graph,andreis2023setbased} and extensions of transformers have been proposed for graph-based \cite{diao2023relational} and continuous data \cite{born2023regression,mao2022poseur}.

@@ -2,16 +2,19 @@
 \label{sec:intro}
 
 % eleborate on motivation
-In recent years we have seen an astonishing success in neural field models, for compressed scene representation, as well as in autoregressive
-transformer-based generative models (eg. Large Language Models).
-Additionally, first approaches towards generating novel neural fields using diffusion models \cite{erkoç2023hyperdiffusion} and unconditionally triangle-mesh generation using transformers \cite{siddiqui2023meshgpt} have been proposed.
+%In recent years we have seen an astonishing success in neural field models, for compressed scene representation, as well as in autoregressive
+%transformer-based generative models (eg. Large Language Models).
+Recent successes in neural fields for compressed scene representation and autoregressive transformer models have been remarkable.
+Additionally, first approaches towards generating novel neural fields using diffusion models \cite{erkoç2023hyperdiffusion} and unconditional triangle-mesh generation using transformers \cite{siddiqui2023meshgpt} have been proposed.
 % and problem statement
-However, the absence of a clear structure of implicit neural fields (NeF) makes it difficult to apply to an autoregressive process, which assumes sequence data. Another Problem is the continuous nature of MLP weights, while transformers typically use a small to medium sized vocabulary.
-Therefore, the main problem lies in finding a representation of the MLP weights that can be used to train sequence-to-sequence architectures.
+%However, the absence of a clear structure of implicit neural fields (NeF) makes it difficult to apply to an autoregressive process, which assumes sequence data. Another Problem is the continuous nature of MLP weights, while transformers typically use a small to medium sized vocabulary.
+Challenges persist, however, due to the unstructured nature of implicit neural fields and the mismatch between the continuous MLP weights and the discrete vocabulary typically used by transformers.
+% Therefore, the main problem lies in finding a representation of the MLP weights that can be used to train sequence-to-sequence architectures.
 % contribution bullet points
+% FEEDBACK: Introduction should end with our proposed method
+To this end, we want to explore embedding strategies for neural fields that work well with transformer models. We propose a naive approach with positional encoding, learned continuous embedding, as well as a learned vocabulary and use them in conjunction with popular transformer architectures.
 
-\noindent \textbf{Our contributions are:}
-\begin{itemize}
-  \item Combine the idea of autoregressive transformer-based generation with neural fields
-  \item Quantitatively compare different embedding strategies
-\end{itemize}
+%We aim to investigate neural field embedding strategies compatible with transformer models, proposing methods including positional encoding, learned continuous embedding, and a learned vocabulary integrated with established transformer architectures.
+
+
+\noindent \textbf{Our contributions are: } (1) Develop embedding strategies for neural fields. (2) Train an autoregressive transformer-based model to generate novel neural fields
