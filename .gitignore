@@ -7,7 +7,6 @@ submissions/**/out
 
 *.aux
 *.log
-*.pdf
 *.synctex.gz
 *.out
 *.toc
@@ -19,3 +18,4 @@ submissions/**/out
 *.fls
 *.synctex(busy)
 *.synctex.gz(busy)
+*.brf
