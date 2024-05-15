@@ -21,6 +21,7 @@ torchinfo = "^1.8.0"
 tensorboard = "^2.16.2"
 transformers = "^4.40.2"
 wandb = "^0.16.6"
+scikit-learn = "^1.4.2"
 
 
 [build-system]
