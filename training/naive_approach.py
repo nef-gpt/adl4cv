@@ -42,12 +42,10 @@ class Config:
     always_save_checkpoint = True  # if True, always save a checkpoint after each eval
 
     gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
+    batch_size = 1  # 8  # effective batch size
 
     wandb_project = "regression-transformer"
     wandb_run_name = "run-" + time.strftime("%Y-%m-%d-%H-%M-%S")
-
-    # functions taking a split ('train', 'val') and returning a batch of data
-    get_batch: callable
 
     # adamw optimizer
     learning_rate = 6e-4  # max learning rate
@@ -81,8 +79,9 @@ def get_lr(it, config: Config):
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def train(model_config: RegressionTransformerConfig, config: Config):
-
+def train(
+    get_batch: callable, config: Config, model_config: RegressionTransformerConfig
+):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -159,7 +158,7 @@ def train(model_config: RegressionTransformerConfig, config: Config):
         for split in ["train", "val"]:
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
-                X, Y = config.get_batch(split)
+                X, Y = get_batch(split)
                 with ctx:
                     logits, loss = model(X, Y)
                 losses[k] = loss.item()
@@ -175,7 +174,7 @@ def train(model_config: RegressionTransformerConfig, config: Config):
     )
 
     # training loop
-    X, Y = config.get_batch("train")  # fetch the very first batch
+    X, Y = get_batch("train")  # fetch the very first batch
     t0 = time.time()
     local_iter_num = 0  # number of iterations in the lifetime of this process
     raw_model = model  # unwrap DDP container if needed
@@ -183,7 +182,7 @@ def train(model_config: RegressionTransformerConfig, config: Config):
     while True:
 
         # determine and set the learning rate for this iteration
-        lr = get_lr(iter_num) if config.decay_lr else config.learning_rate
+        lr = get_lr(iter_num, config) if config.decay_lr else config.learning_rate
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
 
@@ -228,7 +227,7 @@ def train(model_config: RegressionTransformerConfig, config: Config):
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
-            X, Y = config.get_batch("train")
+            X, Y = get_batch("train")
             # backward pass, with gradient scaling if training in fp16
             scaler.scale(loss).backward()
         # clip the gradient

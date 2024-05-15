@@ -8,6 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 import os
 
+
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
     save_path = Path(save_path) / name
     inr_path = Path(data_path)
@@ -48,7 +49,7 @@ def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=500
         json.dump(data_split, file)
 
 
-# Taken from neural-field-arena 
+# Taken from neural-field-arena
 class DWSNetsDataset(BaseDataset):
     def __init__(
         self,
@@ -57,8 +58,8 @@ class DWSNetsDataset(BaseDataset):
         end_idx: Union[int, float] = 1.0,
         data_prefix: str = "",
         transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
-        download_url: str =  None,
-        force_download: bool =  False,
+        download_url: str = None,
+        force_download: bool = False,
     ):
         """Initialize theDataset object.
 
@@ -72,11 +73,10 @@ class DWSNetsDataset(BaseDataset):
                 Defaults to None.
         """
 
-        super().__init__(path, download_url = download_url, force_download = force_download)
+        super().__init__(path, download_url=download_url, force_download=force_download)
 
         if isinstance(path, str):
             path = Path(path)
-        
 
         assert path.exists(), f"Path {path.absolute()} does not exist"
         assert path.is_dir(), f"Path {path.absolute()} is not a directory"
@@ -90,8 +90,6 @@ class DWSNetsDataset(BaseDataset):
             )
         """
 
-
-
         generate_splits(path, path, name="mnist_splits.json")
 
     """
@@ -104,4 +102,3 @@ class DWSNetsDataset(BaseDataset):
             batch_item, self.rng = self.transform(batch_item, self.rng)
         return batch_item
     """
-    
