@@ -41,8 +41,13 @@ class Config:
     eval_only = False  # if True, script exits right after the first eval
     always_save_checkpoint = True  # if True, always save a checkpoint after each eval
 
+    gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
+
     wandb_project = "regression-transformer"
     wandb_run_name = "run-" + time.strftime("%Y-%m-%d-%H-%M-%S")
+
+    # functions taking a split ('train', 'val') and returning a batch of data
+    get_batch: callable
 
     # adamw optimizer
     learning_rate = 6e-4  # max learning rate
@@ -152,9 +157,9 @@ def train(model_config: RegressionTransformerConfig, config: Config):
         out = {}
         model.eval()
         for split in ["train", "val"]:
-            losses = torch.zeros(eval_iters)
-            for k in range(eval_iters):
-                X, Y = get_batch(split)
+            losses = torch.zeros(config.eval_iters)
+            for k in range(config.eval_iters):
+                X, Y = config.get_batch(split)
                 with ctx:
                     logits, loss = model(X, Y)
                 losses[k] = loss.item()
@@ -168,5 +173,97 @@ def train(model_config: RegressionTransformerConfig, config: Config):
         name=config.wandb_run_name,
         config={**vars(config), **vars(model_config)},
     )
+
+    # training loop
+    X, Y = config.get_batch("train")  # fetch the very first batch
+    t0 = time.time()
+    local_iter_num = 0  # number of iterations in the lifetime of this process
+    raw_model = model  # unwrap DDP container if needed
+    running_mfu = -1.0
+    while True:
+
+        # determine and set the learning rate for this iteration
+        lr = get_lr(iter_num) if config.decay_lr else config.learning_rate
+        for param_group in optimizer.param_groups:
+            param_group["lr"] = lr
+
+        # evaluate the loss on train/val sets and write checkpoints
+        if iter_num % config.eval_interval == 0:
+            losses = estimate_loss()
+            print(
+                f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}"
+            )
+
+            wandb.log(
+                {
+                    "iter": iter_num,
+                    "train/loss": losses["train"],
+                    "val/loss": losses["val"],
+                    "lr": lr,
+                    "mfu": running_mfu * 100,  # convert to percentage
+                }
+            )
+            if losses["val"] < best_val_loss or config.always_save_checkpoint:
+                best_val_loss = losses["val"]
+                if iter_num > 0:
+                    checkpoint = {
+                        "model": raw_model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "model_args": model_config,
+                        "iter_num": iter_num,
+                        "best_val_loss": best_val_loss,
+                        "config": config,
+                    }
+                    print(f"saving checkpoint to {config.out_dir}")
+                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
+        if iter_num == 0 and config.eval_only:
+            break
+
+        # forward backward update, with optional gradient accumulation to simulate larger batch size
+        # and using the GradScaler if data type is float16
+        for micro_step in range(config.gradient_accumulation_steps):
+            with ctx:
+                logits, loss = model(X, Y)
+                loss = (
+                    loss / config.gradient_accumulation_steps
+                )  # scale the loss to account for gradient accumulation
+            # immediately async prefetch next batch while model is doing the forward pass on the GPU
+            X, Y = config.get_batch("train")
+            # backward pass, with gradient scaling if training in fp16
+            scaler.scale(loss).backward()
+        # clip the gradient
+        if config.grad_clip != 0.0:
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip)
+        # step the optimizer and scaler if training in fp16
+        scaler.step(optimizer)
+        scaler.update()
+        # flush the gradients as soon as we can, no need for this memory anymore
+        optimizer.zero_grad(set_to_none=True)
+
+        # timing and logging
+        t1 = time.time()
+        dt = t1 - t0
+        t0 = t1
+        if iter_num % config.log_interval == 0:
+            # get loss as float. note: this is a CPU-GPU sync point
+            # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
+            lossf = loss.item() * config.gradient_accumulation_steps
+            if local_iter_num >= 5:  # let the training loop settle a bit
+                mfu = raw_model.estimate_mfu(
+                    config.batch_size * config.gradient_accumulation_steps, dt
+                )
+                running_mfu = (
+                    mfu if running_mfu == -1.0 else 0.9 * running_mfu + 0.1 * mfu
+                )
+            print(
+                f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms, mfu {running_mfu*100:.2f}%"
+            )
+        iter_num += 1
+        local_iter_num += 1
+
+        # termination conditions
+        if iter_num > config.max_iters:
+            break
 
     pass
