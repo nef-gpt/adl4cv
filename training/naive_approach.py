@@ -9,7 +9,7 @@ TODO:
 """
 
 from contextlib import nullcontext
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import os
 from networks.regression_transformer import (
     RegressionTransformerConfig,
@@ -35,11 +35,11 @@ class Config:
     )  # 'float32', 'bfloat16', or 'float16', the latter will auto implement a GradScaler
 
     # training loop
-    eval_interval = 2000
+    eval_interval = 100
     log_interval = 1
-    eval_iters = 200
+    eval_iters = 16  # 200
     eval_only = False  # if True, script exits right after the first eval
-    always_save_checkpoint = True  # if True, always save a checkpoint after each eval
+    always_save_checkpoint = False  # if True, always save a checkpoint after each eval
 
     gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
     batch_size = 1  # 8  # effective batch size
@@ -53,11 +53,11 @@ class Config:
     weight_decay = 1e-1
     beta1 = 0.9
     beta2 = 0.95
-    grad_clip = 1.0  # clip gradients at this value, or disable if == 0.0
+    grad_clip = 0.0  # clip gradients at this value, or disable if == 0.0
 
     # learning rate decay settings
     decay_lr = True  # whether to decay the learning rate
-    warmup_iters = 2000  # how many steps to warm up for
+    warmup_iters = 500  # how many steps to warm up for
     lr_decay_iters = 600000  # should be ~= max_iters per Chinchilla
     min_lr = 6e-5  # minimum learning rate, should be ~= learning_rate/10 per Chinchilla
 
@@ -167,10 +167,10 @@ def train(
         return out
 
     # let's init wandb (use both the config and the model config)
+    # merge the two dataclasses into a single dict (with defaults from the model config)
+    super_config = asdict(config) | asdict(model_config)
     wandb.init(
-        project=config.wandb_project,
-        name=config.wandb_run_name,
-        config={**vars(config), **vars(model_config)},
+        project=config.wandb_project, name=config.wandb_run_name, config=super_config
     )
 
     # training loop
@@ -244,20 +244,20 @@ def train(
         t1 = time.time()
         dt = t1 - t0
         t0 = t1
-        if iter_num % config.log_interval == 0:
-            # get loss as float. note: this is a CPU-GPU sync point
-            # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
-            lossf = loss.item() * config.gradient_accumulation_steps
-            if local_iter_num >= 5:  # let the training loop settle a bit
-                mfu = raw_model.estimate_mfu(
-                    config.batch_size * config.gradient_accumulation_steps, dt
-                )
-                running_mfu = (
-                    mfu if running_mfu == -1.0 else 0.9 * running_mfu + 0.1 * mfu
-                )
-            print(
-                f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms, mfu {running_mfu*100:.2f}%"
-            )
+        # if iter_num % config.log_interval == 0:
+        #     # get loss as float. note: this is a CPU-GPU sync point
+        #     # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
+        #     lossf = loss.item() * config.gradient_accumulation_steps
+        #     if local_iter_num >= 5:  # let the training loop settle a bit
+        #         mfu = raw_model.estimate_mfu(
+        #             config.batch_size * config.gradient_accumulation_steps, dt
+        #         )
+        #         running_mfu = (
+        #             mfu if running_mfu == -1.0 else 0.9 * running_mfu + 0.1 * mfu
+        #         )
+        #     print(
+        #         f"iter {iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms, mfu {running_mfu*100:.2f}%"
+        #     )
         iter_num += 1
         local_iter_num += 1
 
