@@ -1,7 +1,4 @@
 """
-THIS IS A REWORKED VERSION OF THE FOLLOWING SCRIPT:
-https://github.com/karpathy/nanoGPT/blob/master/train.py
-
 This training script can be run both on a single gpu in debug mode,
 and also in a larger training run with distributed data parallel (ddp).
 
@@ -29,6 +26,8 @@ import numpy as np
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
+
+from model import GPTConfig, GPT
 
 # -----------------------------------------------------------------------------
 # default config values designed to train a gpt2 (124M) on OpenWebText
@@ -129,6 +128,36 @@ ctx = (
     if device_type == "cpu"
     else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
 )
+
+# poor man's data loader
+data_dir = os.path.join("data", dataset)
+
+
+def get_batch(split):
+    # We recreate np.memmap every batch to avoid a memory leak, as per
+    # https://stackoverflow.com/questions/45132940/numpy-memmap-memory-usage-want-to-iterate-once/61472122#61472122
+    if split == "train":
+        data = np.memmap(os.path.join(data_dir, "train.bin"), dtype=np.uint16, mode="r")
+    else:
+        data = np.memmap(os.path.join(data_dir, "val.bin"), dtype=np.uint16, mode="r")
+    ix = torch.randint(len(data) - block_size, (batch_size,))
+    x = torch.stack(
+        [torch.from_numpy((data[i : i + block_size]).astype(np.int64)) for i in ix]
+    )
+    y = torch.stack(
+        [
+            torch.from_numpy((data[i + 1 : i + 1 + block_size]).astype(np.int64))
+            for i in ix
+        ]
+    )
+    if device_type == "cuda":
+        # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+        x, y = x.pin_memory().to(device, non_blocking=True), y.pin_memory().to(
+            device, non_blocking=True
+        )
+    else:
+        x, y = x.to(device), y.to(device)
+    return x, y
 
 
 # init these up here, can override if init_from='resume' (i.e. from a checkpoint)
