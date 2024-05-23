@@ -17,7 +17,7 @@ class RQAutoencoder(nn.Module):
     def __init__(self, config: RQAutoencoderConfig):
         super().__init__()
 
-        self.num_l = len(config.dim_l - 1)
+        self.num_l = len(config.dim_l) - 1
         # Encoder
         self.encoder = nn.Sequential()
         for i in range(self.num_l - 1):

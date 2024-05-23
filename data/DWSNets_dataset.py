@@ -9,6 +9,7 @@ from pathlib import Path
 import os
 import torch
 
+
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
     save_path = Path(save_path) / name
     inr_path = Path(data_path)
@@ -73,7 +74,7 @@ class DWSNetsDataset(BaseDataset):
         super().__init__(path, download_url=download_url, force_download=force_download)
 
         if isinstance(path, str):
-            path = Path(path) 
+            path = Path(path)
 
         assert path.exists(), f"Path {path.absolute()} does not exist"
         assert path.is_dir(), f"Path {path.absolute()} is not a directory"
@@ -86,14 +87,45 @@ class DWSNetsDataset(BaseDataset):
 
         self.dataset = json.load(open(Path(path) / "mnist_splits.json", "r"))
 
-    
     def __len__(self):
         return len(self.dataset[self.split]["path"])
-    
 
     def __getitem__(self, idx):
-        weights_dict = torch.load(self.dataset[self.split]["path"][idx], map_location=torch.device('cpu'))
-        weights = torch.cat([weights_dict[key].flatten() for key in weights_dict.keys()])
-        return weights, int(self.dataset[self.split]["label"][idx])
-    
-    
+        target = torch.load(
+            self.dataset[self.split]["path"][idx], map_location=torch.device("cpu")
+        )
+
+        label = int(self.dataset[self.split]["label"][idx])
+
+        if self.transform:
+            target, label = self.transform(target, label)
+
+        return target, label
+
+
+class FlattenTransform(torch.nn.Module):
+    def forward(self, weights_dict):
+        weights = torch.cat(
+            [weights_dict[key].flatten() for key in weights_dict.keys()]
+        )
+        return weights.unsqueeze(-1)
+
+
+class LayerOneHotTransform(torch.nn.Module):
+    def forward(self, weights_dict):
+        # one hot encoding of the layer id, should be a tensor of shape (num_of_flattened_entries, num_layers)
+        layer_index = []
+        for key in weights_dict.keys():
+            layer = int(key.split(".")[1])
+            layer_index += [layer] * weights_dict[key].numel()
+        one_hot = torch.nn.functional.one_hot(torch.tensor(layer_index))
+        return one_hot
+
+
+class BiasFlagTransform(torch.nn.Module):
+    def forward(self, weights_dict):
+        bias_flag = []
+        for key in weights_dict.keys():
+            bias = int(key.split(".")[2] == "bias")
+            bias_flag += [bias] * weights_dict[key].numel()
+        return torch.tensor(bias_flag).unsqueeze(-1)
