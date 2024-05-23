@@ -13,6 +13,7 @@ import wandb
 from utils import get_default_device
 from networks.naive_rq_ae import RQAutoencoder, RQAutoencoderConfig
 from torch import autocast, optim
+from torch.optim.lr_scheduler import LambdaLR
 from tqdm import tqdm
 
 
@@ -33,6 +34,7 @@ class TrainingConfig:
     log_interval = 1
     eval_iters = 100  # 200
     eval_only = False  # if True, script exits right after the first eval
+    checkpoint_interval = 100 # how often to save a checkpoint
     always_save_checkpoint = False  # if True, always save a checkpoint after each eval
 
     gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
@@ -54,6 +56,15 @@ class TrainingConfig:
     warmup_iters = 500  # how many steps to warm up for
     lr_decay_iters = 600000  # should be ~= max_iters per Chinchilla
     min_lr = 6e-5  # minimum learning rate, should be ~= learning_rate/10 per Chinchilla
+
+def get_lr_scheduler(optimizer, config):
+    def lr_lambda(current_step: int):
+        if current_step < config.warmup_iters:
+            return float(current_step) / float(max(1, config.warmup_iters))
+        progress = float(current_step - config.warmup_iters) / float(max(1, config.lr_decay_iters - config.warmup_iters))
+        return max(config.min_lr, 0.5 * (1.0 + math.cos(math.pi * progress)))
+    
+    return LambdaLR(optimizer, lr_lambda)
 
 
 def train_model(
@@ -84,6 +95,7 @@ def train_model(
         weight_decay=config.weight_decay,
     )
     scaler = None
+    scheduler = get_lr_scheduler(optimizer, config)
 
     # Training loop
     model.train()
@@ -106,12 +118,17 @@ def train_model(
                 loss.backward()
                 optimizer.step()
 
+            # Update the learning rate
+            if config.decay_lr:
+                scheduler.step()
+
             loop.set_description(f"Epoch [{epoch + 1}/{config.max_iters}]")
             loop.set_postfix(loss=loss.item())
 
             # Log and evaluate
             if (i + 1) % config.log_interval == 0:
-                wandb.log({"loss": loss.item(), "epoch": epoch, "batch": i + 1})
+                wandb.log({"loss": loss.item(), "epoch": epoch, "batch": i + 1, "lr": scheduler.get_last_lr()[0]})
+
 
             if (i + 1) % config.eval_interval == 0:
                 eval_loss = evaluate_model(
@@ -119,8 +136,8 @@ def train_model(
                 )
                 wandb.log({"eval_loss": eval_loss, "epoch": epoch, "batch": i + 1})
 
-        if config.always_save_checkpoint:
-            save_checkpoint(model, optimizer, epoch, config.out_dir)
+            if (i + 1) % config.checkpoint_interval == 0 and config.always_save_checkpoint:
+                save_checkpoint(model, optimizer, epoch, config.out_dir)
 
     wandb.finish()
 

@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from vector_quantize_pytorch import VectorQuantize
+from vector_quantize_pytorch import ResidualVQ
 from dataclasses import dataclass
 
 
 @dataclass
 class RQAutoencoderConfig:
     dim_l: tuple = (4, 2, 1)
-    size_cb: int = 512
-    decay_cb: float = 0.8
-    commitment_weight: float = 1.0
+    num_quantizers: int = 8      # specify number of quantizers
+    codebook_size: int = 1024    # codebook size
+
 
 
 class RQAutoencoder(nn.Module):
@@ -46,15 +46,24 @@ class RQAutoencoder(nn.Module):
             nn.Linear(config.dim_l[1], config.dim_l[0]),
         )
 
-        self.vq = VectorQuantize(
+        self.vq = ResidualVQ(
             dim=config.dim_l[-1],
-            codebook_size=config.size_cb,  # codebook size
-            decay=config.decay_cb,  # the exponential moving average decay, lower means the dictionary will change faster
-            commitment_weight=config.commitment_weight,  # the weight on the commitment loss
+            num_quantizers=config.num_quantizers,
+            codebook_size=config.codebook_size
         )
+
+    def encode(self, x):
+        return self.encoder(x)
+    
+    def encode_to_cb(self, x):
+        x = self.encode(x)
+        return self.vq(x)
+    
+    def decode(self, x):
+        return self.decoder(x)
 
     def forward(self, x):
         x = self.encoder(x)
-        x, _indices, _commit_loss = self.vq(x)
+        #x, _indices, _commit_loss = self.vq(x)
         x = self.decoder(x)
         return x

@@ -104,28 +104,28 @@ class DWSNetsDataset(BaseDataset):
 
 
 class FlattenTransform(torch.nn.Module):
-    def forward(self, weights_dict):
+    def forward(self, weights_dict, y):
         weights = torch.cat(
             [weights_dict[key].flatten() for key in weights_dict.keys()]
         )
-        return weights.unsqueeze(-1)
+        return weights.unsqueeze(-1), y
 
 
 class LayerOneHotTransform(torch.nn.Module):
-    def forward(self, weights_dict):
+    def forward(self, weights_dict, y):
         # one hot encoding of the layer id, should be a tensor of shape (num_of_flattened_entries, num_layers)
         layer_index = []
         for key in weights_dict.keys():
             layer = int(key.split(".")[1])
             layer_index += [layer] * weights_dict[key].numel()
         one_hot = torch.nn.functional.one_hot(torch.tensor(layer_index))
-        return one_hot
+        return one_hot, y
 
 
 class BiasFlagTransform(torch.nn.Module):
-    def forward(self, weights_dict):
+    def forward(self, weights_dict, y):
         bias_flag = []
         for key in weights_dict.keys():
             bias = int(key.split(".")[2] == "bias")
             bias_flag += [bias] * weights_dict[key].numel()
-        return torch.tensor(bias_flag).unsqueeze(-1)
+        return torch.tensor(bias_flag).unsqueeze(-1), y
