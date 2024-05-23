@@ -22,6 +22,7 @@ tensorboard = "^2.16.2"
 transformers = "^4.40.2"
 wandb = "^0.16.6"
 scikit-learn = "^1.4.2"
+random-fourier-features-pytorch = "^1.0.1"
 
 
 [build-system]

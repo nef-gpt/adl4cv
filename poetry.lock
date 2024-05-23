@@ -2635,6 +2635,22 @@ files = [
 cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
+name = "random-fourier-features-pytorch"
+version = "1.0.1"
+description = "Random Fourier Features for PyTorch"
+optional = false
+python-versions = "*"
+files = [
+    {file = "random-fourier-features-pytorch-1.0.1.tar.gz", hash = "sha256:04127161c5eae37a5dd4ea108acc5b934a8f702ca40457f9ef5cfc5268344bf8"},
+    {file = "random_fourier_features_pytorch-1.0.1-py3-none-any.whl", hash = "sha256:1f3c01e15e8d5c9902b7cc67ca71b056a1c90768bb3d57f45b1043be29808534"},
+]
+
+[package.dependencies]
+numpy = ">=1.17"
+torch = ">=1.7"
+torchvision = ">=0.9"
+
+[[package]]
 name = "referencing"
 version = "0.35.1"
 description = "JSON Referencing + Python"
@@ -3968,4 +3984,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "aa50598a98bafca749968d2c32644c18edc424ae8a6c9b9c9f28047c44d97801"
+content-hash = "d8ee7d4ff618d55ce7905ce72f688f99fbacec84db5a39871b9c2075463ad1d5"

@@ -94,6 +94,10 @@ class DWSNetsDataset(BaseDataset):
     def __getitem__(self, idx):
         weights_dict = torch.load(self.dataset[self.split]["path"][idx], map_location=torch.device('cpu'))
         weights = torch.cat([weights_dict[key].flatten() for key in weights_dict.keys()])
+
         return weights, int(self.dataset[self.split]["label"][idx])
+    
+
+
     
     
