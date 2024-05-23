@@ -41,6 +41,16 @@ DiffGPT:
 - "Experiments" should be more detailed- also remove unnecassary newlines
 - Fastest option to get started with transformers: Huggingface
 
+### 10.05 - Meeting
+
+- Research Proposal?
+
+- teacher forcing
+
+- Ask about dataset
+- Regression Transformer
+
+
 
 ## Paper
 

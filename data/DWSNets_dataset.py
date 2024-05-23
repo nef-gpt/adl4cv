@@ -48,15 +48,15 @@ def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=500
         json.dump(data_split, file)
 
 
-# Taken from neural-field-arena 
+# Taken from neural-field-arena
 class DWSNetsDataset(BaseDataset):
     def __init__(
         self,
         path: Union[str, Path],
         split: str = "train",
         transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
-        download_url: str =  None,
-        force_download: bool =  False,
+        download_url: str = None,
+        force_download: bool = False,
     ):
         """Initialize theDataset object.
 
@@ -70,7 +70,7 @@ class DWSNetsDataset(BaseDataset):
                 Defaults to None.
         """
 
-        super().__init__(path, download_url = download_url, force_download = force_download)
+        super().__init__(path, download_url=download_url, force_download=force_download)
 
         if isinstance(path, str):
             path = Path(path) 

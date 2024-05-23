@@ -4,6 +4,7 @@ datasets
 .ipynb_checkpoints
 .DS_Store
 submissions/**/out
+wandb
 
 *.aux
 *.log

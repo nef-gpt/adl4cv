@@ -12,9 +12,9 @@ from dataclasses import dataclass
 class RegressionTransformerConfig:
     dropout: float = 0.0
     block_size: int = 1024
-    n_layer: int = 12
-    n_head: int = 12
-    n_embd: int = 768
+    n_layer: int = 2
+    n_head: int = 1
+    n_embd: int = 1  # 768
     bias: bool = (
         True  # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
     )
@@ -86,7 +86,7 @@ class RegressionTransformer(nn.Module):
 
     def forward(self, idx, targets=None):
         device = idx.device
-        b, t = idx.size()
+        b, t, n_embd = idx.size()
         assert (
             t <= self.config.block_size
         ), f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
@@ -94,18 +94,24 @@ class RegressionTransformer(nn.Module):
 
         # forward the GPT model itself
         # tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
-        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
-        x = self.transformer.drop(idx + pos_emb)
+
+        # disables positional encoding for now
+        #pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
+        #print(pos_emb)
+        #x = self.transformer.drop(idx + pos_emb)
+
+        x = idx
         for block in self.transformer.h:
             x = block(x)
-        x = self.transformer.ln_f(x)
+        #x = self.transformer.ln_f(x)
+
+
 
         if targets is not None:
             # if we are given some desired targets also calculate the loss
             target = self.lm_head(x)
-            loss = F.cross_entropy(
-                target.view(-1, target.size(-1)), targets.view(-1), ignore_index=-1
-            )
+            loss = F.mse_loss(target.view(-1), targets.view(-1))
+
         else:
             # inference-time mini-optimization: only forward the lm_head on the very last position
             target = self.lm_head(
