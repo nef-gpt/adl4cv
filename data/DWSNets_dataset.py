@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple
 from collections import defaultdict
 from pathlib import Path
 import os
-
+import torch
 
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
     save_path = Path(save_path) / name
@@ -19,7 +19,6 @@ def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=500
             s = "train"
         else:
             s = "test"
-        logging.info
 
         data_split[s]["path"].append((os.getcwd() / p).as_posix())
         data_split[s]["label"].append(p.parent.parent.stem.split("_")[-2])
@@ -54,9 +53,7 @@ class DWSNetsDataset(BaseDataset):
     def __init__(
         self,
         path: Union[str, Path],
-        start_idx: Union[int, float] = 0.0,
-        end_idx: Union[int, float] = 1.0,
-        data_prefix: str = "",
+        split: str = "train",
         transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
         download_url: str = None,
         force_download: bool = False,
@@ -76,29 +73,27 @@ class DWSNetsDataset(BaseDataset):
         super().__init__(path, download_url=download_url, force_download=force_download)
 
         if isinstance(path, str):
-            path = Path(path)
+            path = Path(path) 
 
         assert path.exists(), f"Path {path.absolute()} does not exist"
         assert path.is_dir(), f"Path {path.absolute()} is not a directory"
-        """
-        file_pattern = f"{data_prefix}*.pth"
-        paths = list(path.glob(f"{data_prefix}*.pth"))
 
-        if len(paths) == 0:
-            raise ValueError(
-                f"No files found at `{path.absolute()}` with pattern `{file_pattern}`"
-            )
-        """
+        self.split = split
+        self.transform = transform
+        self.path = path
+        if os.path.isfile(path / "mnist_splits.json") is not True:
+            generate_splits(path, path, name="mnist_splits.json")
 
-        generate_splits(path, path, name="mnist_splits.json")
+        self.dataset = json.load(open(Path(path) / "mnist_splits.json", "r"))
 
-    """
+    
     def __len__(self):
-        return self.data[self.data_keys[0]].shape[0]
+        return len(self.dataset[self.split]["path"])
+    
 
     def __getitem__(self, idx):
-        batch_item = {key: self.data[key][idx] for key in self.data_keys}
-        if self.transform is not None:
-            batch_item, self.rng = self.transform(batch_item, self.rng)
-        return batch_item
-    """
+        weights_dict = torch.load(self.dataset[self.split]["path"][idx], map_location=torch.device('cpu'))
+        weights = torch.cat([weights_dict[key].flatten() for key in weights_dict.keys()])
+        return weights, int(self.dataset[self.split]["label"][idx])
+    
+    
