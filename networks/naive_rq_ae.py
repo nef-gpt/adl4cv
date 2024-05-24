@@ -9,7 +9,7 @@ from dataclasses import dataclass
 class RQAutoencoderConfig:
     dim_enc: tuple = (4, 2, 1)
     dim_dec: tuple = (1, 2, 4)
-    num_quantizers: int = 8      # specify number of quantizers
+    num_quantizers: int = 1      # specify number of quantizers
     codebook_size: int = 1024    # codebook size
     activation: nn.Module = nn.ReLU(True)
 
@@ -18,9 +18,7 @@ class RQAutoencoderConfig:
 class RQAutoencoder(nn.Module):
     def __init__(self, config: RQAutoencoderConfig):
         super().__init__()
-
-        print(config.dim_enc[-1])
-        print(config.dim_dec[0])
+        self.codebook_size = config.codebook_size
 
         assert config.dim_enc[-1]==config.dim_dec[0], "Latent space dimension of encoder/decoder don't match"
         assert len(config.dim_enc) > 1 and len(config.dim_dec) > 1, "dimensions of decoder/encoder tuple must be bigger than 1"
@@ -57,6 +55,7 @@ class RQAutoencoder(nn.Module):
 
         self.vq = ResidualVQ(
             dim=config.dim_enc[-1],
+            shared_codebook=True,
             num_quantizers=config.num_quantizers,
             codebook_size=config.codebook_size
         )

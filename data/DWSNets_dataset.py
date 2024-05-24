@@ -10,6 +10,8 @@ import os
 import torch
 import torch.nn as nn
 
+from networks.naive_rq_ae import RQAutoencoder
+
 
 
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
@@ -143,10 +145,22 @@ class PositionEncodingTransform(nn.Module):
         weights = self.pos_enc(positions).reshape((weights.size(0), -1))
         return weights, y
     
+class TokenTransform(nn.Module):
+    def __init__(self, model: RQAutoencoder):
+        super().__init__()
+        self.model = model
+
+    def forward(self, weights, y):
+        # Apply min-max normalization
+        _x, indices, _commit_loss = self.model.encode_to_cb(weights)
+        codes = self.model.vq.get_codes_from_indices(indices)
+        x = torch.cat((torch.Tensor([self.model.codebook_size]), indices, torch.Tensor([self.model.codebook_size + 1])))
+        return x, y
+    
 
 class MinMaxTransformer(nn.Module):
     def __init__(self, min_value: float = -0.3587, max_value: float = 0.4986):
-        super(MinMaxTransformer, self).__init__()
+        super().__init__()
         self.min_value = min_value
         self.max_value = max_value
 
