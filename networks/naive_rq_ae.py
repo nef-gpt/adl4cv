@@ -9,9 +9,12 @@ from dataclasses import dataclass
 class RQAutoencoderConfig:
     dim_enc: tuple = (4, 2, 1)
     dim_dec: tuple = (1, 2, 4)
-    num_quantizers: int = 1      # specify number of quantizers
+    num_quantizers: int = 8      # specify number of quantizers
     codebook_size: int = 1024    # codebook size
     activation: nn.Module = nn.ReLU(True)
+    kmeans_init = True,   # set to True
+    kmeans_iters = 10     # number of kmeans iterations to calculate the centroids for the codebook on init
+
 
 
 
@@ -57,7 +60,9 @@ class RQAutoencoder(nn.Module):
             dim=config.dim_enc[-1],
             shared_codebook=True,
             num_quantizers=config.num_quantizers,
-            codebook_size=config.codebook_size
+            codebook_size=config.codebook_size,
+            kmeans_init=config.kmeans_init,
+            kmeans_iters=config.kmeans_iters
         )
 
     def encode(self, x):

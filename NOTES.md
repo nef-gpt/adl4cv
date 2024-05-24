@@ -55,3 +55,13 @@ DiffGPT:
 ## Paper
 
 https://link.springer.com/chapter/10.1007/978-3-031-20068-7_13
+
+
+## 24.05
+
+# Main Challenges
+
+- Tokenization of Neural Fields
+- finding useful embedding that encodes the structure of the MLP 
+
+

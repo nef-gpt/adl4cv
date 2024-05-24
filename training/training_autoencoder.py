@@ -138,8 +138,9 @@ def train_model(
 
             #if (i + 1) % config.checkpoint_interval == 0 and config.always_save_checkpoint:
             #    save_checkpoint(model, optimizer, epoch, config.out_dir)
-        if (epoch + 1) % 50 == 0 and config.always_save_checkpoint:
-            save_checkpoint(model, optimizer, epoch, config.out_dir)
+        """if (epoch + 1) % 50 == 0 and config.always_save_checkpoint:
+            save_checkpoint(model, optimizer, epoch, config.out_dir)"""
+        save_checkpoint(model, optimizer, epoch, config.out_dir)
 
     wandb.finish()
     return model
