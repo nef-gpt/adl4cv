@@ -2,12 +2,16 @@ from data.base_dataset import BaseDataset
 import logging
 import json
 from sklearn.model_selection import train_test_split
-
+from rff.layers import PositionalEncoding
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union
 from collections import defaultdict
 from pathlib import Path
 import os
 import torch
+import torch.nn as nn
+
+from networks.naive_rq_ae import RQAutoencoder
+
 
 
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
@@ -103,29 +107,64 @@ class DWSNetsDataset(BaseDataset):
         return target, label
 
 
-class FlattenTransform(torch.nn.Module):
-    def forward(self, weights_dict):
+class FlattenTransform(nn.Module):
+    def forward(self, weights_dict, y):
         weights = torch.cat(
             [weights_dict[key].flatten() for key in weights_dict.keys()]
         )
-        return weights.unsqueeze(-1)
+        return weights.unsqueeze(-1), y
 
 
-class LayerOneHotTransform(torch.nn.Module):
-    def forward(self, weights_dict):
+class LayerOneHotTransform(nn.Module):
+    def forward(self, weights_dict, y):
         # one hot encoding of the layer id, should be a tensor of shape (num_of_flattened_entries, num_layers)
         layer_index = []
         for key in weights_dict.keys():
             layer = int(key.split(".")[1])
             layer_index += [layer] * weights_dict[key].numel()
-        one_hot = torch.nn.functional.one_hot(torch.tensor(layer_index))
-        return one_hot
+        one_hot = nn.functional.one_hot(torch.tensor(layer_index))
+        return one_hot, y
 
 
-class BiasFlagTransform(torch.nn.Module):
-    def forward(self, weights_dict):
+class BiasFlagTransform(nn.Module):
+    def forward(self, weights_dict, y):
         bias_flag = []
         for key in weights_dict.keys():
             bias = int(key.split(".")[2] == "bias")
             bias_flag += [bias] * weights_dict[key].numel()
-        return torch.tensor(bias_flag).unsqueeze(-1)
+        return torch.tensor(bias_flag).unsqueeze(-1), y
+
+
+class PositionEncodingTransform(nn.Module):
+    def __init__(self, sigma: float = 1.0, m: int = 10):
+        super().__init__()
+        self.pos_enc = PositionalEncoding(sigma=sigma, m=m)
+
+    def forward(self, weights, y):
+        positions = torch.arange(1, weights.size(0) + 1, dtype=torch.float32)
+        weights = self.pos_enc(positions).reshape((weights.size(0), -1))
+        return weights, y
+    
+class TokenTransform(nn.Module):
+    def __init__(self, model: RQAutoencoder):
+        super().__init__()
+        self.model = model
+
+    def forward(self, weights, y):
+        # Apply min-max normalization
+        _x, indices, _commit_loss = self.model.encode_to_cb(weights)
+        codes = self.model.vq.get_codes_from_indices(indices)
+        x = torch.cat((torch.Tensor([self.model.codebook_size]), indices, torch.Tensor([self.model.codebook_size + 1])))
+        return x, y
+    
+
+class MinMaxTransformer(nn.Module):
+    def __init__(self, min_value: float = -0.3587, max_value: float = 0.4986):
+        super().__init__()
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def forward(self, weights, y):
+        # Apply min-max normalization
+        weights = (weights - self.min_value) / (self.max_value - self.min_value)
+        return weights, y
