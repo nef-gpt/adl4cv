@@ -1,7 +1,8 @@
 import torch
+import math
 import torch.nn as nn
 import torch.optim as optim
-from vector_quantize_pytorch import ResidualVQ
+from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from dataclasses import dataclass
 
 
@@ -9,10 +10,11 @@ from dataclasses import dataclass
 class RQAutoencoderConfig:
     dim_enc: tuple = (4, 2, 1)
     dim_dec: tuple = (1, 2, 4)
-    num_quantizers: int = 1      # specify number of quantizers
-    codebook_size: int = 1024    # codebook size
+    vq_decay: float = 0.8
+    num_quantizers: int = 1  # specify number of quantizers
+    codebook_size: int = 1024  # codebook size
+    codebook_dim: int = 1  # int(math.log2(codebook_size))
     activation: nn.Module = nn.ReLU(True)
-
 
 
 class RQAutoencoder(nn.Module):
@@ -20,8 +22,12 @@ class RQAutoencoder(nn.Module):
         super().__init__()
         self.codebook_size = config.codebook_size
 
-        assert config.dim_enc[-1]==config.dim_dec[0], "Latent space dimension of encoder/decoder don't match"
-        assert len(config.dim_enc) > 1 and len(config.dim_dec) > 1, "dimensions of decoder/encoder tuple must be bigger than 1"
+        assert (
+            config.dim_enc[-1] == config.dim_dec[0]
+        ), "Latent space dimension of encoder/decoder don't match"
+        assert (
+            len(config.dim_enc) > 1 and len(config.dim_dec) > 1
+        ), "dimensions of decoder/encoder tuple must be bigger than 1"
 
         # Encoder
         num_l = len(config.dim_enc) - 1
@@ -31,7 +37,9 @@ class RQAutoencoder(nn.Module):
                 "encoder-linear-{}".format(i),
                 nn.Linear(config.dim_enc[i], config.dim_enc[i + 1]),
             )
-            self.encoder.add_module(f"encoder-{(config.activation._get_name())}-{i}",config.activation)
+            self.encoder.add_module(
+                f"encoder-{(config.activation._get_name())}-{i}", config.activation
+            )
 
         self.encoder.add_module(
             "encoder-linear-{}".format(num_l - 1),
@@ -46,27 +54,36 @@ class RQAutoencoder(nn.Module):
                 "decoder-linear-{}".format(i),
                 nn.Linear(config.dim_dec[i], config.dim_dec[i + 1]),
             )
-            self.decoder.add_module(f"decoder-{(config.activation._get_name())}-{i}",config.activation)
+            self.decoder.add_module(
+                f"decoder-{(config.activation._get_name())}-{i}", config.activation
+            )
 
         self.decoder.add_module(
             "decoder-linear-{}".format(num_l - 1),
             nn.Linear(config.dim_dec[-2], config.dim_dec[-1]),
         )
 
-        self.vq = ResidualVQ(
+        self.vq = VectorQuantize(
+            decay=config.vq_decay,
             dim=config.dim_enc[-1],
-            shared_codebook=True,
-            num_quantizers=config.num_quantizers,
-            codebook_size=config.codebook_size
+            codebook_dim=config.codebook_dim,
+            codebook_size=config.codebook_size,
         )
+
+        # ResidualVQ(
+        #     dim=config.dim_enc[-1],
+        #     shared_codebook=True,
+        #     num_quantizers=config.num_quantizers,
+        #     codebook_size=config.codebook_size
+        # )
 
     def encode(self, x):
         return self.encoder(x)
-    
+
     def encode_to_cb(self, x):
         x = self.encode(x)
         return self.vq(x)
-    
+
     def decode(self, x):
         return self.decoder(x)
 
