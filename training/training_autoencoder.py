@@ -102,13 +102,13 @@ def train_model(
     for epoch in range(config.max_iters):
         loop = tqdm(train_loader, leave=False)
         for i, batch in enumerate(loop):
-            inputs = batch[0].to(device)
+            inputs = batch.to(device)
 
             optimizer.zero_grad()
 
             with autocast(device_type=device.type, enabled=bool(scaler)):
                 outputs = model(inputs)
-                loss = criterion(outputs, inputs)
+                loss = criterion(outputs, inputs[:, 0])
 
             if scaler:
                 scaler.scale(loss).backward()
@@ -130,16 +130,19 @@ def train_model(
                 wandb.log({"loss": loss.item(), "epoch": epoch, "batch": i + 1, "lr": scheduler.get_last_lr()[0]})
 
 
-            if (i + 1) % config.eval_interval == 0:
+            """if (i + 1) % config.eval_interval == 0:
                 eval_loss = evaluate_model(
                     model, eval_loader, criterion, device, scaler
                 )
-                wandb.log({"eval_loss": eval_loss, "epoch": epoch, "batch": i + 1})
+                wandb.log({"eval_loss": eval_loss, "epoch": epoch, "batch": i + 1})"""
 
-            if (i + 1) % config.checkpoint_interval == 0 and config.always_save_checkpoint:
-                save_checkpoint(model, optimizer, epoch, config.out_dir)
+            #if (i + 1) % config.checkpoint_interval == 0 and config.always_save_checkpoint:
+            #    save_checkpoint(model, optimizer, epoch, config.out_dir)
+        if (epoch + 1) % 50 == 0 and config.always_save_checkpoint:
+            save_checkpoint(model, optimizer, epoch, config.out_dir)
 
     wandb.finish()
+    return model
 
 
 def evaluate_model(model, eval_loader, criterion, device, scaler):
