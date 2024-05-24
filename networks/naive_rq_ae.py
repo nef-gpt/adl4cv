@@ -10,11 +10,11 @@ from dataclasses import dataclass
 class RQAutoencoderConfig:
     dim_enc: tuple = (4, 2, 1)
     dim_dec: tuple = (1, 2, 4)
-    vq_decay: float = 0.8
-    num_quantizers: int = 1  # specify number of quantizers
+    num_quantizers: int = 8  # specify number of quantizers
     codebook_size: int = 1024  # codebook size
-    codebook_dim: int = 1  # int(math.log2(codebook_size))
     activation: nn.Module = nn.ReLU(True)
+    kmeans_init = (True,)  # set to True
+    kmeans_iters = 10  # number of kmeans iterations to calculate the centroids for the codebook on init
 
 
 class RQAutoencoder(nn.Module):
@@ -66,8 +66,11 @@ class RQAutoencoder(nn.Module):
         self.vq = VectorQuantize(
             decay=config.vq_decay,
             dim=config.dim_enc[-1],
-            codebook_dim=config.codebook_dim,
+            shared_codebook=True,
+            num_quantizers=config.num_quantizers,
             codebook_size=config.codebook_size,
+            kmeans_init=config.kmeans_init,
+            kmeans_iters=config.kmeans_iters,
         )
 
         # ResidualVQ(
