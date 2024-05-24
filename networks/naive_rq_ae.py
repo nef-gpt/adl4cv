@@ -13,7 +13,8 @@ class RQAutoencoderConfig:
     num_quantizers: int = 8  # specify number of quantizers
     codebook_size: int = 1024  # codebook size
     activation: nn.Module = nn.ReLU(True)
-    kmeans_init = (True,)  # set to True
+    vq_decay = 0.99  # decay for the vq layer
+    kmeans_init = False  # set to True
     kmeans_iters = 10  # number of kmeans iterations to calculate the centroids for the codebook on init
 
 
@@ -63,7 +64,7 @@ class RQAutoencoder(nn.Module):
             nn.Linear(config.dim_dec[-2], config.dim_dec[-1]),
         )
 
-        self.vq = VectorQuantize(
+        self.vq = ResidualVQ(
             decay=config.vq_decay,
             dim=config.dim_enc[-1],
             shared_codebook=True,
