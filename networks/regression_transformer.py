@@ -83,6 +83,7 @@ class RegressionTransformer(nn.Module):
         optimizer = torch.optim.AdamW(
             optim_groups, lr=learning_rate, betas=betas, **extra_args
         )
+        #optimizer = torch.optim.SGD(optim_groups, lr=learning_rate)
         print(f"using fused AdamW: {use_fused}")
 
         return optimizer
@@ -99,15 +100,12 @@ class RegressionTransformer(nn.Module):
         # forward the GPT model itself
         # tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
 
-        # disables positional encoding for now
-        #pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
-        #print(pos_emb)
-        #x = self.transformer.drop(idx + pos_emb)
+        x = self.in_to_emb(idx)
 
-        idx = self.in_to_emb(idx)
+        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
+        x = idx + pos_emb # self.transformer.drop(idx + pos_emb)
 
 
-        x = idx
         for block in self.transformer.h:
             x = block(x)
         #x = self.transformer.ln_f(x)
@@ -124,7 +122,6 @@ class RegressionTransformer(nn.Module):
             target = self.lm_head(
                 x[:, [-1], :]
             )  # note: using list [-1] to preserve the time dim
-            target = self.emb_to_out(target)
             loss = None
 
         return target, loss
