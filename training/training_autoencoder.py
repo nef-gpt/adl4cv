@@ -34,7 +34,7 @@ class TrainingConfig:
     log_interval = 1
     eval_iters = 100  # 200
     eval_only = False  # if True, script exits right after the first eval
-    checkpoint_interval = 100 # how often to save a checkpoint
+    checkpoint_interval = 100  # how often to save a checkpoint
     always_save_checkpoint = False  # if True, always save a checkpoint after each eval
 
     gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
@@ -57,13 +57,16 @@ class TrainingConfig:
     lr_decay_iters = 600000  # should be ~= max_iters per Chinchilla
     min_lr = 6e-5  # minimum learning rate, should be ~= learning_rate/10 per Chinchilla
 
+
 def get_lr_scheduler(optimizer, config):
     def lr_lambda(current_step: int):
         if current_step < config.warmup_iters:
             return float(current_step) / float(max(1, config.warmup_iters))
-        progress = float(current_step - config.warmup_iters) / float(max(1, config.lr_decay_iters - config.warmup_iters))
+        progress = float(current_step - config.warmup_iters) / float(
+            max(1, config.lr_decay_iters - config.warmup_iters)
+        )
         return max(config.min_lr, 0.5 * (1.0 + math.cos(math.pi * progress)))
-    
+
     return LambdaLR(optimizer, lr_lambda)
 
 
@@ -108,7 +111,7 @@ def train_model(
 
             with autocast(device_type=device.type, enabled=bool(scaler)):
                 outputs = model(inputs)
-                loss = criterion(outputs, inputs[:, 0])
+                loss = criterion(outputs, inputs)
 
             if scaler:
                 scaler.scale(loss).backward()
@@ -127,8 +130,14 @@ def train_model(
 
             # Log and evaluate
             if (i + 1) % config.log_interval == 0:
-                wandb.log({"loss": loss.item(), "epoch": epoch, "batch": i + 1, "lr": scheduler.get_last_lr()[0]})
-
+                wandb.log(
+                    {
+                        "loss": loss.item(),
+                        "epoch": epoch,
+                        "batch": i + 1,
+                        "lr": scheduler.get_last_lr()[0],
+                    }
+                )
 
             """if (i + 1) % config.eval_interval == 0:
                 eval_loss = evaluate_model(
@@ -136,7 +145,7 @@ def train_model(
                 )
                 wandb.log({"eval_loss": eval_loss, "epoch": epoch, "batch": i + 1})"""
 
-            #if (i + 1) % config.checkpoint_interval == 0 and config.always_save_checkpoint:
+            # if (i + 1) % config.checkpoint_interval == 0 and config.always_save_checkpoint:
             #    save_checkpoint(model, optimizer, epoch, config.out_dir)
         """if (epoch + 1) % 50 == 0 and config.always_save_checkpoint:
             save_checkpoint(model, optimizer, epoch, config.out_dir)"""

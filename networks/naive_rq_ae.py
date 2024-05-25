@@ -23,46 +23,52 @@ class RQAutoencoder(nn.Module):
         super().__init__()
         self.codebook_size = config.codebook_size
 
-        assert (
-            config.dim_enc[-1] == config.dim_dec[0]
-        ), "Latent space dimension of encoder/decoder don't match"
-        assert (
-            len(config.dim_enc) > 1 and len(config.dim_dec) > 1
-        ), "dimensions of decoder/encoder tuple must be bigger than 1"
-
         # Encoder
-        num_l = len(config.dim_enc) - 1
-        self.encoder = nn.Sequential()
-        for i in range(num_l - 1):
-            self.encoder.add_module(
-                "encoder-linear-{}".format(i),
-                nn.Linear(config.dim_enc[i], config.dim_enc[i + 1]),
-            )
-            self.encoder.add_module(
-                f"encoder-{(config.activation._get_name())}-{i}", config.activation
-            )
+        if config.dim_enc is not None:
+            assert (
+                config.dim_enc[-1] == config.dim_dec[0]
+            ), "Latent space dimension of encoder/decoder don't match"
+            assert (
+                len(config.dim_enc) > 1 and len(config.dim_dec) > 1
+            ), "dimensions of decoder/encoder tuple must be bigger than 1"
 
-        self.encoder.add_module(
-            "encoder-linear-{}".format(num_l - 1),
-            nn.Linear(config.dim_enc[-2], config.dim_enc[-1]),
-        )
+            num_l = len(config.dim_enc) - 1
+            self.encoder = nn.Sequential()
+            for i in range(num_l - 1):
+                self.encoder.add_module(
+                    "encoder-linear-{}".format(i),
+                    nn.Linear(config.dim_enc[i], config.dim_enc[i + 1]),
+                )
+                self.encoder.add_module(
+                    f"encoder-{(config.activation._get_name())}-{i}", config.activation
+                )
+
+            self.encoder.add_module(
+                "encoder-linear-{}".format(num_l - 1),
+                nn.Linear(config.dim_enc[-2], config.dim_enc[-1]),
+            )
+        else:
+            self.encoder = nn.Identity()
 
         # Decoder
-        num_l = len(config.dim_dec) - 1
-        self.decoder = nn.Sequential()
-        for i in range(0, num_l - 1):
-            self.decoder.add_module(
-                "decoder-linear-{}".format(i),
-                nn.Linear(config.dim_dec[i], config.dim_dec[i + 1]),
-            )
-            self.decoder.add_module(
-                f"decoder-{(config.activation._get_name())}-{i}", config.activation
-            )
+        if config.dim_dec is not None:
+            num_l = len(config.dim_dec) - 1
+            self.decoder = nn.Sequential()
+            for i in range(0, num_l - 1):
+                self.decoder.add_module(
+                    "decoder-linear-{}".format(i),
+                    nn.Linear(config.dim_dec[i], config.dim_dec[i + 1]),
+                )
+                self.decoder.add_module(
+                    f"decoder-{(config.activation._get_name())}-{i}", config.activation
+                )
 
-        self.decoder.add_module(
-            "decoder-linear-{}".format(num_l - 1),
-            nn.Linear(config.dim_dec[-2], config.dim_dec[-1]),
-        )
+            self.decoder.add_module(
+                "decoder-linear-{}".format(num_l - 1),
+                nn.Linear(config.dim_dec[-2], config.dim_dec[-1]),
+            )
+        else:
+            self.decoder = nn.Identity()
 
         self.vq = ResidualVQ(
             decay=config.vq_decay,

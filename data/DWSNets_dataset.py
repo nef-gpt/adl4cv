@@ -13,7 +13,6 @@ import torch.nn as nn
 from networks.naive_rq_ae import RQAutoencoder
 
 
-
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
     save_path = Path(save_path) / name
     inr_path = Path(data_path)
@@ -101,10 +100,11 @@ class DWSNetsDataset(BaseDataset):
 
         label = int(self.dataset[self.split]["label"][idx])
 
+        result = (target, label)
         if self.transform:
-            target, label = self.transform(target, label)
+            result = self.transform(*result)
 
-        return target, label
+        return result
 
 
 class FlattenTransform(nn.Module):
@@ -112,7 +112,7 @@ class FlattenTransform(nn.Module):
         weights = torch.cat(
             [weights_dict[key].flatten() for key in weights_dict.keys()]
         )
-        return weights.unsqueeze(-1), y
+        return weights, y
 
 
 class LayerOneHotTransform(nn.Module):
@@ -144,7 +144,8 @@ class PositionEncodingTransform(nn.Module):
         positions = torch.arange(1, weights.size(0) + 1, dtype=torch.float32)
         weights = self.pos_enc(positions).reshape((weights.size(0), -1))
         return weights, y
-    
+
+
 class TokenTransform(nn.Module):
     def __init__(self, model: RQAutoencoder):
         super().__init__()
@@ -154,9 +155,15 @@ class TokenTransform(nn.Module):
         # Apply min-max normalization
         _x, indices, _commit_loss = self.model.encode_to_cb(weights)
         codes = self.model.vq.get_codes_from_indices(indices)
-        x = torch.cat((torch.Tensor([self.model.codebook_size]), indices, torch.Tensor([self.model.codebook_size + 1])))
+        x = torch.cat(
+            (
+                torch.Tensor([self.model.codebook_size]),
+                indices,
+                torch.Tensor([self.model.codebook_size + 1]),
+            )
+        )
         return x, y
-    
+
 
 class MinMaxTransformer(nn.Module):
     def __init__(self, min_value: float = -0.3587, max_value: float = 0.4986):
