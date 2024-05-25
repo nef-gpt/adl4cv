@@ -32,6 +32,8 @@ class RegressionTransformer(nn.Module):
         super().__init__()
         self.config = config
 
+        self.in_to_emb = nn.Linear(1, config.n_embd, bias=True)
+
         self.transformer = nn.ModuleDict(
             dict(
                 drop=nn.Dropout(config.dropout),
@@ -41,10 +43,11 @@ class RegressionTransformer(nn.Module):
                 h=nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
             )
         )
+
         # This is the regression head (not really a head, but a single linear layer)
         self.lm_head = nn.Linear(config.n_embd, 1, bias=False)
         # init all weights
-        self.apply(self._init_weights)
+        #self.apply(self._init_weights)
         # apply special scaled init to the residual projections, per GPT-2 paper
         for pn, p in self.named_parameters():
             if pn.endswith("c_proj.weight"):
@@ -85,6 +88,7 @@ class RegressionTransformer(nn.Module):
         return optimizer
 
     def forward(self, idx, targets=None):
+
         device = idx.device
         b, t, n_embd = idx.size()
         assert (
@@ -100,6 +104,9 @@ class RegressionTransformer(nn.Module):
         #print(pos_emb)
         #x = self.transformer.drop(idx + pos_emb)
 
+        idx = self.in_to_emb(idx)
+
+
         x = idx
         for block in self.transformer.h:
             x = block(x)
@@ -110,21 +117,22 @@ class RegressionTransformer(nn.Module):
         if targets is not None:
             # if we are given some desired targets also calculate the loss
             target = self.lm_head(x)
-            loss = F.mse_loss(target.view(-1), targets.view(-1))
+            loss = F.l1_loss(target.view(-1), targets.view(-1))
 
         else:
             # inference-time mini-optimization: only forward the lm_head on the very last position
             target = self.lm_head(
                 x[:, [-1], :]
             )  # note: using list [-1] to preserve the time dim
+            target = self.emb_to_out(target)
             loss = None
 
         return target, loss
 
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            if module.bias is not None:
-                torch.nn.init.zeros_(module.bias)
-        elif isinstance(module, nn.Embedding):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+    # def _init_weights(self, module):
+    #     if isinstance(module, nn.Linear):
+    #         torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+    #         if module.bias is not None:
+    #             torch.nn.init.zeros_(module.bias)
+    #     elif isinstance(module, nn.Embedding):
+    #         torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
