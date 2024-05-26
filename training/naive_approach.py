@@ -214,7 +214,7 @@ def train(
                         "config": config,
                     }
                     print(f"saving checkpoint to {config.out_dir}")
-                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
+                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pth"))
         if iter_num == 0 and config.eval_only:
             break
 
@@ -264,5 +264,17 @@ def train(
         # termination conditions
         if iter_num > config.max_iters:
             break
+
+    # save the final model
+    checkpoint = {
+        "model": raw_model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "model_args": model_config,
+        "iter_num": iter_num,
+        "best_val_loss": best_val_loss,
+        "config": config,
+    }
+    print(f"saving final checkpoint to {config.out_dir}")
+    torch.save(checkpoint, os.path.join(config.out_dir, "final_model.pth"))
 
     pass
