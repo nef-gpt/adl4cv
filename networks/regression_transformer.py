@@ -102,6 +102,7 @@ class RegressionTransformer(nn.Module):
 
         x = self.in_to_emb(idx)
 
+
         pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
         x = idx + pos_emb # self.transformer.drop(idx + pos_emb)
 

@@ -2,7 +2,6 @@ from data.base_dataset import BaseDataset
 import logging
 import json
 from sklearn.model_selection import train_test_split
-from rff.layers import PositionalEncoding
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union
 from collections import defaultdict
 from pathlib import Path
@@ -106,6 +105,62 @@ class DWSNetsDataset(BaseDataset):
 
         return result
 
+# Taken from neural-field-arena
+class DWSNetsDataset(BaseDataset):
+    def __init__(
+        self,
+        path: Union[str, Path],
+        split: str = "train",
+        transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
+        download_url: str = None,
+        force_download: bool = False,
+    ):
+        """Initialize theDataset object.
+
+        Args:
+            path (Union[str, Path]): The path to the directory containing the dataset files.
+            start_idx (Union[int, float], optional): The starting index or fraction of the dataset to use. Defaults to 0.0.
+            end_idx (Union[int, float], optional): The ending index or fraction of the dataset to use. Defaults to 1.0.
+            data_prefix (str, optional): The prefix of the dataset files. Defaults to "".
+            data_keys (List[str], optional): The list of keys to load from the dataset files. Defaults to None, which loads all keys.
+            transform (Optional[Union[Callable, Dict[str, Callable]]], optional): The transformation function to apply to the loaded data.
+                Defaults to None.
+        """
+
+        super().__init__(path, download_url=download_url, force_download=force_download)
+
+        if isinstance(path, str):
+            path = Path(path)
+
+        assert path.exists(), f"Path {path.absolute()} does not exist"
+        assert path.is_dir(), f"Path {path.absolute()} is not a directory"
+
+        self.split = split
+        self.transform = transform
+        self.path = path
+        if os.path.isfile(path / "mnist_splits.json") is not True:
+            generate_splits(path, path, name="mnist_splits.json")
+
+        self.dataset = json.load(open(Path(path) / "mnist_splits.json", "r"))
+
+    def __len__(self):
+        return len(self.dataset[self.split]["path"])
+
+    def __getitem__(self, idx):
+        target = torch.load(
+            self.dataset[self.split]["path"][idx], map_location=torch.device("cpu")
+        )
+
+        label = int(self.dataset[self.split]["label"][idx])
+
+        result = (target, label)
+        if self.transform:
+            result = self.transform(*result)
+
+        return result
+
+
+
 
 class FlattenTransform(nn.Module):
     def forward(self, weights_dict, y):
@@ -135,15 +190,15 @@ class BiasFlagTransform(nn.Module):
         return torch.tensor(bias_flag).unsqueeze(-1), y
 
 
-class PositionEncodingTransform(nn.Module):
-    def __init__(self, sigma: float = 1.0, m: int = 10):
-        super().__init__()
-        self.pos_enc = PositionalEncoding(sigma=sigma, m=m)
+# class PositionEncodingTransform(nn.Module):
+#     def __init__(self, sigma: float = 1.0, m: int = 10):
+#         super().__init__()
+#         self.pos_enc = PositionalEncoding(sigma=sigma, m=m)
 
-    def forward(self, weights, y):
-        positions = torch.arange(1, weights.size(0) + 1, dtype=torch.float32)
-        weights = self.pos_enc(positions).reshape((weights.size(0), -1))
-        return weights, y
+#     def forward(self, weights, y):
+#         positions = torch.arange(1, weights.size(0) + 1, dtype=torch.float32)
+#         weights = self.pos_enc(positions).reshape((weights.size(0), -1))
+#         return weights, y
 
 
 class TokenTransform(nn.Module):

@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 import cv2
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from networks.mlp_models import MLP3D
 
 mnist = datasets.MNIST("mnist-data", train=True, download=True)
+
 
 def make_coordinates(
     shape: Union[Tuple[int], List[int]],
@@ -27,6 +28,7 @@ def make_coordinates(
     coordinates = np.stack([x_coordinates, y_coordinates]).T
     coordinates = np.repeat(coordinates[np.newaxis, ...], bs, axis=0)
     return torch.from_numpy(coordinates).type(torch.float)
+
 
 def visualize_learning_process(image_idx: int, num_epochs: int):
     # Configuration
@@ -52,9 +54,16 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
 
     for epoch in range(num_epochs):
         path = os.path.dirname(os.path.abspath(__file__))
+<<<<<<< HEAD
         model_path = path + f"/mnist-nerfs/recording_pretrained/mnist-nerfs-structured-{image_idx}_{epoch}_model_final.pth"
+=======
+        model_path = (
+            path
+            + f"/mnist-nerfs/recording/mnist-nerfs-unstructured-{image_idx}_{epoch}_model_final.pth"
+        )
+>>>>>>> 73e53211589c15d62cf6e0d04a269f74dcea7a99
         assert os.path.exists(model_path), f"File {model_path} does not exist"
-        
+
         model.load_state_dict(torch.load(model_path))
 
         # Generate image using the INR model
@@ -82,15 +91,26 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
         plt.tight_layout()
 
         frame_path = os.path.join(frames_dir, f"frame_{epoch:03d}.png")
-        plt.savefig(frame_path, format='png')
+        plt.savefig(frame_path, format="png")
         plt.close(fig)
 
     # Compile the images into a video
-    frame_paths = [os.path.join(frames_dir, f"frame_{epoch:03d}.png") for epoch in range(num_epochs) if os.path.exists(os.path.join(frames_dir, f"frame_{epoch:03d}.png"))]
+    frame_paths = [
+        os.path.join(frames_dir, f"frame_{epoch:03d}.png")
+        for epoch in range(num_epochs)
+        if os.path.exists(os.path.join(frames_dir, f"frame_{epoch:03d}.png"))
+    ]
     frame = cv2.imread(frame_paths[0])
     height, width, layers = frame.shape
+<<<<<<< HEAD
     video_path = "learning_process_pretrained.mp4"
     out = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*"mp4v"), 10, (width, height))
+=======
+    video_path = "learning_process.mp4"
+    out = cv2.VideoWriter(
+        video_path, cv2.VideoWriter_fourcc(*"mp4v"), 10, (width, height)
+    )
+>>>>>>> 73e53211589c15d62cf6e0d04a269f74dcea7a99
 
     for frame_path in frame_paths:
         frame = cv2.imread(frame_path)
@@ -99,10 +119,12 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
     out.release()
     print(f"Video saved to {video_path}")
 
+
 def main():
     image_idx = 35  # Change this to visualize a different image from the dataset
     num_epochs = 200  # Number of epochs or models saved
     visualize_learning_process(image_idx, num_epochs)
+
 
 if __name__ == "__main__":
     main()
