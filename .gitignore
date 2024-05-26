@@ -20,3 +20,8 @@ wandb
 *.synctex(busy)
 *.synctex.gz(busy)
 *.brf
+generation/mnist-nerfs
+generation/frames
+
+*ubyte
+*.gz

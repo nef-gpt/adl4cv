@@ -136,6 +136,6 @@ class MLP3D(nn.Module):
             x = x
         else:
             raise f"This self.output_type ({self.output_type}) not implemented"
-        # x = dist.Bernoulli(logits=x).logits
+        x = dist.Bernoulli(logits=x).logits
 
         return x

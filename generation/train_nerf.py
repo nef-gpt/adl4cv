@@ -1,5 +1,10 @@
 """Implements a generic training loop.
 """
+import sys
+import os
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import os
 import shutil
@@ -214,8 +219,14 @@ def train(
                 }
             )
 
+            # torch.save(
+            #     model.state_dict(),
+            #     os.path.join(checkpoints_dir + "/recording/", f"{filename}_{epoch}_model_final.pth"),
+            # )
+
             if num_bad_epochs == patience:
                 break
+            
         # if not cfg.mlp_config.move:
         #     summary_fn(
         #         "audio_samples",

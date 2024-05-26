@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from typing import List, Tuple, Union
 from networks.mlp_models import MLP3D
 import numpy as np
@@ -32,10 +38,11 @@ def visualize_neural_field(idx: int):
     # Initialize and load the INR model
     model_config = {
         "out_size": 1,
-        "hidden_neurons": [16, 8],
+        "hidden_neurons": [16, 16],
         "use_leaky_relu": False,
         "output_type": "logits",  # "
         "input_dims": 2,
+        "multires" : 4,
     }
     model = MLP3D(**model_config)
 
@@ -76,7 +83,7 @@ def visualize_neural_field(idx: int):
 
 
 def main():
-    idx = 14
+    idx = 0
     visualize_neural_field(idx)
 
 
