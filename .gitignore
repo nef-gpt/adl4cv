@@ -27,3 +27,4 @@ generation/frames
 
 *ubyte
 *.gz
+*.whl
