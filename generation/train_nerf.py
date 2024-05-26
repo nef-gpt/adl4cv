@@ -1,5 +1,10 @@
 """Implements a generic training loop.
 """
+import sys
+import os
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import os
 import shutil
@@ -31,6 +36,11 @@ def train(
     filename=None,
     cfg=None,
 ):
+    # Check for GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    model.to(device)
     optim = torch.optim.Adam(lr=lr, params=model.parameters())
     if cfg.scheduler.type == "step":
         scheduler = StepLR(
@@ -89,6 +99,9 @@ def train(
 
             for step, (model_input, gt) in enumerate(train_dataloader):
                 start_time = time.time()
+
+                model_input = model_input.to(device)
+                gt = gt.to(device)
 
                 if double_precision:
                     model_input = {
@@ -214,8 +227,14 @@ def train(
                 }
             )
 
+            # torch.save(
+            #     model.state_dict(),
+            #     os.path.join(checkpoints_dir + "/recording/", f"{filename}_{epoch}_model_final.pth"),
+            # )
+
             if num_bad_epochs == patience:
                 break
+            
         # if not cfg.mlp_config.move:
         #     summary_fn(
         #         "audio_samples",

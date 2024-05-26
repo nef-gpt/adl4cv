@@ -1,4 +1,10 @@
 # Description: Overfit neural field networks on the MNIST dataset
+import os
+import sys
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from networks.mlp_models import MLP3D
 from torchvision import datasets, transforms
@@ -45,24 +51,25 @@ def fit_single_batch(image: Image.Image, label: int, i: int):
 
     # Create dataset and dataloader
     dataset = MNISTNeRFDataset(image)
-    dataloader = DataLoader(dataset, batch_size=256, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
     # Create neural field network
     # out_size=1, hidden_neurons=[16, 16], use_leaky_relu=True, input_dims=2
     model_config = {
         "out_size": 1,
-        "hidden_neurons": [16, 8],
-        "use_leaky_relu": True,
+        "hidden_neurons": [16, 16],
+        "use_leaky_relu": False,
         "output_type": "logits",  # "
         "input_dims": 2,
+        "multires" : 4,
     }
     model = MLP3D(**model_config)
 
     loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
 
     train_config = {
-        "epochs": 800,
-        "lr": 1e-3,
+        "epochs": 200,
+        "lr": 4e-3,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
         "model_dir": "mnist-nerfs",
@@ -79,10 +86,10 @@ def fit_single_batch(image: Image.Image, label: int, i: int):
             "step_size": 30,
             "gamma": 0.1,
             "min_lr": 1e-5,
-            "patience": 50,
+            "patience": 100,
             "patience_adaptive": 10,
-            "factor": 0.8,
-            "threshold": 0,
+            "factor": 0.95,
+            "threshold": 0.00001,
         },
         "strategy": "not_continue",
         "mlp_config": {"move": False},
@@ -113,6 +120,7 @@ def main():
     for i, data in enumerate(mnist):
         image, label = data
         fit_single_batch(image, label, i)
+        break
 
 
 if __name__ == "__main__":

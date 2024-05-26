@@ -22,4 +22,8 @@ wandb
 *.brf
 mnist-nerfs/*.pth
 mnist-data
-.gitignore
+generation/mnist-nerfs
+generation/frames
+
+*ubyte
+*.gz

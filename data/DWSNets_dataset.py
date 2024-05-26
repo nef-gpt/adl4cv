@@ -165,7 +165,7 @@ class TokenTransform(nn.Module):
         return x, y
 
 
-class MinMaxTransformer(nn.Module):
+class MinMaxTransform(nn.Module):
     def __init__(self, min_value: float = -0.3587, max_value: float = 0.4986):
         super().__init__()
         self.min_value = min_value
