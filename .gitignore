@@ -20,3 +20,6 @@ wandb
 *.synctex(busy)
 *.synctex.gz(busy)
 *.brf
+mnist-nerfs/*.pth
+mnist-data
+.gitignore
