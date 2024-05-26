@@ -37,9 +37,9 @@ def train(
     loss_schedules=None,
     filename=None,
     cfg=None,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
     # Check for GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     model.to(device)
@@ -254,13 +254,13 @@ def train(
         if cfg.strategy != "continue":
             torch.save(
                 model.state_dict(),
-                os.path.join(checkpoints_dir, f"{filename}_model_final.pth"),
+                  f"{filename}_model_final.pth"
             )
         # np.savetxt(os.path.join(checkpoints_dir, 'train_losses_final.txt'),
         #            np.array(train_losses))
         wandb.finish()
 
-        return train_loss.item()
+        return train_loss.item(), f"{filename}_model_final.pth"
 
 
 class LinearDecaySchedule:

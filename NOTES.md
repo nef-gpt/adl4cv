@@ -65,3 +65,33 @@ https://link.springer.com/chapter/10.1007/978-3-031-20068-7_13
 - finding useful embedding that encodes the structure of the MLP 
 
 
+
+## 27.05
+
+### Overview
+
+- Finish dws loading
+- Regression Transformer (Overfitting on one sample) - Show predicted sequence
+- Autoencoder (1dimensional, layer encoding, bias flag, positional encoding, vector quantize, residualvq (multiple tokens/codes))
+- Only Codebook
+- ResidualVQ with whole batch
+
+- Weight init from hyperdiff (why?)
+- MNIST Overfitting (Difference unconditioned/conditioned)
+
+- Regression Transformer (multiple samples) (avg problem)
+
+### Outlook
+
+- Naive Descritiation of the model
+- Graph (?)
+
+## Presentation
+
+- Visualization methods (video animation)
+- Storyline (?)
+
+### Questions
+
+- HyperDiffusion: Why one param 8 tokens (where in code)
+- Why no params in codebook (why no function on 1 dimension)

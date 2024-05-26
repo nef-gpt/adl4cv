@@ -2,6 +2,8 @@
 import os
 import sys
 
+from utils import get_default_device
+
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -55,10 +57,21 @@ model_config = {
     "multires": 4,
 }
 
-config_file = "./datasets/mnist-nerfs/overview.json"
+# settings
+only_label = None  # can also be None
+idx_range = None # , range(0, 100)  # can also be None
+save_during_epochs = None
 
+config_file = "./datasets/mnist-nerfs/overview.json"
+device = get_default_device()
+
+print("Using device", device)
 
 def load_config():
+    # create config file if it does not exist
+    if not os.path.exists(config_file):
+        with open(config_file, "w") as f:
+            json.dump({"pretrained": {}, "unconditioned": {}}, f)
     with open(config_file, "r") as f:
         return json.load(f)
 
@@ -98,10 +111,13 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     if init_model_path:
         model.load_state_dict(torch.load(init_model_path))
 
+    model.to(device)
+
     loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
 
+    subfoldername = "pretrained" if init_model_path else "unconditioned"
     foldername = (
-        f"./datasets/mnist-nerfs/{"pretrained" if init_model_path else "unconditioned"}"
+        f"./datasets/mnist-nerfs/{subfoldername}"
     )
 
     train_config = {
@@ -139,7 +155,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         config=model_config | train_config | cfg,
     )
 
-    total_loss = training.train(
+    total_loss, output_name = training.train(
         model,
         train_dataloader=dataloader,
         loss_fn=loss_fn,
@@ -148,10 +164,12 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         wandb=wandb,
         summary_fn=None,
         save_epoch_interval=save_during_epochs,
+        device=device
     )
 
     return {
-        "file": train_config["filename"],
+        "file-prefix": train_config["filename"],
+        "output": output_name,
         "label": label,
         "loss": total_loss,
         "type": "pretrained" if init_model_path else "unconditioned",
@@ -164,16 +182,12 @@ mnist = datasets.MNIST("mnist-data", train=True, download=True)
 # load config
 config = load_config()
 
-# settings
-only_label = 5  # can also be None
-range = range(0, 100)  # can also be None
-save_during_epochs = 1
 
 
 def train_unconditioned():
     for i, data in enumerate(mnist):
 
-        if (range is not None) and (i not in range):
+        if (idx_range is not None) and (i not in idx_range):
             continue
 
         image, label = data
@@ -183,11 +197,14 @@ def train_unconditioned():
 
         entry = fit_single_batch(image, label, i, None)
         # update config
+        global config
         config = update_config(config, entry)
 
 
 def lookup_pretrained(label):
-    for entry in config["unconditioned"]:
+    # config[unconditioned] is a dict
+
+    for key, entry in config["unconditioned"].items():
         if entry["label"] == label:
             return entry
     return None
@@ -195,20 +212,22 @@ def lookup_pretrained(label):
 
 def train_pretrained():
     for i, data in enumerate(mnist):
-        if (range is not None) and (i not in range):
+        if (idx_range is not None) and (i not in idx_range):
             continue
         image, label = data
 
         if only_label is not None and label != only_label:
             continue
 
-        entry = fit_single_batch(image, label, i, lookup_pretrained(label)["file"])
+        entry = fit_single_batch(image, label, i, lookup_pretrained(label)["output"])
         # update config
+        global config
         config = update_config(config, entry)
     pass
 
 
 def main():
+
     print("Training unstructured")
     train_unconditioned()
     print("Training structured")
