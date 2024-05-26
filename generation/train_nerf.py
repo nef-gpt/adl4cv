@@ -95,6 +95,11 @@ def train(
             #                os.path.join(checkpoints_dir, 'model_epoch_%04d.pth' % epoch))
             #     np.savetxt(os.path.join(checkpoints_dir, 'train_losses_epoch_%04d.txt' % epoch),
             #                np.array(train_losses))
+
+            # torch.save(
+            #     model.state_dict(),
+            #     os.path.join(checkpoints_dir + "/recording_pretrained/", f"{filename}_{epoch}_model_final.pth"),
+            # )
             total_loss, total_items = 0, 0
 
             for step, (model_input, gt) in enumerate(train_dataloader):
@@ -227,10 +232,6 @@ def train(
                 }
             )
 
-            # torch.save(
-            #     model.state_dict(),
-            #     os.path.join(checkpoints_dir + "/recording/", f"{filename}_{epoch}_model_final.pth"),
-            # )
 
             if num_bad_epochs == patience:
                 break
