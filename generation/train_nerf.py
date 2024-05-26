@@ -1,10 +1,11 @@
 """Implements a generic training loop.
 """
+
 import sys
 import os
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import os
 import shutil
@@ -32,12 +33,13 @@ def train(
     double_precision=False,
     clip_grad=False,
     use_lbfgs=False,
+    save_epoch_interval=None,
     loss_schedules=None,
     filename=None,
     cfg=None,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
     # Check for GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     model.to(device)
@@ -95,6 +97,9 @@ def train(
             #                os.path.join(checkpoints_dir, 'model_epoch_%04d.pth' % epoch))
             #     np.savetxt(os.path.join(checkpoints_dir, 'train_losses_epoch_%04d.txt' % epoch),
             #                np.array(train_losses))
+
+            if save_epoch_interval is not None and not epoch % save_epoch_interval:
+                torch.save(model.state_dict(), f"{filename}_model_epoch_{epoch}.pth")
 
             # torch.save(
             #     model.state_dict(),
@@ -232,10 +237,9 @@ def train(
                 }
             )
 
-
             if num_bad_epochs == patience:
                 break
-            
+
         # if not cfg.mlp_config.move:
         #     summary_fn(
         #         "audio_samples",
@@ -250,11 +254,13 @@ def train(
         if cfg.strategy != "continue":
             torch.save(
                 model.state_dict(),
-                os.path.join(checkpoints_dir, f"{filename}_model_final.pth"),
+                  f"{filename}_model_final.pth"
             )
         # np.savetxt(os.path.join(checkpoints_dir, 'train_losses_final.txt'),
         #            np.array(train_losses))
         wandb.finish()
+
+        return train_loss.item(), f"{filename}_model_final.pth"
 
 
 class LinearDecaySchedule:
