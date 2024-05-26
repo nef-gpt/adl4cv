@@ -41,9 +41,20 @@ class MNISTNeRFDataset(Dataset):
         return torch.tensor([x_norm, y_norm], dtype=torch.float32), torch.tensor(
             pixel_value, dtype=torch.float32
         )
+    
+# Create neural field network
+# out_size=1, hidden_neurons=[16, 16], use_leaky_relu=True, input_dims=2
+model_config = {
+    "out_size": 1,
+    "hidden_neurons": [16, 16],
+    "use_leaky_relu": False,
+    "output_type": "logits",  # "
+    "input_dims": 2,
+    "multires" : 4,
+}
 
 
-def fit_single_batch(image: Image.Image, label: int, i: int):
+def fit_single_batch(image: Image.Image, label: int, i: int, init_model: torch.nn.Module = None):
     # image is a (28, 28) tensor
     image = transforms.functional.pil_to_tensor(image).squeeze(0) / 255.0
     # we need to construct a dataloader that maps x, y -> image[x, y] to train a neural field network
@@ -53,23 +64,16 @@ def fit_single_batch(image: Image.Image, label: int, i: int):
     dataset = MNISTNeRFDataset(image)
     dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
-    # Create neural field network
-    # out_size=1, hidden_neurons=[16, 16], use_leaky_relu=True, input_dims=2
-    model_config = {
-        "out_size": 1,
-        "hidden_neurons": [16, 16],
-        "use_leaky_relu": False,
-        "output_type": "logits",  # "
-        "input_dims": 2,
-        "multires" : 4,
-    }
     model = MLP3D(**model_config)
+
+    if init_model:
+        model = init_model
 
     loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
 
     train_config = {
-        "epochs": 200,
-        "lr": 4e-3,
+        "epochs": 250,
+        "lr": 4e-4 if init_model is None else 4e-3,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
         "model_dir": "mnist-nerfs",
@@ -77,7 +81,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int):
         "clip_grad": False,
         "use_lbfgs": False,
         "loss_schedules": None,
-        "filename": "mnist-nerfs-unstructured-{}".format(i),
+        "filename": "structured/mnist-nerfs-structured-{}".format(i),
     }
 
     cfg = {
@@ -119,8 +123,11 @@ def main():
 
     for i, data in enumerate(mnist):
         image, label = data
-        fit_single_batch(image, label, i)
-        break
+        if label == 5 and i > 11:
+            model = MLP3D(**model_config)
+            model.load_state_dict(torch.load("mnist-nerfs/unstructured/mnist-nerfs-unstructured-0_model_final.pth"))
+            fit_single_batch(image, label, i, model)
+            
 
 
 if __name__ == "__main__":
