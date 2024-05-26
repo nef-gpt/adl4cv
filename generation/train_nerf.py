@@ -36,6 +36,11 @@ def train(
     filename=None,
     cfg=None,
 ):
+    # Check for GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    model.to(device)
     optim = torch.optim.Adam(lr=lr, params=model.parameters())
     if cfg.scheduler.type == "step":
         scheduler = StepLR(
@@ -94,6 +99,9 @@ def train(
 
             for step, (model_input, gt) in enumerate(train_dataloader):
                 start_time = time.time()
+
+                model_input = model_input.to(device)
+                gt = gt.to(device)
 
                 if double_precision:
                     model_input = {
