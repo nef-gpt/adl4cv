@@ -52,7 +52,7 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
 
     for epoch in range(num_epochs):
         path = os.path.dirname(os.path.abspath(__file__))
-        model_path = path + f"/mnist-nerfs/recording/mnist-nerfs-unstructured-0_{epoch}_model_final.pth"
+        model_path = path + f"/mnist-nerfs/recording_pretrained/mnist-nerfs-structured-{image_idx}_{epoch}_model_final.pth"
         assert os.path.exists(model_path), f"File {model_path} does not exist"
         
         model.load_state_dict(torch.load(model_path))
@@ -89,7 +89,7 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
     frame_paths = [os.path.join(frames_dir, f"frame_{epoch:03d}.png") for epoch in range(num_epochs) if os.path.exists(os.path.join(frames_dir, f"frame_{epoch:03d}.png"))]
     frame = cv2.imread(frame_paths[0])
     height, width, layers = frame.shape
-    video_path = "learning_process.mp4"
+    video_path = "learning_process_pretrained.mp4"
     out = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*"mp4v"), 10, (width, height))
 
     for frame_path in frame_paths:
@@ -100,7 +100,7 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
     print(f"Video saved to {video_path}")
 
 def main():
-    image_idx = 0  # Change this to visualize a different image from the dataset
+    image_idx = 35  # Change this to visualize a different image from the dataset
     num_epochs = 200  # Number of epochs or models saved
     visualize_learning_process(image_idx, num_epochs)
 

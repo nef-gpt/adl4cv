@@ -48,7 +48,7 @@ def visualize_neural_field(idx: int):
 
     model.load_state_dict(
         torch.load(
-            "mnist-nerfs/mnist-nerfs-unstructured-{}_model_final.pth".format(idx)
+            "mnist-nerfs/structured/mnist-nerfs-structured-{}_model_final.pth".format(idx)
         )
     )
 
@@ -83,7 +83,7 @@ def visualize_neural_field(idx: int):
 
 
 def main():
-    idx = 0
+    idx = 259
     visualize_neural_field(idx)
 
 
