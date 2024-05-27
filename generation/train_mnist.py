@@ -67,11 +67,14 @@ model_config = {
 
 # settings
 only_label = 5  # can also be None
-idx_range = range(0, 100) # , range(0, 100)  # can also be None
-save_during_epochs = 1
+idx_range = None # range(0, 100) # , range(0, 100)  # can also be None
+save_during_epochs = None # 1
+skip_existing_models = True
+skip_unconditioned = False
+multi_process = False
 
 config_file = "./datasets/mnist-nerfs/overview.json"
-device = get_default_device()
+device = torch.device("cpu") # get_default_device()
 
 print("Using device", device)
 
@@ -156,6 +159,19 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         "mlp_config": {"move": False},
     }
 
+    # check if we already trained this model (eg. if filename exists), then skip training and just return object
+    if os.path.exists(train_config["filename"] + "_model_final.pth") and skip_existing_models:
+        print("Model already trained, skipping")
+        return {
+            "file-prefix": train_config["filename"],
+            "output": train_config["filename"] + "_model_final.pth",
+            "label": label,
+            "loss": 0,
+            "type": "pretrained" if init_model_path else "unconditioned",
+            "init_model": init_model_path if init_model_path else "None",  # "None
+            "idx": i,
+        }
+
     # init wandb
     wandb.init(
         project="nerfs",
@@ -173,7 +189,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         summary_fn=None,
         save_epoch_interval=save_during_epochs,
         device=device,
-        disable_tqdm=True
+        disable_tqdm=False
     )
 
     return {
@@ -189,6 +205,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
 
 mnist = datasets.MNIST("mnist-data", train=True, download=True)
 # load config
+config = load_config()
 
 def train_unconditioned_single(i, data):
     if (idx_range is not None) and (i not in idx_range):
@@ -199,21 +216,25 @@ def train_unconditioned_single(i, data):
     if only_label is not None and label != only_label:
         return
 
-    entry = fit_single_batch(image, label, i, None)
-    print(f"Training image {i} with label {label} and no pretrained model")
-    # update config
     global config
+    
+    print(f"Training image {i} with label {label} and no pretrained model")
+    entry = fit_single_batch(image, label, i, None)
+    # update config
     config = update_config(config, entry)
+    save_config(config)
 
 def train_unconditioned():
-    pool = Pool(8)
-    pool.starmap(train_unconditioned_single, enumerate(mnist))
-    
+    if multi_process:
+        pool = Pool(8)
+        pool.starmap(train_unconditioned_single, enumerate(mnist))
+    else:
+        for i, data in enumerate(mnist):
+            train_unconditioned_single(i, data)
 
 
-def lookup_pretrained(label):
-    # config[unconditioned] is a dict
-
+def lookup_pretrained(label, config):
+    # config[unconditioned] is a dictionary with keys as indices and values as dictionaries
     for key, entry in config["unconditioned"].items():
         if entry["label"] == label:
             return entry
@@ -226,26 +247,32 @@ def train_pretrained_single(i, data):
 
         if only_label is not None and label != only_label:
             return
-
-        entry = fit_single_batch(image, label, i, lookup_pretrained(label)["output"])
-        print(f"Training image {i} with label {label} and pretrained model {lookup_pretrained(label)['output']}")
-        # update config
         global config
+        pretrained_entry = lookup_pretrained(label, config)
+        print(f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}")
+        entry = fit_single_batch(image, label, i, pretrained_entry["output"])
+        
+        # update config
         config = update_config(config, entry)
 
 def train_pretrained():
-    pool = Pool(8)
-    pool.starmap(train_pretrained_single, enumerate(mnist))
-
+    if multi_process:
+        pool = Pool(8)
+        pool.starmap(train_pretrained_single, enumerate(mnist))
+    else:
+        for i, data in enumerate(mnist):
+            train_pretrained_single(i, data)
 
 def main():
-
-    print("Training unstructured")
-    train_unconditioned()
-    print("Training structured")
-    train_pretrained()
-
-    save_config(config)
+    # ensure save config is called in the end
+    try:
+        if not skip_unconditioned:
+            print("Training unstructured")
+            train_unconditioned()
+        print("Training structured")
+        train_pretrained()
+    finally:
+        save_config(config)
 
 
 if __name__ == "__main__":

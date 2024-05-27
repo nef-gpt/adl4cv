@@ -60,6 +60,7 @@ class MnistNeFDataset(BaseDataset):
         transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
         download_url: str = None,
         force_download: bool = False,
+        fixed_label: Optional[int] = None,
     ):
         """Initialize the Dataset object.
 
@@ -84,6 +85,9 @@ class MnistNeFDataset(BaseDataset):
         self.dataset = json.load(open(Path(path) / "overview.json", "r"))
         self.transform = transform
         self.type = type
+        self.fixed_label = fixed_label
+
+        self.length, self.mapping = self.calculate_length_and_mapping()
 
     def min_max(self):
         mins = []
@@ -96,17 +100,31 @@ class MnistNeFDataset(BaseDataset):
         max = torch.Tensor(maxs).max()
         return min, max
             
-
+    def calculate_length_and_mapping(self):
+        # check for entry label for calculation
+        if self.fixed_label is not None:
+            keys = [
+                    (i, k)
+                    for i, k in enumerate(self.dataset[self.type].keys())
+                    if self.dataset[self.type][k]["label"] == self.fixed_label
+                ]
+            
+            return len(keys), [i for i, k in keys]
+        else:
+            return len(self.dataset[self.type].keys()), list(range(len(self.dataset[self.type].keys())))
 
     def __len__(self):
-        return len(self.dataset[self.type].keys())
+        return self.length
 
     def __getitem__(self, idx):
         target = torch.load(
-            self.dataset[self.type][list(self.dataset[self.type].keys())[idx]]["output"], map_location=torch.device("cpu")
+            self.dataset[self.type][list(self.dataset[self.type].keys())[self.mapping[idx]]]["output"], map_location=torch.device("cpu")
         )
 
-        label = self.dataset[self.type][list(self.dataset[self.type].keys())[idx]]["label"]
+        label = self.dataset[self.type][list(self.dataset[self.type].keys())[self.mapping[idx]]]["label"]
+
+        if self.fixed_label is not None:
+            assert label == self.fixed_label, f"Label {label} does not match fixed label {self.fixed_label}"
 
         result = (target, label)
         if self.transform:
@@ -244,3 +262,17 @@ class MinMaxTransform(nn.Module):
         # Reverse the min-max normalization
         original_weights = normalized_weights * (self.max_value - self.min_value) + self.min_value
         return original_weights
+    
+class FlattenMinMaxTransform(torch.nn.Module):
+  def __init__(self, min_max: tuple = None):
+    super().__init__()
+    self.flatten = FlattenTransform()
+    if min_max:
+      self.minmax = MinMaxTransform(*min_max)
+    else:
+      self.minmax = MinMaxTransform()
+
+  def forward(self, x, y):
+    x, _ = self.flatten(x, y)
+    x, _ = self.minmax(x, y)
+    return x, y
