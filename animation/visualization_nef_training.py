@@ -141,7 +141,7 @@ def visualize_learning_process(image_idx: int, num_epochs: int, model_config: di
                 fig = get_figure(model, vmin, vmax, model_difference)
             else:
                 fig = get_figure(model, vmin, vmax)
-                
+
             frame_path = os.path.join(frames_dir, f"frame_{epoch:03d}.png")
             plt.savefig(frame_path, format="png")
 
@@ -262,6 +262,6 @@ if __name__ == "__main__":
     assert os.path.exists(model_path), f"File {model_path} does not exist"
 
     comparison_model.load_state_dict(torch.load(model_path))
-    compare_different_runs([11, 35, 47, 65], 200, model_config, ["pretrained", "unconditioned"])#, comparison_model)
+    compare_different_runs([0], 200, model_config, ["unconditioned"])#, comparison_model)
     
 

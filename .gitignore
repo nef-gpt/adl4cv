@@ -5,6 +5,7 @@ datasets
 .DS_Store
 submissions/**/out
 wandb
+frames
 
 *.aux
 *.log
@@ -29,7 +30,7 @@ generation/frames
 *.gz
 *.whl
 
-*.gif
+
 *.mp4
-*.png
+
 *.pt
