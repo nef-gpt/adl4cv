@@ -42,7 +42,7 @@ dataset_with_transform = MnistNeFDataset(data_root_ours, type="pretrained", tran
 dataset_no_transform = MnistNeFDataset(data_root_ours, type="pretrained")
 
 
-def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, video_name: str = "learning_process", fps=10):
+def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, video_name: str = "learning_process", fps=10, iter_step=iter_step):
 
     # Initialize model configuration
     nef_config = {
@@ -65,9 +65,9 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
     original_dict = dataset_no_transform[image_idx][0]
     sample = dataset_with_transform[image_idx][0]
 
-    with tqdm(total=num_iters/100) as pbar:
+    with tqdm(total=num_iters/iter_step) as pbar:
 
-        for iter in range(0, num_iters, 100):
+        for iter in range(0, num_iters, iter_step):
             
             model_path = f"./models/{foldername}/iter_{iter}.pt"
             assert os.path.exists(model_path), f"File {model_path} does not exist"
@@ -109,7 +109,7 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
     # Compile the images into a video
     frame_paths = [
         os.path.join(frames_dir, f"frame_iter_{iter:03d}.png")
-        for iter in range(0, num_iters, 100)
+        for iter in range(0, num_iters, iter_step)
         if os.path.exists(os.path.join(frames_dir, f"frame_iter_{iter:03d}.png"))
     ]
     frame = cv2.imread(frame_paths[0])
