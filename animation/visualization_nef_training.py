@@ -13,7 +13,7 @@ from tqdm import tqdm
 from PIL import Image
 import glob
 from networks.mlp_models import MLP3D
-from animation.util import make_coordinates, ensure_folder_exists, reconstruct_image, get_vmin_vmax
+from animation.util import make_coordinates, ensure_folder_exists, reconstruct_image, get_vmin_vmax, get_model_difference
 
 model_config = {
         "out_size": 1,
@@ -38,21 +38,26 @@ def save_colorbar(save_path: str, vmin: torch.Tensor, vmax: torch.Tensor):
     plt.savefig(save_path, transparent=True, bbox_inches='tight', pad_inches=0)
     plt.close()
 
-def get_figure(model: torch.nn.Module, vmin: torch.Tensor, vmax: torch.Tensor):
+def get_figure(model: torch.nn.Module, vmin: torch.Tensor, vmax: torch.Tensor, comparison_model: torch.nn.Module = None):
 
     # Generate random data for demonstration
     image = reconstruct_image(model)
-    state_dict = model.state_dict()
-    W1 = state_dict['layers.0.weight']
-    W2 = state_dict['layers.1.weight']
-    W3 = state_dict['layers.2.weight']
-    b1 = state_dict['layers.0.bias'].unsqueeze(-1)
-    b2 = state_dict['layers.1.bias'].unsqueeze(-1)
-    b3 = state_dict['layers.2.bias'].unsqueeze(-1)
-
-    vmax = torch.Tensor((W1.max(), W2.max(), W3.max(), b1.max(), b2.max(), b3.max())).max()
-    vmin = torch.Tensor((W1.min(), W2.min(), W3.min(), b1.min(), b2.min(), b3.min())).min()
-
+    if comparison_model:
+        state_dict = comparison_model.state_dict()
+        W1 = state_dict['layers.0.weight']
+        W2 = state_dict['layers.1.weight']
+        W3 = state_dict['layers.2.weight']
+        b1 = state_dict['layers.0.bias'].unsqueeze(-1)
+        b2 = state_dict['layers.1.bias'].unsqueeze(-1)
+        b3 = state_dict['layers.2.bias'].unsqueeze(-1)
+    else:
+        state_dict = model.state_dict()
+        W1 = state_dict['layers.0.weight']
+        W2 = state_dict['layers.1.weight']
+        W3 = state_dict['layers.2.weight']
+        b1 = state_dict['layers.0.bias'].unsqueeze(-1)
+        b2 = state_dict['layers.1.bias'].unsqueeze(-1)
+        b3 = state_dict['layers.2.bias'].unsqueeze(-1)
 
     # Set the x-size of the whole figure
     figure_x_size = 10
@@ -106,7 +111,9 @@ def get_figure(model: torch.nn.Module, vmin: torch.Tensor, vmax: torch.Tensor):
 
 
 
-def visualize_learning_process(image_idx: int, num_epochs: int, model_config: dict, foldername: str, video_name: str = "learning_process", v: tuple = None, fps: int = 10):
+def visualize_learning_process(image_idx: int, num_epochs: int, model_config: dict, foldername: str, 
+                               video_name: str = "learning_process", v: tuple = None, fps: int = 10,
+                               comparison_model: torch.nn.Module = None):
 
     frames_dir = "frames"
     frames = []
@@ -127,8 +134,14 @@ def visualize_learning_process(image_idx: int, num_epochs: int, model_config: di
 
             model.load_state_dict(torch.load(model_path))
 
-            fig = get_figure(model, vmin, vmax)
+            if comparison_model:
+                model_difference = MLP3D(**model_config)
+                get_model_difference(model, comparison_model, model_difference)
 
+                fig = get_figure(model, vmin, vmax, model_difference)
+            else:
+                fig = get_figure(model, vmin, vmax)
+                
             frame_path = os.path.join(frames_dir, f"frame_{epoch:03d}.png")
             plt.savefig(frame_path, format="png")
 
@@ -208,20 +221,29 @@ def create_all_videos():
         )
         visualize_learning_process(image_idx, num_epochs, model_config, foldername, f"./animation/{subfoldername}/presentation_{subfoldername}_{image_idx}")
 
-def compare_different_runs(image_idxs: List[int], num_epoch: int, model_config: dict, subfoldernames: List[str]):
+def compare_different_runs(image_idxs: List[int], num_epoch: int, model_config: dict, subfoldernames: List[str], comparison_model: torch.nn.Module = None):
     vmins = []
     vmaxs = []
 
     # find max and min of v
     for idx in image_idxs:
         for subfoldername in subfoldernames:
-            vmin, vmax = get_vmin_vmax(idx, num_epoch,  f"./datasets/mnist-nerfs/{subfoldername}")
+            if comparison_model:
+                vmin, vmax = get_vmin_vmax(idx, num_epoch,  f"./datasets/mnist-nerfs/{subfoldername}", comparison_model.state_dict())
+            else:
+                vmin, vmax = get_vmin_vmax(idx, num_epoch,  f"./datasets/mnist-nerfs/{subfoldername}")
             vmins.append(vmin)
             vmaxs.append(vmax)
     vmax = torch.Tensor([v.max() for v in vmaxs]).max()
     vmin = torch.Tensor([v.min() for v in vmins]).min()
 
-    save_folder = f"./animation/comparison_{'_'.join(map(str, image_idxs))}"
+    vmax = 1
+    vmin = -1
+
+    if comparison_model:
+        save_folder = f"./animation/comparison_with_comparison_model_{'_'.join(map(str, image_idxs))}"
+    else:
+        save_folder = f"./animation/comparison_{'_'.join(map(str, image_idxs))}"
     
     for idx in image_idxs:
         for subfoldername in subfoldernames:
@@ -229,11 +251,17 @@ def compare_different_runs(image_idxs: List[int], num_epoch: int, model_config: 
             video_name = save_folder + f"/{subfoldername}_{idx}"
 
             ensure_folder_exists(save_folder)
-            visualize_learning_process(idx, num_epoch, model_config, foldername,  video_name=video_name, v= (vmin, vmax))
+            visualize_learning_process(idx, num_epoch, model_config, foldername,  video_name=video_name, v= (vmin, vmax), comparison_model=comparison_model)
     
     save_colorbar(save_folder + "/colorbar.png", vmin, vmax)
 
 if __name__ == "__main__":
-    compare_different_runs([0, 11, 35, 47, 65], 200, model_config, ["pretrained", "unconditioned"])
+    comparison_model = MLP3D(**model_config)
+            
+    model_path = "./datasets/mnist-nerfs/unconditioned/image-0_model_final.pth"
+    assert os.path.exists(model_path), f"File {model_path} does not exist"
+
+    comparison_model.load_state_dict(torch.load(model_path))
+    compare_different_runs([11, 35, 47, 65], 200, model_config, ["pretrained", "unconditioned"])#, comparison_model)
     
 
