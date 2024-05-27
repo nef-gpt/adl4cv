@@ -52,16 +52,16 @@ def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=500
 
 
 # Taken from neural-field-arena
-class DWSNetsDataset(BaseDataset):
+class MnistNeFDataset(BaseDataset):
     def __init__(
         self,
         path: Union[str, Path],
-        split: str = "train",
+        type: str = "unconditioned",
         transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
         download_url: str = None,
         force_download: bool = False,
     ):
-        """Initialize theDataset object.
+        """Initialize the Dataset object.
 
         Args:
             path (Union[str, Path]): The path to the directory containing the dataset files.
@@ -81,23 +81,32 @@ class DWSNetsDataset(BaseDataset):
         assert path.exists(), f"Path {path.absolute()} does not exist"
         assert path.is_dir(), f"Path {path.absolute()} is not a directory"
 
-        self.split = split
+        self.dataset = json.load(open(Path(path) / "overview.json", "r"))
         self.transform = transform
-        self.path = path
-        if os.path.isfile(path / "mnist_splits.json") is not True:
-            generate_splits(path, path, name="mnist_splits.json")
+        self.type = type
 
-        self.dataset = json.load(open(Path(path) / "mnist_splits.json", "r"))
+    def min_max(self):
+        mins = []
+        maxs = []
+        for i in range(len(self.dataset)):
+            weights, _ = self.__getitem__(i)
+            mins.append(weights.min())
+            maxs.append(weights.max())
+        min = torch.Tensor(mins).min()
+        max = torch.Tensor(maxs).max()
+        return min, max
+            
+
 
     def __len__(self):
-        return len(self.dataset[self.split]["path"])
+        return len(self.dataset[self.type].keys())
 
     def __getitem__(self, idx):
         target = torch.load(
-            self.dataset[self.split]["path"][idx], map_location=torch.device("cpu")
+            self.dataset[self.type][list(self.dataset[self.type].keys())[idx]]["output"], map_location=torch.device("cpu")
         )
 
-        label = int(self.dataset[self.split]["label"][idx])
+        label = self.dataset[self.type][list(self.dataset[self.type].keys())[idx]]["label"]
 
         result = (target, label)
         if self.transform:
