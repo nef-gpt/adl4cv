@@ -239,3 +239,8 @@ class MinMaxTransform(nn.Module):
         # Apply min-max normalization
         weights = (weights - self.min_value) / (self.max_value - self.min_value)
         return weights, y
+    
+    def reverse(self, normalized_weights):
+        # Reverse the min-max normalization
+        original_weights = normalized_weights * (self.max_value - self.min_value) + self.min_value
+        return original_weights

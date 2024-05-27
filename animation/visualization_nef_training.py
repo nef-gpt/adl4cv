@@ -8,12 +8,12 @@ from torchvision import datasets
 import matplotlib.pyplot as plt
 import cv2
 import sys
-from collections import OrderedDict
 from typing import List, Tuple, Union
 from tqdm import tqdm
 from PIL import Image
 import glob
 from networks.mlp_models import MLP3D
+from animation.util import make_coordinates, ensure_folder_exists, reconstruct_image, get_vmin_vmax
 
 model_config = {
         "out_size": 1,
@@ -23,67 +23,6 @@ model_config = {
         "input_dims": 2,
         "multires": 4,
     }
-
-def ensure_folder_exists(folder_path: str):
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        print(f"Folder '{folder_path}' created.")
-    else:
-        print(f"Folder '{folder_path}' already exists.")
-
-def make_coordinates(
-    shape: Union[Tuple[int], List[int]],
-    bs: int,
-    coord_range: Union[Tuple[int], List[int]] = (0, 1),
-) -> torch.Tensor:
-    x_coordinates = np.linspace(coord_range[0], coord_range[1], shape[0])
-    y_coordinates = np.linspace(coord_range[0], coord_range[1], shape[1])
-    x_coordinates, y_coordinates = np.meshgrid(x_coordinates, y_coordinates)
-    x_coordinates = x_coordinates.flatten()
-    y_coordinates = y_coordinates.flatten()
-    coordinates = np.stack([x_coordinates, y_coordinates]).T
-    coordinates = np.repeat(coordinates[np.newaxis, ...], bs, axis=0)
-    return torch.from_numpy(coordinates).type(torch.float)
-
-def reconstruct_image(model: torch.nn.Module, image_size: tuple = (28, 28)):
-
-    input_coords = make_coordinates(image_size, 1)
-     # Generate image using the INR model
-    with torch.no_grad():
-        reconstructed_image = model(input_coords)
-        reconstructed_image = torch.sigmoid(reconstructed_image)
-        reconstructed_image = reconstructed_image.view(*image_size, -1)
-        reconstructed_image = reconstructed_image.permute(2, 0, 1)
-
-    return reconstructed_image.squeeze(0).numpy()
-
-def state_dict_to_min_max(state_dict: OrderedDict):
-    weights = []
-
-    for key, value in state_dict.items():
-        weights.append(value)
-
-    vmax = torch.Tensor([w.max() for w in weights]).max()
-    vmin = torch.Tensor([w.min() for w in weights]).min()
-
-    return vmin, vmax
-
-
-def get_vmin_vmax(image_idx: int, num_epochs: int, foldername: str):
-    vmins = []
-    vmaxs = []
-    for epoch in range(num_epochs):        
-        model_path = "{}/image-{}".format(foldername, image_idx) + f"_model_epoch_{epoch}.pth"
-        assert os.path.exists(model_path), f"File {model_path} does not exist"
-
-        vmin, vmax = state_dict_to_min_max(torch.load(model_path))
-        vmins.append(vmin)
-        vmaxs.append(vmax)
-
-    vmax = torch.Tensor([v.max() for v in vmaxs]).max()
-    vmin = torch.Tensor([v.min() for v in vmins]).min()
-
-    return vmin, vmax
 
 def save_colorbar(save_path: str, vmin: torch.Tensor, vmax: torch.Tensor):
     fig, ax = plt.subplots(figsize=(6, 1))
@@ -130,7 +69,7 @@ def get_figure(model: torch.nn.Module, vmin: torch.Tensor, vmax: torch.Tensor):
 
     # Second row: W1 and b1
     ax_W1 = plt.subplot(gs[1, 0])
-    im1 = ax_W1.imshow(W1, cmap='viridis', aspect='equal', vmin=vmin, vmax=vmax)
+    ax_W1.imshow(W1, cmap='viridis', aspect='equal', vmin=vmin, vmax=vmax)
     ax_W1.axis('off')
 
     ax_b1 = plt.subplot(gs[1, 1])
@@ -170,7 +109,6 @@ def get_figure(model: torch.nn.Module, vmin: torch.Tensor, vmax: torch.Tensor):
 def visualize_learning_process(image_idx: int, num_epochs: int, model_config: dict, foldername: str, video_name: str = "learning_process", v: tuple = None, fps: int = 10):
 
     frames_dir = "frames"
-
     frames = []
 
     if v:
@@ -236,11 +174,10 @@ def visualize_learning_process(image_idx: int, num_epochs: int, model_config: di
         transparency=0,  # specify the transparency color (usually 0 for black)
         disposal=2  # ensures that each frame is replaced, not drawn on top of the previous one
     )
-
     print(f"GIF saved to {gif_path}")
 
 
-def main():
+def create_one_video():
 
     image_idx = 1721  # Change this to visualize a different image from the dataset
     num_epochs = 250  # Number of epochs or models saved
