@@ -21,6 +21,9 @@ import time
 from torch.utils.data import DataLoader, Dataset
 from munch import DefaultMunch
 
+config = {}
+config["unconditioned"] = {}
+config["pretrained"] = {}
 
 class MNISTNeRFDataset(Dataset):
     def __init__(self, image):
@@ -58,9 +61,9 @@ model_config = {
 }
 
 # settings
-only_label = None  # can also be None
-idx_range = None # , range(0, 100)  # can also be None
-save_during_epochs = None
+only_label = 5  # can also be None
+idx_range = range(0, 100) # , range(0, 100)  # can also be None
+save_during_epochs = 1
 
 config_file = "./datasets/mnist-nerfs/overview.json"
 device = get_default_device()
@@ -121,8 +124,8 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     )
 
     train_config = {
-        "epochs": 250,
-        "lr": 4e-4 if init_model_path is None else 4e-3,
+        "epochs": 200,
+        "lr": 4e-3 if init_model_path is None else 4e-3,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
         "model_dir": "mnist-nerfs",
@@ -180,7 +183,6 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
 
 mnist = datasets.MNIST("mnist-data", train=True, download=True)
 # load config
-config = load_config()
 
 
 
@@ -198,6 +200,7 @@ def train_unconditioned():
         entry = fit_single_batch(image, label, i, None)
         # update config
         global config
+
         config = update_config(config, entry)
 
 

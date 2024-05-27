@@ -43,6 +43,8 @@ Using a transformer based architecture
 
 - Regression Transformer
   - Structure Challenge (Permutation Invariance)
+    - permutate the weights matrix
+    - train with 1, 2, 4, 8, 16, 32 samples and see progress 
   - Token Problem (eg. SOS, EOS, Empty)
 - Custom Overfitting
   - Abusing pretrained

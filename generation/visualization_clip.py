@@ -6,6 +6,7 @@ import torch
 from torchvision import datasets
 import matplotlib.pyplot as plt
 import cv2
+from tqdm import tqdm
 
 
 # Add the parent directory to the Python path
@@ -31,7 +32,8 @@ def make_coordinates(
     return torch.from_numpy(coordinates).type(torch.float)
 
 
-def visualize_learning_process(image_idx: int, num_epochs: int):
+def visualize_learning_process(image_idx: int, num_epochs: int, foldername: str, video_name: str = "learning_process"):
+
     # Configuration
     image_size = (28, 28)
     # Get dataset elements
@@ -53,42 +55,48 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
     frames_dir = "frames"
     os.makedirs(frames_dir, exist_ok=True)
 
-    for epoch in range(num_epochs):
-        path = os.path.dirname(os.path.abspath(__file__))
-        
-        model_path = path + f"/mnist-nerfs/recording_pretrained/mnist-nerfs-structured-{image_idx}_{epoch}_model_final.pth"
-        
-        assert os.path.exists(model_path), f"File {model_path} does not exist"
+    with tqdm(total=num_epochs) as pbar:
 
-        model.load_state_dict(torch.load(model_path))
+        for epoch in range(num_epochs):
+            
+            model_path = "{}/image-{}".format(foldername, image_idx) + f"_model_epoch_{epoch}.pth"
+            
+            assert os.path.exists(model_path), f"File {model_path} does not exist"
 
-        # Generate image using the INR model
-        with torch.no_grad():
-            reconstructed_image = model(input_coords)
-            reconstructed_image = torch.sigmoid(reconstructed_image)
-            reconstructed_image = reconstructed_image.view(*image_size, -1)
-            reconstructed_image = reconstructed_image.permute(2, 0, 1)
+            model.load_state_dict(torch.load(model_path))
 
-        reconstructed_tensor = reconstructed_image.squeeze(0).numpy()
+            # Generate image using the INR model
+            with torch.no_grad():
+                reconstructed_image = model(input_coords)
+                reconstructed_image = torch.sigmoid(reconstructed_image)
+                reconstructed_image = reconstructed_image.view(*image_size, -1)
+                reconstructed_image = reconstructed_image.permute(2, 0, 1)
 
-        # Save the frame as a PNG image
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+            reconstructed_tensor = reconstructed_image.squeeze(0).numpy()
 
-        axes[0].imshow(image, cmap="gray", aspect="auto")
-        axes[0].set_title("Ground Truth")
-        axes[0].set_xlabel("X-axis")
-        axes[0].set_ylabel("Y-axis")
+            # Save the frame as a PNG image
+            fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-        axes[1].imshow(reconstructed_tensor, cmap="gray", aspect="auto")
-        axes[1].set_title(f"Reconstructed (Epoch {epoch})")
-        axes[1].set_xlabel("X-axis")
-        axes[1].set_ylabel("Y-axis")
+            axes[0].imshow(image, cmap="gray", aspect="auto")
+            axes[0].set_title("Ground Truth")
+            axes[0].set_xlabel("X-axis")
+            axes[0].set_ylabel("Y-axis")
 
-        plt.tight_layout()
+            axes[1].imshow(reconstructed_tensor, cmap="gray", aspect="auto")
+            axes[1].set_title(f"Reconstructed (Epoch {epoch})")
+            axes[1].set_xlabel("X-axis")
+            axes[1].set_ylabel("Y-axis")
 
-        frame_path = os.path.join(frames_dir, f"frame_{epoch:03d}.png")
-        plt.savefig(frame_path, format="png")
-        plt.close(fig)
+            plt.tight_layout()
+
+            frame_path = os.path.join(frames_dir, f"frame_{epoch:03d}.png")
+            plt.savefig(frame_path, format="png")
+            plt.close(fig)
+            pbar.update(1)
+            pbar.set_description(
+                    "Finished creating frame for epoch %d"
+                    % (epoch)
+                )
 
     # Compile the images into a video
     frame_paths = [
@@ -99,7 +107,7 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
     frame = cv2.imread(frame_paths[0])
     height, width, layers = frame.shape
     
-    video_path = "learning_process_pretrained.mp4"
+    video_path = video_name + ".mp4"
     out = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*"mp4v"), 10, (width, height))
 
     for frame_path in frame_paths:
@@ -112,8 +120,12 @@ def visualize_learning_process(image_idx: int, num_epochs: int):
 
 def main():
     image_idx = 35  # Change this to visualize a different image from the dataset
-    num_epochs = 200  # Number of epochs or models saved
-    visualize_learning_process(image_idx, num_epochs)
+    num_epochs = 150  # Number of epochs or models saved
+    subfoldername = "unconditioned" #"pretrained"
+    foldername = (
+        f"./datasets/mnist-nerfs/{subfoldername}"
+    )
+    visualize_learning_process(image_idx, num_epochs, foldername, f"./animation/{subfoldername}_{image_idx}")
 
 
 if __name__ == "__main__":
