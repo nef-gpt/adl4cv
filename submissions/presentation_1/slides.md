@@ -255,6 +255,15 @@ $$
 <VideoPane :videos="[]" />
 
 
+
+---
+---
+
+
+# Regression Transformer (Conditioned Initialization)
+
+<VideoPane :videos="[['/n_1_type_pretrained_model_big_idx_0.mp4'], ['/n_4_type_pretrained_model_big_idx_0.mp4', '/n_4_type_pretrained_model_big_idx_1.mp4', '/n_4_type_pretrained_model_big_idx_2.mp4', '/n_4_type_pretrained_model_big_idx_3.mp4']]" />
+
 ---
 ---
 
@@ -267,15 +276,8 @@ We run into issues regarding special tokens (what comes after the start token in
 ---
 ---
 
-# Outlok: Token Prediction with Transformer
+# Outlook: Token Prediction with Transformer
 
----
----
-
-
-# Regression Transformer (Unconditioned Init)
-
-<VideoPane :videos="[['/n_1_type_pretrained_model_big_idx_0.mp4'], ['/n_4_type_pretrained_model_big_idx_0.mp4', '/n_4_type_pretrained_model_big_idx_1.mp4', '/n_4_type_pretrained_model_big_idx_2.mp4', '/n_4_type_pretrained_model_big_idx_3.mp4']]" />
 
 ---
 ---
