@@ -37,6 +37,7 @@ def train(
     loss_schedules=None,
     filename=None,
     cfg=None,
+    disable_tqdm=False,
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
     # Check for GPU
@@ -89,7 +90,7 @@ def train(
     patience = cfg.scheduler.patience
     num_bad_epochs = 0
 
-    with tqdm(total=len(train_dataloader) * epochs) as pbar:
+    with tqdm(total=len(train_dataloader) * epochs, disable=disable_tqdm) as pbar:
         train_losses = []
         for epoch in range(epochs):
             # if not epoch % epochs_til_checkpoint and epoch:

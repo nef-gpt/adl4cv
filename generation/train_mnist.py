@@ -1,6 +1,11 @@
 # Description: Overfit neural field networks on the MNIST dataset
 import os
 import sys
+from torch.multiprocessing import Pool, Process, set_start_method
+try:
+     set_start_method('spawn')
+except RuntimeError:
+    pass
 
 from utils import get_default_device
 
@@ -164,7 +169,8 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         wandb=wandb,
         summary_fn=None,
         save_epoch_interval=save_during_epochs,
-        device=device
+        device=device,
+        disable_tqdm=True
     )
 
     return {
@@ -182,23 +188,25 @@ mnist = datasets.MNIST("mnist-data", train=True, download=True)
 # load config
 config = load_config()
 
+def train_unconditioned_single(i, data):
+    if (idx_range is not None) and (i not in idx_range):
+        return
 
+    image, label = data
+
+    if only_label is not None and label != only_label:
+        return
+
+    entry = fit_single_batch(image, label, i, None)
+    print(f"Training image {i} with label {label} and no pretrained model")
+    # update config
+    global config
+    config = update_config(config, entry)
 
 def train_unconditioned():
-    for i, data in enumerate(mnist):
-
-        if (idx_range is not None) and (i not in idx_range):
-            continue
-
-        image, label = data
-
-        if only_label is not None and label != only_label:
-            continue
-
-        entry = fit_single_batch(image, label, i, None)
-        # update config
-        global config
-        config = update_config(config, entry)
+    pool = Pool(8)
+    pool.starmap(train_unconditioned_single, enumerate(mnist))
+    
 
 
 def lookup_pretrained(label):
@@ -209,21 +217,23 @@ def lookup_pretrained(label):
             return entry
     return None
 
-
-def train_pretrained():
-    for i, data in enumerate(mnist):
+def train_pretrained_single(i, data):
         if (idx_range is not None) and (i not in idx_range):
-            continue
+            return
         image, label = data
 
         if only_label is not None and label != only_label:
-            continue
+            return
 
         entry = fit_single_batch(image, label, i, lookup_pretrained(label)["output"])
+        print(f"Training image {i} with label {label} and pretrained model {lookup_pretrained(label)['output']}")
         # update config
         global config
         config = update_config(config, entry)
-    pass
+
+def train_pretrained():
+    pool = Pool(8)
+    pool.starmap(train_pretrained_single, enumerate(mnist))
 
 
 def main():
