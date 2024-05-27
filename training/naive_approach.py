@@ -61,6 +61,8 @@ class Config:
     lr_decay_iters = 600000  # should be ~= max_iters per Chinchilla
     min_lr = 6e-5  # minimum learning rate, should be ~= learning_rate/10 per Chinchilla
 
+    detailed_folder = None
+
 
 # learning rate decay scheduler (cosine with warmup)
 def get_lr(it, config: Config):
@@ -214,7 +216,22 @@ def train(
                         "config": config,
                     }
                     print(f"saving checkpoint to {config.out_dir}")
-                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pth"))
+                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
+            if config.detailed_folder:
+                checkpoint = {
+                        "model": raw_model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "model_args": model_config,
+                        "iter_num": iter_num,
+                        "best_val_loss": best_val_loss,
+                        "config": config,
+                    }
+                print(f"saving checkpoint to {config.out_dir}")
+                folder_path =  os.path.join(config.out_dir, config.detailed_folder)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+                torch.save(checkpoint, os.path.join(folder_path, f"iter_{iter_num}.pt"))
+
         if iter_num == 0 and config.eval_only:
             break
 

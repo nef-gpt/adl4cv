@@ -28,3 +28,8 @@ generation/frames
 *ubyte
 *.gz
 *.whl
+
+*.gif
+*.mp4
+*.png
+*.pt

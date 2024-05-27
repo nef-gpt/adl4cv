@@ -26,6 +26,8 @@ vector-quantize-pytorch = "^1.14.24"
 random-fourier-features-pytorch = "^1.0.1"
 munch = "^4.0.0"
 opencv-python = "^4.9.0.80"
+plotly = "^5.22.0"
+imageio = "^2.34.1"
 
 
 [tool.poetry.group.dev.dependencies]

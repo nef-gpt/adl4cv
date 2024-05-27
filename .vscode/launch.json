@@ -15,5 +15,16 @@
                 "PYTHONPATH": "${workspaceFolder}",
             }
         },
+        {
+            "name": "Python Interpreter: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+            }
+        }
     ]
 }
