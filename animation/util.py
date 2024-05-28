@@ -47,14 +47,20 @@ def state_dict_to_min_max(state_dict: OrderedDict):
 
     return vmin, vmax
 
-def get_vmin_vmax(image_idx: int, num_epochs: int, foldername: str):
+
+def get_vmin_vmax(image_idx: int, num_epochs: int, foldername: str, comparison_model: OrderedDict = None):
+    
     vmins = []
     vmaxs = []
     for epoch in range(num_epochs):        
         model_path = "{}/image-{}".format(foldername, image_idx) + f"_model_epoch_{epoch}.pth"
         assert os.path.exists(model_path), f"File {model_path} does not exist"
 
-        vmin, vmax = state_dict_to_min_max(torch.load(model_path))
+        if comparison_model:
+            new_state_dict, _, _ = get_model_difference_dict(torch.load(model_path), comparison_model)
+            vmin, vmax = state_dict_to_min_max(new_state_dict)
+        else:
+            vmin, vmax = state_dict_to_min_max(torch.load(model_path))
         vmins.append(vmin)
         vmaxs.append(vmax)
 
@@ -62,6 +68,22 @@ def get_vmin_vmax(image_idx: int, num_epochs: int, foldername: str):
     vmin = torch.Tensor([v.min() for v in vmins]).min()
 
     return vmin, vmax
+
+def get_model_difference(model_1: torch.nn.Module, model_2: torch.nn.Module, untrained_model: torch.nn.Module):
+
+    state_dict, _, _ = get_model_difference_dict(model_1.state_dict(), model_2.state_dict())
+
+    untrained_model.load_state_dict(state_dict)
+
+    return untrained_model
+
+def get_model_difference_dict(model_1_dict: OrderedDict, model_2_dict: OrderedDict):
+    new_state_dict = OrderedDict()
+    assert model_1_dict.keys() == model_2_dict.keys(), "Model keys do not match"
+    for key in model_1_dict.keys():
+        new_state_dict[key] = model_1_dict[key] - model_2_dict[key]
+
+    return new_state_dict, model_1_dict, model_2_dict
 
 def backtransform_weights(flattened_weights, original_weights_dict):
     reconstructed_dict = OrderedDict()

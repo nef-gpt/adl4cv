@@ -55,10 +55,6 @@ Using a transformer based architecture
 - Outlook
   - Using Graph Structure to build better Tokenization
   
----
----
-# Introduction
-
 
 ---
 ---
@@ -145,10 +141,13 @@ question:
 ---
 ---
 # Autoregressive Generation of Neural Field Weights
+And a regression transformer architecture
 
 - Goal: generative modeling of neural fields
 $P(\Theta_{i} \mid \Theta_{i-1}, \Theta_{i-2}, \ldots, \Theta_{0})$
 
+- Using a generally available preset for GPT-like Architecture (like nanoGPT)
+- Adapt to regression task
 
 <video src="/autoregressive.mp4" autoplay loop muted></video>
 
@@ -228,12 +227,28 @@ Approach: Overfit Neural Fields using pretrained weight for initialization and r
 ---
 
 # Overfitting Neural Fields
-Using random initialization
+Overfitting on one sample
+
+- First start with ground truth and training of one initial sample
+- Introduce weight visualization of weight matices bad biases
 
 <VideoPane :videos="[]" />
 
 ---
 ---
+
+# Overfitting Neural Fields
+Comparison Conditiones and Unconditioned Training
+
+- Introducing a new sample 35
+- train two different NeFs one unconditiones and one conditioned
+- structure might be similar but difficult to identify do to permutation symmetry
+
+<VideoPane :videos="[]" />
+
+---
+---
+
 
 # Overfitting Neural Fields
 Using pretrained initialization
