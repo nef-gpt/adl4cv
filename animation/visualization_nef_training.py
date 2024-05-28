@@ -237,8 +237,8 @@ def compare_different_runs(image_idxs: List[int], num_epoch: int, model_config: 
     vmax = torch.Tensor([v.max() for v in vmaxs]).max()
     vmin = torch.Tensor([v.min() for v in vmins]).min()
 
-    vmax = 1
-    vmin = -1
+    #vmax = 1
+    #vmin = -1
 
     if comparison_model:
         save_folder = f"./animation/comparison_with_comparison_model_{'_'.join(map(str, image_idxs))}"
@@ -262,6 +262,6 @@ if __name__ == "__main__":
     assert os.path.exists(model_path), f"File {model_path} does not exist"
 
     comparison_model.load_state_dict(torch.load(model_path))
-    compare_different_runs([0], 200, model_config, ["unconditioned"])#, comparison_model)
+    compare_different_runs([11, 35, 47, 65], 200, model_config, ["pretrained"], comparison_model)
     
 
