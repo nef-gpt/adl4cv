@@ -113,15 +113,6 @@ $$
 </div>
 
 <!--
-TODO: Examples of overfitted
--->
-
-
-<!--
-maybe without theta -> then clip -> boom theta appears
--->
-
-<!--
 Neural Fields (NeF): 
 - Neural fields are continuous functions parameterized by neural network
 - Neural fields maps an input coordinate location in n-dimensional space to the target signal domain
@@ -317,7 +308,7 @@ Overfitting on one sample
 <!-- - First start with ground truth and training of one initial sample
 - Introduce weight visualization of weight matices bad biases -->
 
-<TrainingPane gt="/mnist_gt/mnist_0.png" :videos="['/comparison_0/unconditioned_0_cropped.mp4']" :labels="['First Sample']">
+<TrainingPane gt="/mnist_gt/mnist_0.png" :videos="['/comparison_0/unconditioned_0_cropped.mp4']" :labels="['First Sample']" infoBox="/comparison_11_35_47_65/unconditioned_65_last_frame.png" infoLabel="Legend">
 
 <template v-slot:left-pane>
 <div class="flex-shrink-1 flex-grow-0 w-250px">
@@ -466,44 +457,52 @@ layout: flex
 # Outlook: Tokenization
 Predicting the next MLP weight as a token
 
-<div class="flex flex-col justify-center w-100% items-center">
+<div class="flex flex-col justify-center w-100% items-start">
 <span class="text-justify">
-We run into issues regarding special tokens (what comes after the start token in the absence of the start token)
+Run into issues regarding special tokens:
 </span>
+
+<div class="w-100% flex flex-row justify-center">
 
 $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0}) \rightarrow \theta_{0}\text{?}$
 
+</div>
+
 <span class="text-justify">
-Solution:
-Find Tokens to encode the MLP weights and transfer from Regression Transformer to Classical Transformer
+
+
+**Solution:**
+Find Tokens to encode the MLP weights and transfer from Regression Transformer to Classical Transformer Architectures
+
+
 </span>
 </div>
   
 
 <div class="flex flex-row gap-[1em] justify-stretch items-stretch mt-4 flex-1">
-<div class="p-4 rounded-4 border border-white text-center text-sm flex-basis-50% text-left">
+<div class="p-4 rounded-4 border border-white text-sm flex-basis-50% text-justify">
 
 
-## First Approach:
-- Create Tokens using the Condition Neural Field Weights to train
-- Naive Attempt: Define Buckets on different Metrices for quantization
-- Vector Quantization Attempt: Find Tokens using Vector Quantization 
+<h3 class="text-center mb-2">First Approach:</h3>
 
 
-</div>
-<div class="p-4 rounded-4 border border-white text-center text-sm flex-basis-50% text-left">
-
-
-## Second Approach:
-- Find vocabulary of latent quantized embeddings, using graph convolutions 
-- Neural Networks are by nature acyclic graphs
+- Create Tokens using conditioned Neural Field Weights
+- Naive Attempt: Use weight distribution for discretization
+- Vector Quantization Attempt: Find optimal token representation using optimization techniques
 
 
 </div>
+<div class="p-4 rounded-4 border border-white text-sm flex-basis-50% text-justify">
+
+<h3 class="text-center mb-2">Second Approach:</h3>
+
+- Find layer representations of unconditioned neural fields that are permutation equivariant
+- For example by using the graph structure of the neural fields and employing deep learning techniques suited for graphs
+
+
+
 </div>
-
-
-
+</div>
 
 
 ---
@@ -517,14 +516,5 @@ We hope you enjoyed our presentation and are looking forward to your questions.
 <div class="h-8" />
 <span class="op-[0.5] max-w-30%">
 
-If you want to access the slides afterwards, you can find them under: [https://adl4cv.vercel.app](https://adl4cv.vercel.app)
-
-We run into issues regarding special tokens (what comes after the start token in the absence of the start token)
-
-- $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$ → $\theta_{0}\text{?}$
-- due to the continuous nature of the regression transformer there are no special token (eg. SOS)
-
-- Outlook
-  - Using Graph Structure to build better Tokenization
 
 </span>
