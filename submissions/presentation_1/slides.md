@@ -169,8 +169,8 @@ And a regression transformer architecture
 <div class="grid grid-cols-2">
         <div><strong>nanoGPT</strong></div>
         <div><strong>our regression transformer</strong></div>
-        <div>Token Embedding</div>
-        <div>Weight to Embedding using MLP</div>
+        <div class="text-#fde725">Token Embedding</div>
+        <div class="text-#fde725">Weight to Embedding using MLP</div>
         <div>Embedding + Positional Encoding</div>
         <div>Embedding + Positional Encoding</div>
         <div>Nx Blocks (Causal Self Attention and MLP)</div>
