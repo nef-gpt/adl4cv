@@ -5,6 +5,7 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'radix-vue'
 
 interface Props {
   videos: string[];
+  rowLabels: string[];
 }
 
 
@@ -60,6 +61,8 @@ watch(sliderValue, () => !playing.value && updateVideoTime());
 <template>
   <div class="flex flex-col gap-[1em] items-start">
     <div v-for="(row, index) in videos" :key="index" class="flex flex-row gap-[1em] items-center">
+      <span v-if="props.rowLabels && props.rowLabels.length > 0" class="text-white w-100px">{{ props.rowLabels[index]
+        }}</span>
       <div v-for="(video, index) in row" :key="index" class="video-pane">
         <video ref="videoRefs" class="w-[100px]" muted playsinline loop>
           <source :src="video" type="video/mp4" />
