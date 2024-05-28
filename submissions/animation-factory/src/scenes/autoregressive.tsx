@@ -6,22 +6,24 @@ const tokens = [
   {
     x: -55,
     fill: '#21918c',
-
   },
   {
     x: 0,
-    fill: '#3b528b',
+    fill: '#21918c',
   },
   {
     x: 55,
-    fill: '#440154',
+    fill: '#21918c',
   },
 ]
+
+const newTokenColor = "#3b528b"
 
 export default makeScene2D(function* (view) {
   // Create references for the boxes
   const transformerBox = createRef<Rect>();
   const tokenRects = tokens.map(() => createRef<Rect>());
+  const tokenTexts = tokens.map(() => createRef<Txt>());
   const token_names = ["θ₀", "θ₁", "θ₂"];
 
 
@@ -31,7 +33,7 @@ export default makeScene2D(function* (view) {
       <Rect
         ref={tokenRects[i]}
         width={50}
-        opacity={i == 0 ? 1 : 0}
+        opacity={0}
         height={50}
         fill={token.fill}
         radius={10}
@@ -41,8 +43,10 @@ export default makeScene2D(function* (view) {
     view.add(
       <Txt
         text={token_names[i]}
+        ref={tokenTexts[i]}
         fill="#ffffff"
         fontSize={20}
+        opacity={0}
         position={[token.x - 300, 0]}
         fontFamily={"Noto Sans Math"}
       />
@@ -54,7 +58,7 @@ export default makeScene2D(function* (view) {
   view.add(
     <Rect
       ref={transformerBox}
-      width={200}
+      width={250}
       height={100}
       fill="#5ec962"
       radius={10}
@@ -65,7 +69,7 @@ export default makeScene2D(function* (view) {
   // Add text to the transformer box
   view.add(
     <Txt
-      text="Transformer(θᵢ₋₁, θᵢ₋₂...θ₀"
+      text="Transformer(θᵢ₋₁, θᵢ₋₂...θ₀)"
       fill="#ffffff"
       fontSize={20}
       position={[0, 0]}
@@ -76,9 +80,19 @@ export default makeScene2D(function* (view) {
   
 
   // Animation sequence
+
+  // Show the first token with the label
+  yield* all(
+    tokenRects[0]().opacity(1, 0.5),
+    tokenTexts[0]().opacity(1, 0.5)
+  )
+
+
+
   for (let i = 0; i < 2; i++) {
     // Move input box to transformer
-    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x, 0], 1)));
+    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x, 0], 1)),
+      ...tokenTexts.map((tokenText, i) => tokenText().position([tokens[i].x, 0], 1)));
 
     // Simulate processing in transformer
     // shake the transformer (eg. increate the rotation a bit and then decrease it back to normal for a few times)
@@ -91,9 +105,15 @@ export default makeScene2D(function* (view) {
 
     // imidiately show the next token
     yield* tokenRects[i + 1]().opacity(1, 0);
+    yield* tokenTexts[i + 1]().opacity(1, 0);
+    // and change color of the new token
+    yield* tokenRects[i + 1]().fill(newTokenColor, 0.5);
 
     // Move all tokens to the right
-    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x + 300, 0], 1)));
+    yield* all(
+      ...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x + 300, 0], 1)),
+      ...tokenTexts.map((tokenText, i) => tokenText().position([tokens[i].x + 300, 0], 1))
+    );
 
     // Wait for a bit
     yield* waitFor(0.5);
@@ -107,9 +127,18 @@ export default makeScene2D(function* (view) {
     // First to 300, -100
     // Then to -300, -100
     // Then to -300, 0
-    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x + 300, -100], 0.5)));
-    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x - 300, -100], 0.8)));
-    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x - 300, 0], 0.5)));
+    yield* all(
+      ...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x + 300, -100], 0.5)),
+      ...tokenTexts.map((tokenText, i) => tokenText().position([tokens[i].x + 300, -100], 0.5))
+    );
+    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x - 300, -100], 0.8)),
+      ...tokenTexts.map((tokenText, i) => tokenText().position([tokens[i].x - 300, -100], 0.8)));
+    yield* all(...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x - 300, 0], 0.5)),
+      ...tokenTexts.map((tokenText, i) => tokenText().position([tokens[i].x - 300, 0], 0.5)));
+
+
+    // now revert the color of the new token
+    yield* tokenRects[i + 1]().fill(tokens[i + 1].fill, 0.5);
 
     // // Show output boxes
     // yield* all(
@@ -126,4 +155,10 @@ export default makeScene2D(function* (view) {
     // Prepare for next iteration
     yield* waitFor(0.5);
   }
+
+  // at the end move all tokens to the bottom of the screen
+  yield* all(
+    ...tokenRects.map((tokenRect, i) => tokenRect().position([tokens[i].x + 300, 400], 0.5)),
+    ...tokenTexts.map((tokenText, i) => tokenText().position([tokens[i].x + 300, 400], 0.5))
+  );
 });

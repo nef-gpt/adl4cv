@@ -51,18 +51,22 @@ layout: flex
 # Related works
 
 <div class="grid grid-cols-2 gap-4 flex-1">
-  <div class="bg-white text-black p-4 rounded-md flex flex-col">
+  <div class="bg-white text-black p-4 rounded-md flex flex-col max-h-100% justify-between items-center">
+  <div>
     <h2>HyperDiffusion</h2>
-    <p>Generating neural implicit fields by predicting their weight parameters using diffusion</p>
-    <img src="/hd_overview.png" class="w-full rounded-md flex-1 object-contain" alt="HyperDiffusion">
+    <p>Operates on MLP weights directly to generates new neural implicit fields encoded by synthesized MLP parameters</p>
+    </div>
+    <img src="/hd_overview.png" class="rounded-md w-350px object-contain" alt="HyperDiffusion">
     <span class="text-right w-100% text-gray-500 text-xs">
     ICCV’23 [Erkoç et al.]: Hyperdiffusion
     </span>
   </div>
-  <div class="bg-white text-black p-4 rounded-md flex flex-col">
+  <div class="bg-white text-black p-4 rounded-md flex flex-col  max-h-100% justify-between items-center">
+  <div>
     <h2>MeshGPT</h2>
-    <p>Sequence-based approach to autoregressively generate triangle meshes as sequences of triangles</p>
-    <img src="/mesh_gpt_overview.png" class="w-full rounded-md flex-1 object-contain" alt="MeshGPT">
+    <p>Autoregressively generate triangle meshes as sequences of triangles using a learned vocabulary of latent quantized embedding as tokens</p>
+    </div>
+    <img src="/mesh_gpt_overview.png" class="rounded-md w-220px object-contain" alt="MeshGPT">
     <span class="text-right w-100% text-gray-500 text-xs">
     CVPR’24 [Siddiqui et al.]: MeshGPT
     </span>
@@ -84,7 +88,7 @@ MeshGPT:
 # Autoregressive Generation of Neural Field Weights
 Neural Fields
 
-Neural fields maps an input coordinate location in n-dimensional space to the target signal domain
+Input coordinate location in n-dimensional space are mapped to target signal domain
 
 **Example:**
 
@@ -178,18 +182,24 @@ From nanoGPT to Regression Transformer
 
 <VideoPane :rowLabels="['Ground Truth', 'N=1']" :videos="[['/regression_transformer/ground_truth_0.png'], ['/regression_transformer/n_1_type_unconditioned_model_big_idx_0.mp4']]" size="140px">
   <template v-slot:left-pane>
-    <div class="grid grid-cols-2 gap-y-4px">
+    <div class="grid grid-cols-[1fr_auto_1fr] gap-y-4px">
           <div class="border-b border-white"><strong>nanoGPT</strong></div>
+          <div class="border-b border-white font-bold pr-4">vs.</div>
           <div class="border-b border-white"><strong>Our Regression Transformer</strong></div>
           <div class="text-#fde725">Token Embedding</div>
+          <div></div>
           <div class="text-#fde725">Weight to Embedding using MLP</div>
           <div>Embedding + Positional Encoding</div>
+          <div></div>
           <div>Embedding + Positional Encoding</div>
           <div>Nx Blocks (Causal Self Attention and MLP)</div>
+          <div></div>
           <div>Nx Blocks (Causal Self Attention and MLP)</div>
           <div>Linear Transformation Embedding</div>
+          <div></div>
           <div>Linear Transformation Embedding</div>
           <div class="text-#fde725">Softmax and Cross-Entropy Loss</div>
+          <div></div>
           <div class="text-#fde725">L1-norm as Loss</div>
   </div>
   </template>
@@ -268,7 +278,7 @@ transition: fade
 ---
 
 # Overfitting Neural Fields
-Overfitting on one sample
+Finding a Solution
 
 <!-- - First start with ground truth and training of one initial sample
 - Introduce weight visualization of weight matices bad biases -->
@@ -411,35 +421,89 @@ $$
 
 ---
 layout: flex
+transition: fade
 ---
 
+# Reminder: Regression Transformer 
+How far we got with unconditioned neural fields
 
-# Regression Transformer
-Using conditioned neural fields 
-
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_pretrained_model_big_idx_0.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_1.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_2.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_3.mp4'],
-['regression_transformer/n_32_type_pretrained_model_big_idx_0.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_1.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_2.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_3.mp4']]" size="90px">
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_unconditioned_model_big_idx_0.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_1.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_2.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_unconditioned_model_big_idx_0.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_1.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_2.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_3.mp4']]" size="90px">
 
 <template v-slot:left-pane>
 
-- Training Regression Transformer using conditioned Neural Fields
+- Transformer fails to capture the structure of the weights for larger N
+- Why can't the sequence be remembered even for small values of N?
 
 </template>
 
 </VideoPane>
 
 ---
+layout: flex
 ---
 
-# Challenges: Tokenization
+
+# Regression Transformer
+Using conditioned neural fields to verify the Hypothesis
+
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_pretrained_model_big_idx_0.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_1.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_2.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_pretrained_model_big_idx_0.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_1.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_2.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_3.mp4']]" size="90px">
+
+<template v-slot:left-pane>
+
+- Training Regression Transformer using conditioned Neural Fields Weights
+- Structural similarity of weights improve the performance of the Transformer
+
+</template>
+
+</VideoPane>
+
+---
+layout: flex
+---
+
+# Outlook: Tokenization
+Predicting the next MLP weight as a token
+
+<div class="flex flex-col justify-center w-100% items-center">
+<span class="text-justify">
 We run into issues regarding special tokens (what comes after the start token in the absence of the start token)
+</span>
 
-- $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$ → $\theta_{0}\text{?}$
-- due to the continuous nature of the regression transformer there are no special token (eg. SOS)
+$\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0}) \rightarrow \theta_{0}\text{?}$
 
-- Outlook
-  - Using Graph Structure to build better Tokenization
+<span class="text-justify">
+Solution:
+Find Tokens to encode the MLP weights and transfer from Regression Transformer to Classical Transformer
+</span>
+</div>
   
+
+<div class="flex flex-row gap-[1em] justify-stretch items-stretch mt-4 flex-1">
+<div class="p-4 rounded-4 border border-white text-center text-sm flex-basis-50% text-left">
+
+
+## First Approach:
+- Create Tokens using the Condition Neural Field Weights to train
+- Naive Attempt: Define Buckets on different Metrices for quantization
+- Vector Quantization Attempt: Find Tokens using Vector Quantization 
+
+
+</div>
+<div class="p-4 rounded-4 border border-white text-center text-sm flex-basis-50% text-left">
+
+
+## Second Approach:
+- Find vocabulary of latent quantized embeddings, using graph convolutions 
+- Neural Networks are by nature acyclic graphs
+
+
+</div>
+</div>
+
+
+
 
 
 ---
@@ -454,5 +518,13 @@ We hope you enjoyed our presentation and are looking forward to your questions.
 <span class="op-[0.5] max-w-30%">
 
 If you want to access the slides afterwards, you can find them under: [https://adl4cv.vercel.app](https://adl4cv.vercel.app)
+
+We run into issues regarding special tokens (what comes after the start token in the absence of the start token)
+
+- $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$ → $\theta_{0}\text{?}$
+- due to the continuous nature of the regression transformer there are no special token (eg. SOS)
+
+- Outlook
+  - Using Graph Structure to build better Tokenization
 
 </span>

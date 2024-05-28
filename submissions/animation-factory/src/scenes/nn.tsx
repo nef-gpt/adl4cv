@@ -185,10 +185,10 @@ export default makeScene2D(function* (view) {
 const time = 5;
 
 return all(
-      node1().position.x(node2().x(), 1),
-      node1().position.y(node2().y(), 1),
-      node2().position.x(tempX, 1),
-      node2().position.y(tempY, 1),
+      node1().position.x(node2().x(), time),
+      node1().position.y(node2().y(), time),
+      node2().position.x(tempX, time),
+      node2().position.y(tempY, time),
       // Update edges connected to node1
       ...edges.filter(edge => edge().points()[1][0] === tempX && edge().points()[1][1] === tempY).map(edge =>
         edge().points([

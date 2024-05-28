@@ -62,6 +62,9 @@ watch(sliderValue, () => !playing.value && updateVideoTime());
 
 </script>
 <template>
+  <div class="absolute top-2.5em right-2.5em">
+    <img src="/comparison_0/colorbar.png" class="w-350px" alt="Colorbar" />
+  </div>
   <div class="flex flex-col flex-1 gap-[1em] justify-between">
     <div class="flex flex-row gap-[2em] justify-start items-start">
 
