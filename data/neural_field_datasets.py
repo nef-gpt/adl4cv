@@ -51,7 +51,8 @@ def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=500
         json.dump(data_split, file)
 
 
-# Taken from neural-field-arena
+
+# OUR DATASET 
 class MnistNeFDataset(BaseDataset):
     def __init__(
         self,
