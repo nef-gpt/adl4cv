@@ -22,6 +22,7 @@ export default makeScene2D(function* (view) {
   // Create references for the boxes
   const transformerBox = createRef<Rect>();
   const tokenRects = tokens.map(() => createRef<Rect>());
+  const token_names = ["θ₀", "θ₁", "θ₂"];
 
 
   // Create the initial input box
@@ -39,7 +40,7 @@ export default makeScene2D(function* (view) {
     );
     view.add(
       <Txt
-        text="θ₁"
+        text={token_names[i]}
         fill="#ffffff"
         fontSize={20}
         position={[token.x - 300, 0]}
@@ -64,7 +65,7 @@ export default makeScene2D(function* (view) {
   // Add text to the transformer box
   view.add(
     <Txt
-      text="Transformer(θᵢ₋₁..."
+      text="Transformer(θᵢ₋₁, θᵢ₋₂...θ₀"
       fill="#ffffff"
       fontSize={20}
       position={[0, 0]}

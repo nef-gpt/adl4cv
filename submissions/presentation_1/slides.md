@@ -34,7 +34,7 @@ Using a transformer based architecture
 
 <div class="h-8" />
 
-<span class="italic op-[0.5]">from Luis Muschal and Luca Fanselau</span>
+<span class="op-[0.5] text-sm">from Luis Muschal and Luca Fanselau</span>
 
 ---
 hideInToc: true
@@ -86,7 +86,7 @@ Neural Fields
 
 Neural fields maps an input coordinate location in n-dimensional space to the target signal domain
 
-Example:
+**Example:**
 
 With $S$ being a surface in a 3-dimensional space $\mathbb{R}^3$. The Signed Distance Function $f : \mathbb{R}^3 \rightarrow \mathbb{R}$ is defined for a point $\mathbf{p} \in \mathbb{R}^3$ as:
 
@@ -211,7 +211,7 @@ layout: flex
 ---
 
 # Regression Transformer 
-Using neural fields that are randomly initialized
+Observing the Effects of Increasing N
 
 <VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_unconditioned_model_big_idx_0.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_1.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_2.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_3.mp4'],
 ['regression_transformer/n_32_type_unconditioned_model_big_idx_0.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_1.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_2.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_3.mp4']]" size="90px">
@@ -219,7 +219,7 @@ Using neural fields that are randomly initialized
 <template v-slot:left-pane>
 
 - Transformer fails to capture the structure of the weights for larger N
-- Why can't the sequence be remembered ever for small values of N?
+- Why can't the sequence be remembered even for small values of N?
 
 </template>
 
@@ -261,6 +261,40 @@ $$
 <video src="/nn-permutation.mp4" autoplay loop muted></video>
 
 </template>
+
+---
+layout: flex
+transition: fade
+---
+
+# Overfitting Neural Fields
+Overfitting on one sample
+
+<!-- - First start with ground truth and training of one initial sample
+- Introduce weight visualization of weight matices bad biases -->
+
+<div class="flex-shrink-1 flex-grow-0 w-250px">
+
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Minimize structural change by conditioning the training process using weight initialization
+</div>
+
+Approach:
+<div class="flex flex-col gap-[1em]">
+<div class="p-2 rounded-4 border border-white text-center text-sm ">
+Overfit single sample 
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm ">
+Use weights for different sample (conditioned)
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Train sample on randomly initialized weights (unconditioned)
+</div>
+</div>
+
+
+</div>
+
 
 ---
 layout: flex
@@ -403,18 +437,22 @@ We run into issues regarding special tokens (what comes after the start token in
 - $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$ → $\theta_{0}\text{?}$
 - due to the continuous nature of the regression transformer there are no special token (eg. SOS)
 
-
-
-
----
----
-
-# Outlook: Token Prediction with Transformer
-
 - Outlook
   - Using Graph Structure to build better Tokenization
   
 
 
 ---
+layout: center
+class: text-center
 ---
+
+# Thank you for your attention!
+We hope you enjoyed our presentation and are looking forward to your questions.
+
+<div class="h-8" />
+<span class="op-[0.5] max-w-30%">
+
+If you want to access the slides afterwards, you can find them under: [https://adl4cv.vercel.app](https://adl4cv.vercel.app)
+
+</span>

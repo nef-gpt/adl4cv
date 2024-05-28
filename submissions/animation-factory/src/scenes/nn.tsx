@@ -181,7 +181,9 @@ export default makeScene2D(function* (view) {
     const [node1, node2] = [hiddenNeurons[first], hiddenNeurons[second]];
     const tempX = node1().x();
     const tempY = node1().y();
-  
+
+const time = 5;
+
 return all(
       node1().position.x(node2().x(), 1),
       node1().position.y(node2().y(), 1),
@@ -192,28 +194,28 @@ return all(
         edge().points([
           [edge().points()[0][0], edge().points()[0][1]],
           [node2().x(), node2().y()]
-        ], 1)
+        ], time)
       ),
       // Update edges connected to node2
       ...edges.filter(edge => edge().points()[1][0] === node2().x() && edge().points()[1][1] === node2().y()).map(edge =>
         edge().points([
           [edge().points()[0][0], edge().points()[0][1]],
           [tempX, tempY]
-        ], 1)
+        ], time)
       ),
       // Update edges connected *after* node1
       ...edges.filter(edge => edge().points()[0][0] === tempX && edge().points()[0][1] === tempY).map(edge =>
         edge().points([
           [node2().x(), node2().y()],
           [edge().points()[1][0], edge().points()[1][1]]
-        ], 1)
+        ], time)
       ),
       // Update edges connected *after* node2
       ...edges.filter(edge => edge().points()[0][0] === node2().x() && edge().points()[0][1] === node2().y()).map(edge =>
         edge().points([
           [tempX, tempY],
           [edge().points()[1][0], edge().points()[1][1]]
-        ], 1)
+        ], time)
       )
     );
   }
