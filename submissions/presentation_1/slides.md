@@ -150,6 +150,7 @@ question:
 $P(\Theta_{i} \mid \Theta_{i-1}, \Theta_{i-2}, \ldots, \Theta_{0})$
 
 
+<video src="/autoregressive.mp4" autoplay loop muted></video>
 
 <!--
 Show history dependent process of autoregression

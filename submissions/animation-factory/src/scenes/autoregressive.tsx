@@ -57,7 +57,7 @@ export default makeScene2D(function* (view) {
     <Txt
       text="Transformer"
       fill="#ffffff"
-      fontSize={28}
+      fontSize={20}
       position={[0, 0]}
       fontFamily={"Inter"}
     />
