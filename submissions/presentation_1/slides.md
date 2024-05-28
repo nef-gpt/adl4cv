@@ -143,11 +143,10 @@ question:
 # Autoregressive Generation of Neural Field Weights
 And a regression transformer architecture
 
-- Goal: generative modeling of neural fields
-$P(\Theta_{i} \mid \Theta_{i-1}, \Theta_{i-2}, \ldots, \Theta_{0})$
+- Goal: generative modeling of neural fields $P(\theta_{i} \mid \theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$
 
 - Using a generally available preset for GPT-like Architecture (like nanoGPT)
-- Adapt to regression task
+- Adapt to regression task $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$
 
 <video src="/autoregressive.mp4" autoplay loop muted></video>
 
@@ -161,30 +160,34 @@ EG: Animation -> Single token in blackback -> two tokens -> more
 -->
 
 ---
+layout: flex
 ---
 
 # Autoregressive Generation of Neural Field Weights
 And a regression transformer architecture
 
-<div class="grid grid-cols-2">
-        <div><strong>nanoGPT</strong></div>
-        <div><strong>our regression transformer</strong></div>
-        <div class="text-#fde725">Token Embedding</div>
-        <div class="text-#fde725">Weight to Embedding using MLP</div>
-        <div>Embedding + Positional Encoding</div>
-        <div>Embedding + Positional Encoding</div>
-        <div>Nx Blocks (Causal Self Attention and MLP)</div>
-        <div>Nx Blocks (Causal Self Attention and MLP)</div>
-        <div>Linear Transformation Embedding</div>
-        <div>Linear Transformation Embedding</div>
-        <div>Softmax and Cross-Entropy Loss</div>
-        <div>L1-norm as Loss</div>
-</div>
 
 
+<VideoPane :rowLabels="['Ground Truth', 'N=1']" :videos="[['/regression_transformer/ground_truth_0.png'], ['/regression_transformer/n_1_type_unconditioned_model_big_idx_0.mp4']]" size="140px">
+  <template v-slot:left-pane>
+    <div class="grid grid-cols-2 gap-y-4px">
+          <div class="border-b border-white"><strong>nanoGPT</strong></div>
+          <div class="border-b border-white"><strong>Our Regression Transformer</strong></div>
+          <div class="text-#fde725">Token Embedding</div>
+          <div class="text-#fde725">Weight to Embedding using MLP</div>
+          <div>Embedding + Positional Encoding</div>
+          <div>Embedding + Positional Encoding</div>
+          <div>Nx Blocks (Causal Self Attention and MLP)</div>
+          <div>Nx Blocks (Causal Self Attention and MLP)</div>
+          <div>Linear Transformation Embedding</div>
+          <div>Linear Transformation Embedding</div>
+          <div class="text-#fde725">Softmax and Cross-Entropy Loss</div>
+          <div class="text-#fde725">L1-norm as Loss</div>
+  </div>
+  </template>
 
 
-<video src="/autoregressive.mp4" autoplay loop muted></video>
+</VideoPane>
 
 <!--
 Show history dependent process of autoregression
@@ -196,13 +199,23 @@ EG: Animation -> Single token in blackback -> two tokens -> more
 -->
 
 ---
+layout: flex
 ---
 
 # Regression Transformer 
 Using neural fields that are randomly initialized
 
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/n_1_type_unconditioned_model_big_idx_0.mp4'], ['/regression_transformer/n_4_type_unconditioned_model_big_idx_0.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_1.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_2.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_3.mp4'],
-['regression_transformer/n_32_type_unconditioned_model_big_idx_0.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_1.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_2.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_3.mp4']]" />
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_unconditioned_model_big_idx_0.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_1.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_2.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_unconditioned_model_big_idx_0.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_1.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_2.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_3.mp4']]" size="90px">
+
+<template v-slot:left-pane>
+
+- For Bigger N the reconstruction does not work
+- What can we do to help the Transformer to learn the structure?
+
+</template>
+
+</VideoPane>
 
 ---
 layout: two-cols
@@ -214,21 +227,6 @@ layout: two-cols
 # Challenges: Permutation Symmetries
 The same signal can be represented by different weight matrices
 
-with $P$ being a permutation matrix and
-$$
-\~{W}_{1} = PW_{1} \\
-\~{W}_{2} = W_{2}P^T \\
-P^TP = \mathbf I 
-$$
-
-
-$$
-\begin{aligned}
-&f_{\~{W}}(x) = \~{W}_{2}\sigma(\~{W}_{1}x) = W_{2}P^T\sigma(P\~{W}_{1}x) \\
-&=  W_{2}P^TP\sigma({W}_{1}x) = W_{2} \mathbf I W_{1}x = W_{2}\sigma(W_{1}x) = f_{W}(x)
-\end{aligned}
-$$
-
 $$
 P = \left[ 
 \begin{array}{cccc}
@@ -238,6 +236,16 @@ P = \left[
 0 & 0 & 1 & 0 \\
 \end{array}\right]
 $$
+permutated weight matrices are calculated using:
+$$
+\begin{aligned}
+\~{W}_{0} &= PW_{0} \\
+\~{W}_{1} &= W_{1}P^T \\
+\end{aligned}
+$$
+
+
+
 
 </template>
 <template v-slot:right>
@@ -247,49 +255,93 @@ $$
 </template>
 
 ---
----
-
-# Solution: Conditioned Training
-
-Hypothesis: We can minimize the structure change of neural fields encoding similar signal by conditioning the training process in the initialization
-Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization
-
-
-<!---
-  - Text Introduction for training
--->
-
----
+layout: flex
 ---
 
 # Overfitting Neural Fields
 Overfitting on one sample
 
-- First start with ground truth and training of one initial sample
-- Introduce weight visualization of weight matices bad biases
+<!-- - First start with ground truth and training of one initial sample
+- Introduce weight visualization of weight matices bad biases -->
 
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[]" />
+<TrainingPane gt="/mnist_gt/mnist_0.png" :videos="['/comparison_0/unconditioned_0_cropped.mp4']" :labels="['First Sample']">
+
+<template v-slot:left-pane>
+<div class="flex-shrink-1 flex-grow-0">
+
+Hypothesis:
+
+<!-- - we can minimize the structure change of neural fields encoding similar signal by conditioning the training process using weight initialization
+Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization -->
+
+Experiment:
+1. overfit a single sample
+2. train a different sample using the overfitted weight as initial weights (conditioned)
+3. as a comparison train the sample on randomly initialized weights (unconditioned)
+
+
+</div>
+</template>
+
+</TrainingPane>
 
 ---
+layout: flex
 ---
 
 # Overfitting Neural Fields
-Comparison Conditiones and Unconditioned Training
+Overfitting on other sample
 
-- Introducing a new sample 35
-- train two different NeFs one unconditiones and one conditioned
-- structure might be similar but difficult to identify do to permutation symmetry
 
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[]" />
+<TrainingPane gt="/mnist_gt/mnist_35.png" :videos="['/comparison_11_35_47_65/unconditioned_35_cropped.mp4', '/comparison_11_35_47_65/pretrained_35_cropped.mp4']" :labels="['Unconditioned', 'Conditioned']" infoBox="/comparison_0/unconditioned_0_last_frame.png" infoLabel="Condition">
+
+<template v-slot:left-pane>
+<div class="flex-shrink-1 flex-grow-0">
+
+Hypothesis:
+
+<!-- - we can minimize the structure change of neural fields encoding similar signal by conditioning the training process using weight initialization
+Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization -->
+
+Experiment:
+1. overfit a single sample
+2. train a different sample using the overfitted weight as initial weights (conditioned)
+3. as a comparison train the sample on randomly initialized weights (unconditioned)
+
+
+</div>
+</template>
+
+</TrainingPane>
 
 ---
+layout: flex
 ---
-
 
 # Overfitting Neural Fields
-Using pretrained initialization
+Overfitting on other sample
 
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[]" />
+
+<TrainingPane gt="/mnist_gt/mnist_35.png" :videos="['/comparison_with_comparison_model_11_35_47_65/unconditioned_35_cropped.mp4', '/comparison_with_comparison_model_11_35_47_65/pretrained_35_cropped.mp4']" :labels="['Unconditioned', 'Conditioned']" infoBox="/comparison_0/unconditioned_0_last_frame.png" infoLabel="Condition">
+
+<template v-slot:left-pane>
+<div class="flex-shrink-1 flex-grow-0">
+
+Hypothesis:
+
+<!-- - we can minimize the structure change of neural fields encoding similar signal by conditioning the training process using weight initialization
+Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization -->
+
+Experiment:
+1. overfit a single sample
+2. train a different sample using the overfitted weight as initial weights (conditioned)
+3. as a comparison train the sample on randomly initialized weights (unconditioned)
+
+
+</div>
+</template>
+
+</TrainingPane>
 
 ---
 ---
@@ -298,12 +350,15 @@ Using pretrained initialization
 How does the structure change while overfitting using pretrained?
 
 
+
 $$
 \begin{aligned}
-\Delta(W) &= W_{\text{pretrained}} - W\\
+\Delta(W) &= W_{\text{pretrained}} - W \\
 \Delta(b) &= b_{\text{pretrained}} - b
 \end{aligned}
 $$
+
+
 <VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[]" />
 
 
@@ -313,14 +368,28 @@ $$
 
 
 # Regression Transformer (Conditioned Initialization)
+Using pretrained initialization
 
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/n_1_type_pretrained_model_big_idx_0.mp4'], ['/n_4_type_pretrained_model_big_idx_0.mp4', '/n_4_type_pretrained_model_big_idx_1.mp4', '/n_4_type_pretrained_model_big_idx_2.mp4', '/n_4_type_pretrained_model_big_idx_3.mp4']]" />
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_pretrained_model_big_idx_0.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_1.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_2.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_pretrained_model_big_idx_0.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_1.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_2.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_3.mp4']]" size="90px">
+
+<template v-slot:left-pane>
+
+- For Bigger N the reconstruction does not work
+- What can we do to help the Transformer to learn the structure?
+
+</template>
+
+</VideoPane>
 
 ---
 ---
 
 # Challenges: Tokenization
 We run into issues regarding special tokens (what comes after the start token in the absence of the start token)
+
+- $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$ → $\theta_{0}\text{?}$
+- due to the continuous nature of the regression transformer there are no special token (eg. SOS)
 
 
 

@@ -37,6 +37,15 @@ export default makeScene2D(function* (view) {
         position={[token.x - 300, 0]}
       />
     );
+    view.add(
+      <Txt
+        text="θ₁"
+        fill="#ffffff"
+        fontSize={20}
+        position={[token.x - 300, 0]}
+        fontFamily={"Noto Sans Math"}
+      />
+    );
   });
   
 
