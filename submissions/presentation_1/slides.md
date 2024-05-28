@@ -24,6 +24,7 @@ transition: slide-left
 # enable MDC Syntax: https://sli.dev/guide/syntax#mdc-syntax
 mdc: true
 hideInToc: true
+colorSchema: dark
 ---
 
 # Autoregressive Generation of Neural Field Weights
