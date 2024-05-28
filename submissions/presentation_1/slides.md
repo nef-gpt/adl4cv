@@ -6,7 +6,7 @@ layout: center
 # like them? see https://unsplash.com/collections/94734566/slidev
 # background: https://cover.sli.dev
 # some information about your slides, markdown enabled
-title: Welcome to Slidev
+title: Autoregressive Generation of Neural Field Weights
 info: |
   ## Slidev Starter Template
   Presentation slides for developers.
@@ -23,6 +23,7 @@ drawings:
 transition: slide-left
 # enable MDC Syntax: https://sli.dev/guide/syntax#mdc-syntax
 mdc: true
+hideInToc: true
 ---
 
 # Autoregressive Generation of Neural Field Weights
@@ -35,39 +36,29 @@ Using a transformer based architecture
 <span class="italic op-[0.5]">from Luis Muschal and Luca Fanselau</span>
 
 ---
+hideInToc: true
+---
 
-# TOC
+# Table of Content
 
-- Introduction
-- Related Works
-
-- Regression Transformer
-  - Structure Challenge (Permutation Invariance)
-    - permutate the weights matrix
-    - train with 1, 2, 4, 8, 16, 32 samples and see progress 
-  - Token Problem (eg. SOS, EOS, Empty)
-- Custom Overfitting
-  - Abusing pretrained
-  - Comparison Neural Fields (Unstructured vs Pretrained)
-  - Animation Overfitting
-- Token Prediction with Transformer (Classical Transformer)
-  - Tokenization Technique (Naive, Bucket (Volume preserving), Learned)
-- Outlook
-  - Using Graph Structure to build better Tokenization
-  
+<Toc>
+</Toc>
 
 ---
+layout: flex
 ---
 # Related works
 
-<div class="grid grid-cols-2 gap-4">
-  <div class="bg-white text-black p-4 rounded-md">
+<div class="grid grid-cols-2 gap-4 flex-1">
+  <div class="bg-white text-black p-4 rounded-md flex flex-col">
     <h2>HyperDiffusion</h2>
     <p>Generating neural implicit fields by predicting their weight parameters using diffusion</p>
+    <img src="/hd_overview.png" class="w-full rounded-md flex-1 object-contain" alt="HyperDiffusion">
   </div>
-  <div class="bg-white text-black p-4 rounded-md">
+  <div class="bg-white text-black p-4 rounded-md flex flex-col">
     <h2>MeshGPT</h2>
     <p>Sequence-based approach to autoregressively generate triangle meshes as sequences of triangles</p>
+    <img src="/mesh_gpt_overview.png" class="w-full rounded-md flex-1 object-contain" alt="MeshGPT">
   </div>
 </div>
 
@@ -83,14 +74,16 @@ MeshGPT:
 ---
 ---
 
-# Neural Fields
-Signal Compression and Signed Distance Function
+# Autoregressive Generation of Neural Field Weights
+Neural Fields
 
 Neural fields maps an input coordinate location in n-dimensional space to the target signal domain
 
 Example:
 
 With $S$ being a surface in a 3-dimensional space $\mathbb{R}^3$. The Signed Distance Function $f : \mathbb{R}^3 \rightarrow \mathbb{R}$ is defined for a point $\mathbf{p} \in \mathbb{R}^3$ as:
+
+<div class="flex flex-row gap-[2em] justify-between items-center">
 
 
 $$
@@ -101,6 +94,12 @@ f_{\Theta}(\mathbf{p}) =
 -\text{distance}(\mathbf{p}, S) & \text{if } \mathbf{p} \text{ is inside } S,
 \end{cases}
 $$
+
+<div class="rounded-4 bg-white p-4">
+<video src="/hd_plane.mp4" width="200px" autoplay loop muted></video>
+</div>
+
+</div>
 
 <!--
 TODO: Examples of overfitted
@@ -139,9 +138,10 @@ question:
 
 
 ---
+hideInToc: true
 ---
 # Autoregressive Generation of Neural Field Weights
-And a regression transformer architecture
+Autoregressive Process
 
 - Goal: generative modeling of neural fields $P(\theta_{i} \mid \theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$
 
@@ -161,10 +161,11 @@ EG: Animation -> Single token in blackback -> two tokens -> more
 
 ---
 layout: flex
+hideInToc: true
 ---
 
 # Autoregressive Generation of Neural Field Weights
-And a regression transformer architecture
+From nanoGPT to Regression Transformer
 
 
 
@@ -210,8 +211,8 @@ Using neural fields that are randomly initialized
 
 <template v-slot:left-pane>
 
-- For Bigger N the reconstruction does not work
-- What can we do to help the Transformer to learn the structure?
+- Transformer fails to capture the structure of the weights for larger N
+- Why can't the sequence be remembered ever for small values of N?
 
 </template>
 
@@ -256,6 +257,7 @@ $$
 
 ---
 layout: flex
+transition: fade
 ---
 
 # Overfitting Neural Fields
@@ -267,17 +269,24 @@ Overfitting on one sample
 <TrainingPane gt="/mnist_gt/mnist_0.png" :videos="['/comparison_0/unconditioned_0_cropped.mp4']" :labels="['First Sample']">
 
 <template v-slot:left-pane>
-<div class="flex-shrink-1 flex-grow-0">
+<div class="flex-shrink-1 flex-grow-0 w-250px">
 
-Hypothesis:
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Minimize structural change by conditioning the training process using weight initialization
+</div>
 
-<!-- - we can minimize the structure change of neural fields encoding similar signal by conditioning the training process using weight initialization
-Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization -->
-
-Experiment:
-1. overfit a single sample
-2. train a different sample using the overfitted weight as initial weights (conditioned)
-3. as a comparison train the sample on randomly initialized weights (unconditioned)
+Approach:
+<div class="flex flex-col gap-[1em]">
+<div class="p-2 rounded-4 border border-white text-center text-sm text-black bg-white">
+Overfit single sample 
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-smr text-sm ">
+Use weights for different sample (conditioned)
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Train sample on randomly initialized weights (unconditioned)
+</div>
+</div>
 
 
 </div>
@@ -287,6 +296,8 @@ Experiment:
 
 ---
 layout: flex
+hideInToc: true
+transition: fade
 ---
 
 # Overfitting Neural Fields
@@ -296,17 +307,24 @@ Overfitting on other sample
 <TrainingPane gt="/mnist_gt/mnist_35.png" :videos="['/comparison_11_35_47_65/unconditioned_35_cropped.mp4', '/comparison_11_35_47_65/pretrained_35_cropped.mp4']" :labels="['Unconditioned', 'Conditioned']" infoBox="/comparison_0/unconditioned_0_last_frame.png" infoLabel="Condition">
 
 <template v-slot:left-pane>
-<div class="flex-shrink-1 flex-grow-0">
+<div class="flex-shrink-1 flex-grow-0 w-250px">
 
-Hypothesis:
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Minimize structural change by conditioning the training process using weight initialization
+</div>
 
-<!-- - we can minimize the structure change of neural fields encoding similar signal by conditioning the training process using weight initialization
-Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization -->
-
-Experiment:
-1. overfit a single sample
-2. train a different sample using the overfitted weight as initial weights (conditioned)
-3. as a comparison train the sample on randomly initialized weights (unconditioned)
+Approach:
+<div class="flex flex-col gap-[1em]">
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Overfit single sample 
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm text-sm text-black bg-white">
+Use weights for different sample (conditioned)
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm text-black bg-white">
+Train sample on randomly initialized weights (unconditioned)
+</div>
+</div>
 
 
 </div>
@@ -316,26 +334,32 @@ Experiment:
 
 ---
 layout: flex
+hideInToc: true
 ---
 
 # Overfitting Neural Fields
-Overfitting on other sample
+Visualizing the Difference:
 
 
 <TrainingPane gt="/mnist_gt/mnist_35.png" :videos="['/comparison_with_comparison_model_11_35_47_65/unconditioned_35_cropped.mp4', '/comparison_with_comparison_model_11_35_47_65/pretrained_35_cropped.mp4']" :labels="['Unconditioned', 'Conditioned']" infoBox="/comparison_0/unconditioned_0_last_frame.png" infoLabel="Condition">
 
 <template v-slot:left-pane>
-<div class="flex-shrink-1 flex-grow-0">
+<div class="flex-shrink-1 flex-grow-0 w-250px h-100%">
 
-Hypothesis:
+<div class="flex flex-col gap-[1em] justify-center h-100%">
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+$$
+\begin{aligned}
+\Delta(W) &= W_{\text{pretrained}} - W \\
+\Delta(b) &= b_{\text{pretrained}} - b
+\end{aligned}
+$$
+</div>
 
-<!-- - we can minimize the structure change of neural fields encoding similar signal by conditioning the training process using weight initialization
-Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization -->
 
-Experiment:
-1. overfit a single sample
-2. train a different sample using the overfitted weight as initial weights (conditioned)
-3. as a comparison train the sample on randomly initialized weights (unconditioned)
+</div>
+
+
 
 
 </div>
@@ -343,40 +367,21 @@ Experiment:
 
 </TrainingPane>
 
----
----
-
-# Overfitting Neural Fields - Comparison
-How does the structure change while overfitting using pretrained?
-
-
-
-$$
-\begin{aligned}
-\Delta(W) &= W_{\text{pretrained}} - W \\
-\Delta(b) &= b_{\text{pretrained}} - b
-\end{aligned}
-$$
-
-
-<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[]" />
-
-
 
 ---
+layout: flex
 ---
 
 
-# Regression Transformer (Conditioned Initialization)
-Using pretrained initialization
+# Regression Transformer
+Using conditioned neural fields 
 
 <VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_pretrained_model_big_idx_0.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_1.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_2.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_3.mp4'],
 ['regression_transformer/n_32_type_pretrained_model_big_idx_0.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_1.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_2.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_3.mp4']]" size="90px">
 
 <template v-slot:left-pane>
 
-- For Bigger N the reconstruction does not work
-- What can we do to help the Transformer to learn the structure?
+- Training Regression Transformer using conditioned Neural Fields
 
 </template>
 
@@ -398,6 +403,10 @@ We run into issues regarding special tokens (what comes after the start token in
 ---
 
 # Outlook: Token Prediction with Transformer
+
+- Outlook
+  - Using Graph Structure to build better Tokenization
+  
 
 
 ---

@@ -64,7 +64,7 @@ export default makeScene2D(function* (view) {
   // Add text to the transformer box
   view.add(
     <Txt
-      text="Transformer"
+      text="Transformer(θᵢ₋₁..."
       fill="#ffffff"
       fontSize={20}
       position={[0, 0]}

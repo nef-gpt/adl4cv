@@ -66,7 +66,7 @@ watch(sliderValue, () => !playing.value && updateVideoTime());
     <div></div>
     <div class="flex flex-row gap-[2em] justify-between items-center">
 
-      <div class="flex-1">
+      <div class="flex-1 h-100%">
         <slot name="left-pane"></slot>
       </div>
       <div class="flex flex-col gap-[1em] items-start flex-shrink-0">
