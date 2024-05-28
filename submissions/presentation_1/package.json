@@ -11,6 +11,8 @@
     "@slidev/cli": "^0.49.4",
     "@slidev/theme-default": "latest",
     "@slidev/theme-seriph": "latest",
+    "radix-vue": "^1.8.2",
+    "typescript": "^4.9.5",
     "vue": "^3.4.27"
   }
 }
