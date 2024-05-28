@@ -54,11 +54,17 @@ layout: flex
     <h2>HyperDiffusion</h2>
     <p>Generating neural implicit fields by predicting their weight parameters using diffusion</p>
     <img src="/hd_overview.png" class="w-full rounded-md flex-1 object-contain" alt="HyperDiffusion">
+    <span class="text-right w-100% text-gray-500 text-xs">
+    ICCV’23 [Erkoç et al.]: Hyperdiffusion
+    </span>
   </div>
   <div class="bg-white text-black p-4 rounded-md flex flex-col">
     <h2>MeshGPT</h2>
     <p>Sequence-based approach to autoregressively generate triangle meshes as sequences of triangles</p>
     <img src="/mesh_gpt_overview.png" class="w-full rounded-md flex-1 object-contain" alt="MeshGPT">
+    <span class="text-right w-100% text-gray-500 text-xs">
+    CVPR’24 [Siddiqui et al.]: MeshGPT
+    </span>
   </div>
 </div>
 
