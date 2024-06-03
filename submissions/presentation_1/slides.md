@@ -6,7 +6,7 @@ layout: center
 # like them? see https://unsplash.com/collections/94734566/slidev
 # background: https://cover.sli.dev
 # some information about your slides, markdown enabled
-title: Welcome to Slidev
+title: Autoregressive Generation of Neural Field Weights
 info: |
   ## Slidev Starter Template
   Presentation slides for developers.
@@ -23,6 +23,8 @@ drawings:
 transition: slide-left
 # enable MDC Syntax: https://sli.dev/guide/syntax#mdc-syntax
 mdc: true
+hideInToc: true
+colorSchema: dark
 ---
 
 # Autoregressive Generation of Neural Field Weights
@@ -32,65 +34,122 @@ Using a transformer based architecture
 
 <div class="h-8" />
 
-<span class="italic op-[0.5]">from Luis Muschal and Luca Fanselau</span>
+<span class="op-[0.5] text-sm">from Luis Muschal and Luca Fanselau</span>
+
+<!-- [Luis Muschal]
+hello welcome
+
+I'm Luis this is Luca
+
+our project is about:
+
+autoregressive generation of Nerual field weights using a transformer based architecture
+
+progress of our work
+
+-->
+
 
 ---
+hideInToc: true
+---
 
-# TOC
+# Table of Content
 
-- Introduction
-- Related Works
+<Toc>
+</Toc>
 
-- Regression Transformer
-  - Structure Challenge (Permutation Invariance)
-    - permutate the weights matrix
-    - train with 1, 2, 4, 8, 16, 32 samples and see progress 
-  - Token Problem (eg. SOS, EOS, Empty)
-- Custom Overfitting
-  - Abusing pretrained
-  - Comparison Neural Fields (Unstructured vs Pretrained)
-  - Animation Overfitting
-- Token Prediction with Transformer (Classical Transformer)
-  - Tokenization Technique (Naive, Bucket (Volume preserving), Learned)
-- Outlook
-  - Using Graph Structure to build better Tokenization
-  
+<!-- [Luca Fanselau]
+0:00-1:00
+
+Luis is going to start of by presenting mainly the two papers that inspired our work.
+
+- Afterwards we will give a brief introduction to neural fields and the autoregressive process, so that we are all on the same page.e
+
+- Then I will start with the first part of our work, the regression transformer, and how we adapted the transformer architecture to predict the weights of a neural field.
+
+- But this first approach also comes along with some challenges, one of them being the permutation symmetries of the weights. Luis will explain what this is and how we tackled this issue.
+
+- In the end, I will again show how we used these results to improve the performance of the regression transformer architecture.
+
+- And finally, we will give a brief outlook on how we plan to further improve on the pipeline to enable autoregressive prediction of novel neural fields. 
+
+-->
+
 
 ---
+layout: flex
 ---
 # Related works
 
-<div class="grid grid-cols-2 gap-4">
-  <div class="bg-white text-black p-4 rounded-md">
+<div class="grid grid-cols-2 gap-4 flex-1">
+  <div class="bg-white text-black p-4 rounded-md flex flex-col max-h-100% justify-between items-center">
+  <div>
     <h2>HyperDiffusion</h2>
-    <p>Generating neural implicit fields by predicting their weight parameters using diffusion</p>
+    <p>Operates on MLP weights directly to generates new neural implicit fields encoded by synthesized MLP parameters</p>
+    </div>
+    <img src="/hd_overview.png" class="rounded-md w-350px object-contain" alt="HyperDiffusion">
+    <span class="text-right w-100% text-gray-500 text-xs">
+    ICCV’23 [Erkoç et al.]: Hyperdiffusion
+    </span>
   </div>
-  <div class="bg-white text-black p-4 rounded-md">
+  <div class="bg-white text-black p-4 rounded-md flex flex-col  max-h-100% justify-between items-center">
+  <div>
     <h2>MeshGPT</h2>
-    <p>Sequence-based approach to autoregressively generate triangle meshes as sequences of triangles</p>
+    <p>Autoregressively generate triangle meshes as sequences of triangles using a learned vocabulary of latent quantized embedding as tokens</p>
+    </div>
+    <img src="/mesh_gpt_overview.png" class="rounded-md w-220px object-contain" alt="MeshGPT">
+    <span class="text-right w-100% text-gray-500 text-xs">
+    CVPR’24 [Siddiqui et al.]: MeshGPT
+    </span>
   </div>
 </div>
 
+<!-- [Luis Muschal]
+1:00
+1:45
 
-<!--
-Hyperdiffusion:
-- generating neural implicit fields by predicting their weight parameters using diffusion
+Mainly two different inspirations for our work
+
+
+Hyperdiffusion 
+
+Operates on MLP weights directly to generates new neural implicit fields encoded by synthesized MLP parameters
+
+-> a transformer based architecture is used denoising
+
+and
 
 MeshGPT:
-- sequence-based approach to autoregressively generate triangle meshes as sequences of triangles
+Autoregressively generate triangle meshes as sequences of triangles using a learned vocabulary of latent quantized embedding as tokens<
+
+
+which we also learned about in the last lecture
+
+uses vocabulary that is learned using graph convolutions
+
+Our project is basically the combination of both worlds
+
+-> we want to autoregressively generate new Neural Fields 
+
+Now to make sure we are all on the same page some information on Neural Fields
+
 -->
 
+
 ---
 ---
 
-# Neural Fields
-Signal Compression and Signed Distance Function
+# Autoregressive Generation of Neural Field Weights
+Neural Fields
 
-Neural fields maps an input coordinate location in n-dimensional space to the target signal domain
+Input coordinate location in n-dimensional space are mapped to target signal domain
 
-Example:
+**Example:**
 
 With $S$ being a surface in a 3-dimensional space $\mathbb{R}^3$. The Signed Distance Function $f : \mathbb{R}^3 \rightarrow \mathbb{R}$ is defined for a point $\mathbf{p} \in \mathbb{R}^3$ as:
+
+<div class="flex flex-row gap-[2em] justify-between items-center">
 
 
 $$
@@ -102,71 +161,137 @@ f_{\Theta}(\mathbf{p}) =
 \end{cases}
 $$
 
-<!--
-TODO: Examples of overfitted
--->
+<div class="rounded-4 bg-white p-4">
+<video src="/hd_plane.mp4" width="200px" autoplay loop muted></video>
+</div>
+
+</div>
+
+<!-- [Luis Muschal]
+1:45
+2:30
+
+Now to make sure we are all on the same page some information on Neural Fields
+
+Neural Fields are used to map input coordinate location in n-dimensional space to a target signal domain
+
+Example:
+Lets say we have a surface in R^3 we can define a distance function 
+This distance function can be learned using a neural network 
+For this we randomly sample 3D points from our target as ground truth and train a neural network to memorize them
 
 
-<!--
-maybe without theta -> then clip -> boom theta appears
--->
 
-<!--
-Neural Fields (NeF): 
-- Neural fields are continuous functions parameterized by neural network
-- Neural fields maps an input coordinate location in n-dimensional space to the target signal domain
-  - represent various types of spatial information, such as 3D geometry
-- example: neural network encoding signed-distance function input (x, y, z) -> sdf-value 
-  - from this the 3D-scene can be reconstructed (by sampling the space)
-sdf:
-  -positive values indicate points outside the surface
-  -Negative values indicate points inside the surface.
-
-Dunno if this is neccessary:
-  Difference to Neural radiance fields (NeRF):
-  - capturing both radiance (light emitted in different directions) and density.
-
- Neural Fields are encoded in the model weights -> our goal is to generate new MLPs that represent new structures in an autoregressive process
-  latex code: P(X_t \mid X_{t-1}, X_{t-2}, \ldots, X_{t-p})
- 
-  using a transformer architecture -> parallel to chatGPT instead of generate the next word tokens we generate the next MLP-weight until we have a new MLP
- latex code: P(X_t \mid X_{t-1}, X_{t-2}, \ldots, X_{t-p})
-
-question:
-
-- implicit neural field - what would be an explicit neural field?
 -->
 
 
 ---
+hideInToc: true
 ---
 # Autoregressive Generation of Neural Field Weights
-And a regression transformer architecture
+Autoregressive Process
 
-- Goal: generative modeling of neural fields
-$P(\Theta_{i} \mid \Theta_{i-1}, \Theta_{i-2}, \ldots, \Theta_{0})$
+- Goal: generative modeling of neural fields $P(\theta_{i} \mid \theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$
 
 - Using a generally available preset for GPT-like Architecture (like nanoGPT)
-- Adapt to regression task
+- Use Transformer to sample from the Probability, eg. $\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0})$ 
 
 <video src="/autoregressive.mp4" autoplay loop muted></video>
 
-<!--
-Show history dependent process of autoregression
+<!-- [Luca Fanselau]
+2:30
+3:00
 
-explain our approach:
-- instead of predicting tokens predict weights directly
+What is the autoregressive process?
 
-EG: Animation -> Single token in blackback -> two tokens -> more
+So generally the goal is to predict sequences of any kind by using the previous tokens to predict the next one. 
+
+Since the output sequence is fed back into the model the input sequence and output sequence have the same domain. Therefore, architecture stypically drop the encoder part of the transformer and only use the decoder part. (as with openly available GPT models such as nanoGPT)
+
+The Idea is that the model learns the distribution of the next token given the previous tokens and can sample from this distribution to generate new sequences.
+
+We just have the problem that we don't have tokens but weights of a neural fields. So we need to adapt the transformer architecture to predict the weights of a neural field.
+
 -->
 
 ---
+layout: flex
+hideInToc: true
+---
+
+# Autoregressive Generation of Neural Field Weights
+From nanoGPT to Regression Transformer
+
+<VideoPane :rowLabels="['Ground Truth', 'N=1']" :videos="[['/regression_transformer/ground_truth_0.png'], ['/regression_transformer/n_1_type_unconditioned_model_big_idx_0.mp4']]" size="140px">
+  <template v-slot:left-pane>
+  <div class="w-100% h-100% flex flex-col justify-center items-center">
+    <div class="grid grid-cols-[1fr_auto_1fr] gap-y-8px text-center items-center">
+          <div class="border-b border-white"><strong>nanoGPT</strong></div>
+          <div class="border-b border-white font-bold pr-4">vs.</div>
+          <div class="border-b border-white"><strong>Our Regression Transformer</strong></div>
+          <div class="text-#fde725">Tokenizer</div>
+          <div></div>
+          <div class="text-#fde725">MLP Embedding on weight</div>
+          <div class="grid-col-span-3 text-center">Embedding + Positional Embedding</div>
+          <div class="grid-col-span-3 text-center">N x Blocks (Causal Self Attention and MLP)</div>
+          <div class="grid-col-span-3 text-center">Linear Transformation Embedding</div>
+          <div class="text-#fde725">Cross-Entropy Loss</div>
+          <div></div>
+          <div class="text-#fde725">L1-norm as Loss</div>
+  </div>
+  </div>
+  </template>
+
+
+</VideoPane>
+
+<!-- [Luca Fanselau]
+3:00
+4:15
+
+The regression transformer that we developed is based on nanoGPT, with some core differences.
+
+nanoGPT is a decoder-only transformer architecture inspired by GPT-2.
+ It consists of a Tokenizer, to convert the input sequence into tokens, 
+ an Embedding layer, to convert the tokens into a multi dimensional embedding, 
+ and a stack of N blocks, each containing a Causal Self Attention layer and a MLP layer. 
+ 
+ The output of the last block is then transformed into a probability distribution over the tokens using a linear transformation and a softmax layer. The model is trained using cross-entropy loss.
+
+Our regression transformer in contrast to nanoGPT uses the continous weights of the neural fields directly using an Embedding that maps the single value of the weight into a multi-dimensional embedding.
+
+Additionally we changed the output layer to predict a single weight directly using a L1-norm loss function.
+
+On the right side you can see how the architecture is overfitted on a single training sample. The output that you can see is predicted using an autoreressive process, where the model predicts the next weight based on the previous weights. The only input that the model gets is the first weight of the neural field.
+
+-->
+
+---
+layout: flex
 ---
 
 # Regression Transformer 
-Using neural fields that are randomly initialized
+Observing the Effects of Increasing N
 
-<VideoPane :videos="[['/n_1_type_unconditioned_model_big_idx_0.mp4'], ['/n_4_type_unconditioned_model_big_idx_0.mp4', '/n_4_type_unconditioned_model_big_idx_1.mp4', '/n_4_type_unconditioned_model_big_idx_2.mp4', '/n_4_type_unconditioned_model_big_idx_3.mp4']]" />
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_unconditioned_model_big_idx_0.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_1.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_2.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_unconditioned_model_big_idx_0.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_1.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_2.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_3.mp4']]" size="90px">
+
+<template v-slot:left-pane>
+
+- Transformer fails to capture the structure of the weights for larger N
+- Why can't the sequence be remembered even for small values of N?
+
+</template>
+
+</VideoPane>
+
+<!-- [Luca Fanselau]
+4:15
+5:00
+
+But once we scale up the training to more than one weight, the model fails to capture the structure of the weights for larger N. The model is not able to remember the sequence of weights even for small values of N like 32.
+
+-->
 
 ---
 layout: two-cols
@@ -178,21 +303,6 @@ layout: two-cols
 # Challenges: Permutation Symmetries
 The same signal can be represented by different weight matrices
 
-with $P$ being a permutation matrix and
-$$
-\~{W}_{1} = PW_{1} \\
-\~{W}_{2} = W_{2}P^T \\
-P^TP = \mathbf I 
-$$
-
-
-$$
-\begin{aligned}
-&f_{\~{W}}(x) = \~{W}_{2}\sigma(\~{W}_{1}x) = W_{2}P^T\sigma(P\~{W}_{1}x) \\
-&=  W_{2}P^TP\sigma({W}_{1}x) = W_{2} \mathbf I W_{1}x = W_{2}\sigma(W_{1}x) = f_{W}(x)
-\end{aligned}
-$$
-
 $$
 P = \left[ 
 \begin{array}{cccc}
@@ -202,6 +312,16 @@ P = \left[
 0 & 0 & 1 & 0 \\
 \end{array}\right]
 $$
+permutated weight matrices are calculated using:
+$$
+\begin{aligned}
+\~{W}_{0} &= PW_{0} \\
+\~{W}_{1} &= W_{1}P^T \\
+\end{aligned}
+$$
+
+
+
 
 </template>
 <template v-slot:right>
@@ -210,707 +330,382 @@ $$
 
 </template>
 
+<!-- [Luis Muschal]
+5:00
+5:45
+
+issue -> certain permutations of parameters in neural networks do not change the underlying function
+
+example -> permutation matrix like this on
+
+use this formula -> function represented by the MLP stays the same
+
+example -> 4*3*2*1 possibilities to permutate the layer without changing the underlying function
+
+How can we reduce this effect
+
+-->
 ---
+layout: flex
+transition: fade
 ---
 
-# Solution: Conditioned Training
+# Overfitting Neural Fields
+Finding a Solution
 
-Hypothesis: We can minimize the structure change of neural fields encoding similar signal by conditioning the training process in the initialization
-Approach: Overfit Neural Fields using pretrained weight for initialization and random initialization
+<!-- - First start with ground truth and training of one initial sample
+- Introduce weight visualization of weight matices bad biases -->
+
+<div class="flex-shrink-1 flex-grow-0 w-250px">
+
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Minimize structural change by conditioning the training process using weight initialization
+</div>
+
+Approach:
+<div class="flex flex-col gap-[1em]">
+<div class="p-2 rounded-4 border border-white text-center text-sm ">
+Overfit single sample 
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm ">
+Use weights for different sample (conditioned)
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Train sample on randomly initialized weights (unconditioned)
+</div>
+</div>
 
 
-<!---
-  - Text Introduction for training
+</div>
+
+<!--  [Luis Muschal]
+5:45-6:15
+
+
+hypotheses: minimize structural change by conditioning the training process using weight initialization
+
+general idea:
+
+1. overfit one mnist samlpe
+2. use the pretrained weights of that sample for the weight initialization of another NeF
+3. Proof of concept also train that same sample on randomly initialized weights
+
+
 -->
 
+
+
 ---
+layout: flex
+transition: fade
+hideInToc: true
 ---
 
 # Overfitting Neural Fields
 Overfitting on one sample
 
-- First start with ground truth and training of one initial sample
-- Introduce weight visualization of weight matices bad biases
+<!-- - First start with ground truth and training of one initial sample
+- Introduce weight visualization of weight matices bad biases -->
 
-<VideoPane :videos="[]" />
+<TrainingPane gt="/mnist_gt/mnist_0.png" :videos="['/comparison_0/unconditioned_0_cropped.mp4']" :labels="['First Sample']" infoBox="/comparison_11_35_47_65/unconditioned_65_last_frame.png" infoLabel="Legend">
+
+<template v-slot:left-pane>
+<div class="flex-shrink-1 flex-grow-0 w-250px">
+
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Minimize structural change by conditioning the training process using weight initialization
+</div>
+
+Approach:
+<div class="flex flex-col gap-[1em]">
+<div class="p-2 rounded-4 border border-white text-center text-sm text-black bg-white">
+Overfit single sample 
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-smr text-sm ">
+Use weights for different sample (conditioned)
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Train sample on randomly initialized weights (unconditioned)
+</div>
+</div>
+
+
+</div>
+</template>
+
+</TrainingPane>
+
+
+<!-- [Luis Muschal]
+6:15-6:45
+
+First point -> fit one 
+
+explain legend -> first matrix 16x18 (2 (x, y) -> 18 using positional encoding (not learned) -> hidden layer 16x16 -> projected to output 1x16
+
+
+we see the weights an biases to encode the neural field
+
+so in the beginning of the training the weights are just random
+
+on the left we see the ground truth data
+
+press button 
+
+see the weight changing and the NeF getting closer to the ground truth
+
+
+-->
 
 ---
+layout: flex
+hideInToc: true
+transition: fade
 ---
 
 # Overfitting Neural Fields
-Comparison Conditiones and Unconditioned Training
+Overfitting on other sample
 
-- Introducing a new sample 35
-- train two different NeFs one unconditiones and one conditioned
-- structure might be similar but difficult to identify do to permutation symmetry
 
-<VideoPane :videos="[]" />
+<TrainingPane gt="/mnist_gt/mnist_35.png" :videos="['/comparison_11_35_47_65/unconditioned_35_cropped.mp4', '/comparison_11_35_47_65/pretrained_35_cropped.mp4']" :labels="['Unconditioned', 'Conditioned']" infoBox="/comparison_0/unconditioned_0_last_frame.png" infoLabel="Condition">
 
+<template v-slot:left-pane>
+<div class="flex-shrink-1 flex-grow-0 w-250px">
+
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Minimize structural change by conditioning the training process using weight initialization
+</div>
+
+Approach:
+<div class="flex flex-col gap-[1em]">
+<div class="p-2 rounded-4 border border-white text-center text-sm">
+Overfit single sample 
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm text-sm text-black bg-white">
+Use weights for different sample (conditioned)
+</div>
+<div class="p-2 rounded-4 border border-white text-center text-sm text-black bg-white">
+Train sample on randomly initialized weights (unconditioned)
+</div>
+</div>
+
+
+</div>
+</template>
+
+</TrainingPane>
+
+<!-- [Luis Muschal]
+6:45-7:30
+
+different mnist sample
+
+Now we come to the second step
+
+two different weight initialization for the neural fields
+
+left ranfomly initialized -> we see noisy image -> nothing learned yet
+right we see the Neural Field which is initialized using the weights of the previous sample
+
+maybe permutation could lead to the same picture
+
+
+-->
 ---
+layout: flex
+hideInToc: true
 ---
-
 
 # Overfitting Neural Fields
-Using pretrained initialization
-
-<VideoPane :videos="[]" />
-
----
----
-
-# Overfitting Neural Fields - Comparison
-How does the structure change while overfitting using pretrained?
+Visualizing the Difference:
 
 
+<TrainingPane gt="/mnist_gt/mnist_35.png" :videos="['/comparison_with_comparison_model_11_35_47_65/unconditioned_35_cropped.mp4', '/comparison_with_comparison_model_11_35_47_65/pretrained_35_cropped.mp4']" :labels="['Unconditioned', 'Conditioned']" infoBox="/comparison_0/unconditioned_0_last_frame.png" infoLabel="Condition">
+
+<template v-slot:left-pane>
+<div class="flex-shrink-1 flex-grow-0 w-250px h-100%">
+
+<div class="flex flex-col gap-[1em] justify-center h-100%">
+<div class="p-2 rounded-4 border border-white text-center text-sm">
 $$
 \begin{aligned}
-\Delta(W) &= W_{\text{pretrained}} - W\\
+\Delta(W) &= W_{\text{pretrained}} - W \\
 \Delta(b) &= b_{\text{pretrained}} - b
 \end{aligned}
 $$
-<VideoPane :videos="[]" />
-
-
-
----
----
-
-
-# Regression Transformer (Conditioned Initialization)
-
-<VideoPane :videos="[['/n_1_type_pretrained_model_big_idx_0.mp4'], ['/n_4_type_pretrained_model_big_idx_0.mp4', '/n_4_type_pretrained_model_big_idx_1.mp4', '/n_4_type_pretrained_model_big_idx_2.mp4', '/n_4_type_pretrained_model_big_idx_3.mp4']]" />
-
----
----
-
-# Challenges: Tokenization
-We run into issues regarding special tokens (what comes after the start token in the absence of the start token)
-
-
-
-
----
----
-
-# Outlook: Token Prediction with Transformer
-
-
----
----
-
-# Welcome to Slidev
-
-Presentation slides for developers
-
-<div class="pt-12">
-  <span @click="$slidev.nav.next" class="px-2 py-1 rounded cursor-pointer" hover="bg-white bg-opacity-10">
-    Press Space for next page <carbon:arrow-right class="inline"/>
-  </span>
 </div>
 
-<div class="abs-br m-6 flex gap-2">
-  <button @click="$slidev.nav.openInEditor()" title="Open in Editor" class="text-xl slidev-icon-btn opacity-50 !border-none !hover:text-white">
-    <carbon:edit />
-  </button>
-  <a href="https://github.com/slidevjs/slidev" target="_blank" alt="GitHub" title="Open in GitHub"
-    class="text-xl slidev-icon-btn opacity-50 !border-none !hover:text-white">
-    <carbon-logo-github />
-  </a>
+
 </div>
 
-<!--
-The last comment block of each slide will be treated as slide notes. It will be visible and editable in Presenter Mode along with the slide. [Read more in the docs](https://sli.dev/guide/syntax.html#notes)
+
+
+
+</div>
+</template>
+
+</TrainingPane>
+
+<!-- [Luis Muschal]
+7:30-8:00
+
+it is also interesting to look at the difference between the pretrained weights and biases matrices and the trained conditioned
+ weights and biases matrices
+
+on the right we can see the change in the beginning is zero while the matrices on the left already have a large structural difference
+
+while the MLPs encode the same image we see a large difference in the matrices elements
+
+our conclusion is that we can verfy our hypotheses and hopefully have a better chance at training the regression transformer
 -->
 
 ---
-transition: fade-out
+layout: flex
+transition: fade
+hideInToc: true
 ---
 
-# What is Slidev?
+# Reminder: Regression Transformer 
+How far we got with unconditioned neural fields
 
-Slidev is a slides maker and presenter designed for developers, consist of the following features
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_unconditioned_model_big_idx_0.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_1.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_2.mp4', '/regression_transformer/n_4_type_unconditioned_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_unconditioned_model_big_idx_0.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_1.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_2.mp4','regression_transformer/n_32_type_unconditioned_model_big_idx_3.mp4']]" size="90px">
 
-- 📝 **Text-based** - focus on the content with Markdown, and then style them later
-- 🎨 **Themable** - theme can be shared and used with npm packages
-- 🧑‍💻 **Developer Friendly** - code highlighting, live coding with autocompletion
-- 🤹 **Interactive** - embedding Vue components to enhance your expressions
-- 🎥 **Recording** - built-in recording and camera view
-- 📤 **Portable** - export into PDF, PPTX, PNGs, or even a hostable SPA
-- 🛠 **Hackable** - anything possible on a webpage
+<template v-slot:left-pane>
 
-<br>
-<br>
+- Transformer fails to capture the structure of the weights for larger N
+- Why can't the sequence be remembered even for small values of N?
 
-Read more about [Why Slidev?](https://sli.dev/guide/why)
+</template>
 
-<!--
-You can have `style` tag in markdown to override the style for the current page.
-Learn more: https://sli.dev/guide/syntax#embedded-styles
--->
+</VideoPane>
 
-<style>
-h1 {
-  background-color: #2B90B6;
-  background-image: linear-gradient(45deg, #4EC5D4 10%, #146b8c 20%);
-  background-size: 100%;
-  -webkit-background-clip: text;
-  -moz-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -moz-text-fill-color: transparent;
-}
-</style>
+<!-- [Luca Fanselau]
+8:00
 
-<!--
-Here is another comment.
+So now after this digression, we want to come back to the regression transformer and test our hypothesis, that conditioning the training process using weight initialization can improve the performance of the transformer.
+
+Right now we are looking at the exact slide that we have seen before, just to remind you how the model behaved when using unconditioned neural fields.
+
 -->
 
 ---
-transition: slide-up
-level: 2
+layout: flex
 ---
 
-# Navigation
 
-Hover on the bottom-left corner to see the navigation's controls panel, [learn more](https://sli.dev/guide/navigation.html)
+# Regression Transformer
+Using conditioned neural fields to verify the Hypothesis
 
-## Keyboard Shortcuts
+<VideoPane :rowLabels="['Ground Truth', 'N=4', 'N=32']" :videos="[['/regression_transformer/ground_truth_0.png', '/regression_transformer/ground_truth_1.png', '/regression_transformer/ground_truth_2.png', '/regression_transformer/ground_truth_3.png'], ['/regression_transformer/n_4_type_pretrained_model_big_idx_0.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_1.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_2.mp4', '/regression_transformer/n_4_type_pretrained_model_big_idx_3.mp4'],
+['regression_transformer/n_32_type_pretrained_model_big_idx_0.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_1.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_2.mp4','regression_transformer/n_32_type_pretrained_model_big_idx_3.mp4']]" size="90px">
 
-|     |     |
-| --- | --- |
-| <kbd>right</kbd> / <kbd>space</kbd>| next animation or slide |
-| <kbd>left</kbd>  / <kbd>shift</kbd><kbd>space</kbd> | previous animation or slide |
-| <kbd>up</kbd> | previous slide |
-| <kbd>down</kbd> | next slide |
+<template v-slot:left-pane>
 
-<!-- https://sli.dev/guide/animations.html#click-animations -->
-<img
-  v-click
-  class="absolute -bottom-9 -left-7 w-80 opacity-50"
-  src="https://sli.dev/assets/arrow-bottom-left.svg"
-  alt=""
-/>
-<p v-after class="absolute bottom-23 left-45 opacity-30 transform -rotate-10">Here!</p>
+- Training Regression Transformer using conditioned Neural Fields Weights
+- Structural similarity of weights improve the performance of the Transformer
 
----
-layout: two-cols
-layoutClass: gap-16
----
+</template>
 
-# Table of contents
+</VideoPane>
 
-You can use the `Toc` component to generate a table of contents for your slides:
+<!-- [Luca Fanselau]
+9:00
 
-```html
-<Toc minDepth="1" maxDepth="1"></Toc>
-```
+For this slide we now switched over to overfitting to neural fields that where initialized using another neural field. Let's see how the model behaves when using conditioned neural fields.
 
-The title will be inferred from your slide content, or you can override it with `title` and `level` in your frontmatter.
+ WAIT
 
-::right::
+As you can see the same autoregressive process that we used before now leads to a much better reconstruction of the ground truth. The model is now able to remember the sequence of weights even for larger values of N like 32.
 
-<Toc v-click minDepth="1" maxDepth="2"></Toc>
-
----
-layout: image-right
-image: https://cover.sli.dev
----
-
-# Code
-
-Use code snippets and get the highlighting directly, and even types hover![^1]
-
-```ts {all|5|7|7-8|10|all} twoslash
-// TwoSlash enables TypeScript hover information
-// and errors in markdown code blocks
-// More at https://shiki.style/packages/twoslash
-
-import { computed, ref } from 'vue'
-
-const count = ref(0)
-const doubled = computed(() => count.value * 2)
-
-doubled.value = 2
-```
-
-<arrow v-click="[4, 5]" x1="350" y1="310" x2="195" y2="334" color="#953" width="2" arrowSize="1" />
-
-<!-- This allow you to embed external code blocks -->
-<<< @/snippets/external.ts#snippet
-
-<!-- Footer -->
-[^1]: [Learn More](https://sli.dev/guide/syntax.html#line-highlighting)
-
-<!-- Inline style -->
-<style>
-.footnotes-sep {
-  @apply mt-5 opacity-10;
-}
-.footnotes {
-  @apply text-sm opacity-75;
-}
-.footnote-backref {
-  display: none;
-}
-</style>
-
-<!--
-Notes can also sync with clicks
-
-[click] This will be highlighted after the first click
-
-[click] Highlighted with `count = ref(0)`
-
-[click:3] Last click (skip two clicks)
 -->
 
 ---
-level: 2
+layout: flex
 ---
 
-# Shiki Magic Move
+# Conclusion and Outlook: Tokenization
+Predicting the next MLP weight as a token
 
-Powered by [shiki-magic-move](https://shiki-magic-move.netlify.app/), Slidev supports animations across multiple code snippets.
+<div class="flex flex-col justify-center w-100% items-start">
+<span class="text-justify">
+Run into issues regarding special tokens:
+</span>
 
-Add multiple code blocks and wrap them with <code>````md magic-move</code> (four backticks) to enable the magic move. For example:
+<div class="w-100% flex flex-row justify-center">
 
-````md magic-move
-```ts {*|2|*}
-// step 1
-const author = reactive({
-  name: 'John Doe',
-  books: [
-    'Vue 2 - Advanced Guide',
-    'Vue 3 - Basic Guide',
-    'Vue 4 - The Mystery'
-  ]
-})
-```
+$\theta_{i} =  \text{Transformer}(\theta_{i-1}, \theta_{i-2}, \ldots, \theta_{0}) \rightarrow \theta_{0}\text{?}$
 
-```ts {*|1-2|3-4|3-4,8}
-// step 2
-export default {
-  data() {
-    return {
-      author: {
-        name: 'John Doe',
-        books: [
-          'Vue 2 - Advanced Guide',
-          'Vue 3 - Basic Guide',
-          'Vue 4 - The Mystery'
-        ]
-      }
-    }
-  }
-}
-```
+</div>
 
-```ts
-// step 3
-export default {
-  data: () => ({
-    author: {
-      name: 'John Doe',
-      books: [
-        'Vue 2 - Advanced Guide',
-        'Vue 3 - Basic Guide',
-        'Vue 4 - The Mystery'
-      ]
-    }
-  })
-}
-```
+<span class="text-justify">
 
-Non-code blocks are ignored.
 
-```vue
-<!-- step 4 -->
-<script setup>
-const author = {
-  name: 'John Doe',
-  books: [
-    'Vue 2 - Advanced Guide',
-    'Vue 3 - Basic Guide',
-    'Vue 4 - The Mystery'
-  ]
-}
-</script>
-```
-````
+**Solution:**
+Find Tokens to encode the MLP weights and transfer from Regression Transformer to Classical Transformer Architectures
 
-<!--
-jnk
+
+</span>
+</div>
+  
+
+<div class="flex flex-row gap-[1em] justify-stretch items-stretch mt-4 flex-1">
+<div class="p-4 rounded-4 border border-white text-sm flex-basis-50% text-justify">
+
+
+<h3 class="text-center mb-2">First Approach:</h3>
+
+
+- Create Tokens using conditioned Neural Field Weights
+- Naive Attempt: Use weight distribution for discretization
+- Vector Quantization Attempt: Find optimal token representation using optimization techniques
+
+
+</div>
+<div class="p-4 rounded-4 border border-white text-sm flex-basis-50% text-justify">
+
+<h3 class="text-center mb-2">Second Approach:</h3>
+
+- Find layer representations of unconditioned neural fields that are permutation equivariant
+- For example by using the graph structure of the neural fields and employing deep learning techniques suited for graphs
+
+
+
+</div>
+</div>
+
+<!-- [Luca Fanselau]
+9:00
+10:00
+
+But of course we are not done yet. 
+
+To use the autoregressivion to generate completely novel neural fields, we need to have what are called special tokens. Here you add tokens which have spacial meaning in the context of the sequence to the generation process. For Example the SOS or EOS token. To completely unconditionally create neural fields we need those tokens and therefore also a way to discretize our data.
+
+For this we have two approaches in mind. 
+
+The first one is to discretize the conditional neural field weights and use them directly as tokens in the sequence.
+
+Naive Attemplt: Use all available data to build buckets that align with the distribution of the weights.
+Vector Quantization: Find optimal token representation using optimization techniques
+
+The second approach is to redefine the scope of a single token. Instead of using the weights of the field as the entity we want to find latent representations of the whole layer that don't experience the challenges with permutation symmetries. For example by using the graph structure of the neural fields and employing deep learning techniques suited for graphs to predict discrete tokens in an autoencoder like architecture.
+
 -->
 
----
-
-# Components
-
-<div grid="~ cols-2 gap-4">
-<div>
-
-You can use Vue components directly inside your slides.
-
-We have provided a few built-in components like `<Tweet/>` and `<Youtube/>` that you can use directly. And adding your custom components is also super easy.
-
-```html
-<Counter :count="10" />
-```
-
-<!-- ./components/Counter.vue -->
-<Counter :count="10" m="t-4" />
-
-Check out [the guides](https://sli.dev/builtin/components.html) for more.
-
-</div>
-<div>
-
-```html
-<Tweet id="1390115482657726468" />
-```
-
-<Tweet id="1390115482657726468" scale="0.65" />
-
-</div>
-</div>
-
-<!--
-Presenter note with **bold**, *italic*, and ~~striked~~ text.
-
-Also, HTML elements are valid:
-<div class="flex w-full">
-  <span style="flex-grow: 1;">Left content</span>
-  <span>Right content</span>
-</div>
--->
-
----
-class: px-20
----
-
-# Themes
-
-Slidev comes with powerful theming support. Themes can provide styles, layouts, components, or even configurations for tools. Switching between themes by just **one edit** in your frontmatter:
-
-<div grid="~ cols-2 gap-2" m="t-2">
-
-```yaml
----
-theme: default
----
-```
-
-```yaml
----
-theme: seriph
----
-```
-
-<img border="rounded" src="https://github.com/slidevjs/themes/blob/main/screenshots/theme-default/01.png?raw=true" alt="">
-
-<img border="rounded" src="https://github.com/slidevjs/themes/blob/main/screenshots/theme-seriph/01.png?raw=true" alt="">
-
-</div>
-
-Read more about [How to use a theme](https://sli.dev/themes/use.html) and
-check out the [Awesome Themes Gallery](https://sli.dev/themes/gallery.html).
-
----
-
-# Clicks Animations
-
-You can add `v-click` to elements to add a click animation.
-
-<div v-click>
-
-This shows up when you click the slide:
-
-```html
-<div v-click>This shows up when you click the slide.</div>
-```
-
-</div>
-
-<br>
-
-<v-click>
-
-The <span v-mark.red="3"><code>v-mark</code> directive</span>
-also allows you to add
-<span v-mark.circle.orange="4">inline marks</span>
-, powered by [Rough Notation](https://roughnotation.com/):
-
-```html
-<span v-mark.underline.orange>inline markers</span>
-```
-
-</v-click>
-
-<div mt-20 v-click>
-
-[Learn More](https://sli.dev/guide/animations#click-animations)
-
-</div>
-
----
-
-# Motions
-
-Motion animations are powered by [@vueuse/motion](https://motion.vueuse.org/), triggered by `v-motion` directive.
-
-```html
-<div
-  v-motion
-  :initial="{ x: -80 }"
-  :enter="{ x: 0 }"
-  :click-3="{ x: 80 }"
-  :leave="{ x: 1000 }"
->
-  Slidev
-</div>
-```
-
-<div class="w-60 relative">
-  <div class="relative w-40 h-40">
-    <img
-      v-motion
-      :initial="{ x: 800, y: -100, scale: 1.5, rotate: -50 }"
-      :enter="final"
-      class="absolute inset-0"
-      src="https://sli.dev/logo-square.png"
-      alt=""
-    />
-    <img
-      v-motion
-      :initial="{ y: 500, x: -100, scale: 2 }"
-      :enter="final"
-      class="absolute inset-0"
-      src="https://sli.dev/logo-circle.png"
-      alt=""
-    />
-    <img
-      v-motion
-      :initial="{ x: 600, y: 400, scale: 2, rotate: 100 }"
-      :enter="final"
-      class="absolute inset-0"
-      src="https://sli.dev/logo-triangle.png"
-      alt=""
-    />
-  </div>
-
-  <div
-    class="text-5xl absolute top-14 left-40 text-[#2B90B6] -z-1"
-    v-motion
-    :initial="{ x: -80, opacity: 0}"
-    :enter="{ x: 0, opacity: 1, transition: { delay: 2000, duration: 1000 } }">
-    Slidev
-  </div>
-</div>
-
-<!-- vue script setup scripts can be directly used in markdown, and will only affects current page -->
-<script setup lang="ts">
-const final = {
-  x: 0,
-  y: 0,
-  rotate: 0,
-  scale: 1,
-  transition: {
-    type: 'spring',
-    damping: 10,
-    stiffness: 20,
-    mass: 2
-  }
-}
-</script>
-
-<div
-  v-motion
-  :initial="{ x:35, y: 30, opacity: 0}"
-  :enter="{ y: 0, opacity: 1, transition: { delay: 3500 } }">
-
-[Learn More](https://sli.dev/guide/animations.html#motion)
-
-</div>
-
----
-
-# LaTeX
-
-LaTeX is supported out-of-box powered by [KaTeX](https://katex.org/).
-
-<br>
-
-Inline $\sqrt{3x-1}+(1+x)^2$
-
-Block
-$$ {1|3|all}
-\begin{array}{c}
-
-\nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} &
-= \frac{4\pi}{c}\vec{\mathbf{j}}    \nabla \cdot \vec{\mathbf{E}} & = 4 \pi \rho \\
-
-\nabla \times \vec{\mathbf{E}}\, +\, \frac1c\, \frac{\partial\vec{\mathbf{B}}}{\partial t} & = \vec{\mathbf{0}} \\
-
-\nabla \cdot \vec{\mathbf{B}} & = 0
-
-\end{array}
-$$
-
-<br>
-
-[Learn more](https://sli.dev/guide/syntax#latex)
-
----
-
-# Diagrams
-
-You can create diagrams / graphs from textual descriptions, directly in your Markdown.
-
-<div class="grid grid-cols-4 gap-5 pt-4 -mb-6">
-
-```mermaid {scale: 0.5, alt: 'A simple sequence diagram'}
-sequenceDiagram
-    Alice->John: Hello John, how are you?
-    Note over Alice,John: A typical interaction
-```
-
-```mermaid {theme: 'neutral', scale: 0.8}
-graph TD
-B[Text] --> C{Decision}
-C -->|One| D[Result 1]
-C -->|Two| E[Result 2]
-```
-
-```mermaid
-mindmap
-  root((mindmap))
-    Origins
-      Long history
-      ::icon(fa fa-book)
-      Popularisation
-        British popular psychology author Tony Buzan
-    Research
-      On effectiveness<br/>and features
-      On Automatic creation
-        Uses
-            Creative techniques
-            Strategic planning
-            Argument mapping
-    Tools
-      Pen and paper
-      Mermaid
-```
-
-```plantuml {scale: 0.7}
-@startuml
-
-package "Some Group" {
-  HTTP - [First Component]
-  [Another Component]
-}
-
-node "Other Groups" {
-  FTP - [Second Component]
-  [First Component] --> FTP
-}
-
-cloud {
-  [Example 1]
-}
-
-database "MySql" {
-  folder "This is my folder" {
-    [Folder 3]
-  }
-  frame "Foo" {
-    [Frame 4]
-  }
-}
-
-[Another Component] --> [Example 1]
-[Example 1] --> [Folder 3]
-[Folder 3] --> [Frame 4]
-
-@enduml
-```
-
-</div>
-
-[Learn More](https://sli.dev/guide/syntax.html#diagrams)
-
----
-foo: bar
-dragPos:
-  square: 691,33,167,_,-16
----
-
-# Draggable Elements
-
-Double-click on the draggable elements to edit their positions.
-
-<br>
-
-###### Directive Usage
-
-```md
-<img v-drag="'square'" src="https://sli.dev/logo.png">
-```
-
-<br>
-
-###### Component Usage
-
-```md
-<v-drag text-3xl>
-  <carbon:arrow-up />
-  Use the `v-drag` component to have a draggable container!
-</v-drag>
-```
-
-<v-drag pos="671,205,253,_,-15">
-  <div text-center text-3xl border border-main rounded>
-    Double-click me!
-  </div>
-</v-drag>
-
-<img v-drag="'square'" src="https://sli.dev/logo.png">
-
----
-src: ./pages/multiple-entries.md
-hide: false
----
-
----
-
-# Monaco Editor
-
-Slidev provides built-in Monaco Editor support.
-
-Add `{monaco}` to the code block to turn it into an editor:
-
-```ts {monaco}
-import { ref } from 'vue'
-import { emptyArray } from './external'
-
-const arr = ref(emptyArray(10))
-```
-
-Use `{monaco-run}` to create an editor that can execute the code directly in the slide:
-
-```ts {monaco-run}
-import { version } from 'vue'
-import { emptyArray, sayHello } from './external'
-
-sayHello()
-console.log(`vue ${version}`)
-console.log(emptyArray<number>(10).reduce(fib => [...fib, fib.at(-1)! + fib.at(-2)!], [1, 1]))
-```
 
 ---
 layout: center
 class: text-center
+hideInToc: true
 ---
+# Thank you for your attention!
+We hope you enjoyed our presentation and are looking forward to your questions.
 
-# Learn More
+<div class="h-8" />
+<span class="op-[0.5] max-w-30%">
+</span>
 
-[Documentations](https://sli.dev) · [GitHub](https://github.com/slidevjs/slidev) · [Showcases](https://sli.dev/showcases.html)
+<!-- [Luis Muschal]
 
+-->

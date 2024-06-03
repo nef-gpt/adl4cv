@@ -4,18 +4,20 @@ import { ref, onMounted, watch } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'radix-vue'
 
 interface Props {
+  gt: string;
   videos: string[];
-  rowLabels: string[];
-  size: string;
+  labels: string[];
+  infoBox: string;
+  infoLabel: string;
+  size: number;
 }
 
-
-const numFrames = 14_000 / 100;
+const numFrames = 199;
 const frameRate = 10;
 
 
 const props = defineProps<Props>();
-const divWidth = ref(props.size ?? "80px");
+const divWidth = ref(props.size ?? 120);
 const videoRefs = ref<HTMLVideoElement[]>([]);
 const sliderValue = ref([0])
 const playing = ref(false)
@@ -59,30 +61,35 @@ onMounted(() => {
 watch(sliderValue, () => !playing.value && updateVideoTime());
 
 </script>
-
-
 <template>
+  <div class="absolute top-2.5em right-2.5em">
+    <img src="/comparison_0/colorbar.png" class="w-350px" alt="Colorbar" />
+  </div>
   <div class="flex flex-col flex-1 gap-[1em] justify-between">
-    <div></div>
-    <div class="flex flex-row gap-[2em] justify-between items-center">
+    <div class="flex flex-row gap-[2em] justify-start items-start">
 
-      <div class="flex-1 h-100%">
-        <slot name="left-pane"></slot>
+      <slot name="left-pane"></slot>
+
+      <!-- Start with the Ground Truth Label, simple image -->
+      <div class="flex flex-col gap-[1em] justify-center items-start  flex-grow-0 flex-shrink-0">
+        <span class="text-white text-center">Ground Truth</span>
+        <img :src="props.gt" class="flex-grow-0 flex-shrink-0 image-render-pixel"
+          :style="{ width: (divWidth * 0.87) + 'px' }" />
       </div>
-      <div class="flex flex-col gap-[1em] items-start flex-shrink-0">
-        <div v-for="(row, index) in videos" :key="index" class="flex flex-row gap-[1em] items-center">
-          <span v-if="props.rowLabels && props.rowLabels.length > 0"
-            class="text-white text-center flex-grow-0 flex-shrink-0" :style="{ width: divWidth }">{{
-              props.rowLabels[index]
-            }}</span>
-          <div v-for="(video, index) in row" :key="index" class="flex-grow-0 flex-shrink-0">
-            <video v-if="video.endsWith('.mp4')" ref="videoRefs" :style="{ width: divWidth }" muted playsinline>
-              <source :src="video" type="video/mp4" />
-            </video>
-            <img v-else :src="video" :style="{ width: divWidth }"
-              class="flex-grow-0 flex-shrink-0 image-render-pixel" />
-          </div>
-        </div>
+      <!-- Loop through the videos (can only be videos) -->
+      <div v-for="(video, index) in videos" :key="index"
+        class="flex-grow-0 flex-shrink-0 flex flex-col gap-[1em] justify-center items-start"
+        :style="{ width: divWidth }">
+        <span class="text-white text-center flex-grow-0 flex-shrink-0">{{ labels[index] }}</span>
+        <video ref="videoRefs" :style="{ width: divWidth + 'px' }" muted playsinline>
+          <source :src="video" type="video/mp4" />
+        </video>
+      </div>
+      <!-- Show the info box -->
+      <div v-if="props.infoBox"
+        class="rounded-2 border-gray-200 border bg-white bg-op-10 text-black p-[1em] rounded-[10px] -m-4 p-4 flex flex-col gap-[1em] justify-center items-start">
+        <span class="text-white text-center">{{ infoLabel }}</span>
+        <img :src="props.infoBox" :style="{ width: divWidth + 'px' }" class="max-w-none" />
       </div>
     </div>
     <div v-if="counterMargin" class="h-[1em]"></div>
@@ -111,7 +118,7 @@ watch(sliderValue, () => !playing.value && updateVideoTime());
           aria-label="Volume" />
       </SliderRoot>
       <!-- Show the value of the epoch -->
-      <span class="text-white">Iteration: {{ sliderValue[0] * 100 }}</span>
+      <span class="text-white">Epoch: {{ sliderValue[0] }}</span>
     </div>
   </div>
 </template>
