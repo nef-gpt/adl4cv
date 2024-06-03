@@ -68,7 +68,7 @@ model_config = {
 
 # settings
 only_label = 5  # can also be None
-idx_range = None # range(0, 100) # , range(0, 100)  # can also be None
+idx_range = range(0, 500) # , range(0, 100)  # can also be None
 save_during_epochs = None # 1
 skip_existing_models = True
 skip_unconditioned = False
@@ -121,7 +121,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     model = MLP3D(**model_config)
 
     if init_model_path:
-        model.load_state_dict(torch.load(init_model_path))
+        model.load_state_dict(torch.load(init_model_path)["state_dict"])
 
     model.to(device)
 
@@ -133,7 +133,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     )
 
     train_config = {
-        "epochs": 200,
+        "epochs": 250,
         "lr": 4e-3 if init_model_path is None else 4e-3,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
