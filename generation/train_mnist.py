@@ -63,6 +63,7 @@ model_config = {
     "output_type": "logits",  # "
     "input_dims": 2,
     "multires": 4,
+    "weight_init": lambda tensor: torch.nn.init.xavier_uniform_(tensor, gain=torch.nn.init.calculate_gain('relu'))
 }
 
 # settings
@@ -186,6 +187,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         **train_config,
         cfg=DefaultMunch.fromDict(cfg),
         wandb=wandb,
+        model_config=model_config,
         summary_fn=None,
         save_epoch_interval=save_during_epochs,
         device=device,
