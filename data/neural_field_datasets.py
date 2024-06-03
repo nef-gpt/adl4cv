@@ -8,6 +8,7 @@ from pathlib import Path
 import os
 import torch
 import torch.nn as nn
+from networks.mlp_models import MLP3D
 
 from networks.naive_rq_ae import RQAutoencoder
 
@@ -188,7 +189,14 @@ class DWSNetsDataset(BaseDataset):
         return result
 
 
-
+class ModelTransform(nn.Module):
+    def forward(self, weights_dict, y):
+        model = MLP3D(**weights_dict["model_config"])
+        model.load_state_dict(weights_dict["state_directory"])
+        weights = torch.cat(
+            [weights_dict[key].flatten() for key in weights_dict.keys()]
+        )
+        return weights, y
 
 class FlattenTransform(nn.Module):
     def forward(self, weights_dict, y):
@@ -196,6 +204,24 @@ class FlattenTransform(nn.Module):
             [weights_dict[key].flatten() for key in weights_dict.keys()]
         )
         return weights, y
+    
+class ModelTransform(nn.Module):
+    def __init__(self, model: RQAutoencoder):
+        super().__init__()
+        self.model = model
+
+    def forward(self, weights, y):
+        # Apply min-max normalization
+        _x, indices, _commit_loss = self.model.encode_to_cb(weights)
+        codes = self.model.vq.get_codes_from_indices(indices)
+        x = torch.cat(
+            (
+                torch.Tensor([self.model.codebook_size]),
+                indices,
+                torch.Tensor([self.model.codebook_size + 1]),
+            )
+        )
+        return x, y
 
 
 class LayerOneHotTransform(nn.Module):

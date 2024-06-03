@@ -3,6 +3,7 @@
 
 import sys
 import os
+import copy
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -29,6 +30,7 @@ def train(
     loss_fn,
     summary_fn,
     wandb,
+    model_config,
     val_dataloader=None,
     double_precision=False,
     clip_grad=False,
@@ -253,9 +255,14 @@ def train(
         #     )
         wandb.log({"total_train_loss": train_loss.item()})
         if cfg.strategy != "continue":
+            copied_dict = copy.deepcopy(model_config)
+            copied_dict["weight_init"] = None
             torch.save(
-                model.state_dict(),
-                  f"{filename}_model_final.pth"
+                {
+                    "state_dict" : model.state_dict(),
+                    "model_config" : copied_dict
+                },
+                f"{filename}_model_final.pth"
             )
         # np.savetxt(os.path.join(checkpoints_dir, 'train_losses_final.txt'),
         #            np.array(train_losses))
