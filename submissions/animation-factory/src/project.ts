@@ -7,5 +7,5 @@ import autoregressive from './scenes/autoregressive?scene';
 import "./global.css";
 
 export default makeProject({
-  scenes: [autoregressive],
+  scenes: [nn],
 });

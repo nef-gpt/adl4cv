@@ -8,9 +8,10 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "@motion-canvas/core": "^3.16.0",
     "@motion-canvas/2d": "^3.16.0",
-    "@motion-canvas/ffmpeg": "^1.1.0"
+    "@motion-canvas/core": "^3.16.0",
+    "@motion-canvas/ffmpeg": "^1.1.0",
+    "katex": "^0.16.10"
   },
   "devDependencies": {
     "@motion-canvas/ui": "^3.16.0",

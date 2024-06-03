@@ -1,18 +1,21 @@
 <script setup lang="ts">
 // Using UnoCSS to style the component
-
-import { ref, defineProps, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'radix-vue'
 
 interface Props {
   videos: string[];
+  rowLabels: string[];
+  size: string;
 }
 
 
 const numFrames = 14_000 / 100;
 const frameRate = 10;
 
+
 const props = defineProps<Props>();
+const divWidth = ref(props.size ?? "80px");
 const videoRefs = ref<HTMLVideoElement[]>([]);
 const sliderValue = ref([0])
 const playing = ref(false)
@@ -59,14 +62,30 @@ watch(sliderValue, () => !playing.value && updateVideoTime());
 
 
 <template>
-  <div class="flex flex-col gap-[1em] items-start">
-    <div v-for="(row, index) in videos" :key="index" class="flex flex-row gap-[1em] items-center">
-      <div v-for="(video, index) in row" :key="index" class="video-pane">
-        <video ref="videoRefs" class="w-[100px]" muted playsinline>
-          <source :src="video" type="video/mp4" />
-        </video>
+  <div class="flex flex-col flex-1 gap-[1em] justify-between">
+    <div></div>
+    <div class="flex flex-row gap-[2em] justify-between items-center">
+
+      <div class="flex-1 h-100%">
+        <slot name="left-pane"></slot>
+      </div>
+      <div class="flex flex-col gap-[1em] items-start flex-shrink-0">
+        <div v-for="(row, index) in videos" :key="index" class="flex flex-row gap-[1em] items-center">
+          <span v-if="props.rowLabels && props.rowLabels.length > 0"
+            class="text-white text-center flex-grow-0 flex-shrink-0" :style="{ width: divWidth }">{{
+              props.rowLabels[index]
+            }}</span>
+          <div v-for="(video, index) in row" :key="index" class="flex-grow-0 flex-shrink-0">
+            <video v-if="video.endsWith('.mp4')" ref="videoRefs" :style="{ width: divWidth }" muted playsinline>
+              <source :src="video" type="video/mp4" />
+            </video>
+            <img v-else :src="video" :style="{ width: divWidth }"
+              class="flex-grow-0 flex-shrink-0 image-render-pixel" />
+          </div>
+        </div>
       </div>
     </div>
+    <div v-if="counterMargin" class="h-[1em]"></div>
     <div class="w-[100%] flex gap-[1em] items-center">
       <button @click="togglePlay" class="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center">
         <svg v-if="playing" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -82,17 +101,17 @@ watch(sliderValue, () => !playing.value && updateVideoTime());
         </svg>
 
       </button>
-      <SliderRoot v-model="sliderValue" class="relative flex items-center select-none touch-none flex-1 h-5"
-        :max="numFrames" :step="1">
-        <SliderTrack class="bg-white relative grow rounded-full h-[3px]">
-          <SliderRange class="absolute bg-white rounded-full h-full" />
+      <SliderRoot :disabled="playing" v-model="sliderValue"
+        class="group relative flex items-center select-none touch-none flex-1 h-5" :max="numFrames" :step="1">
+        <SliderTrack class="bg-white bg-op-60 relative grow rounded-full h-[3px] group-disabled:bg-op-30">
+          <SliderRange class="absolute bg-white rounded-full h-full group-disabled:bg-op-30" />
         </SliderTrack>
         <SliderThumb
-          class="block w-5 h-5 bg-white shadow-[0_2px_10px] shadow-blackA7 rounded-[10px] hover:bg-violet3 focus:outline-none focus:shadow-[0_0_0_5px] focus:shadow-blackA8"
+          class="block w-5 h-5 bg-white rounded-[10px] hover:bg-gray-200 focus:outline-none focus:shadow-[0_0_0_5px] focus:shadow-blackA8"
           aria-label="Volume" />
       </SliderRoot>
-
-
+      <!-- Show the value of the epoch -->
+      <span class="text-white">Iteration: {{ sliderValue[0] * 100 }}</span>
     </div>
   </div>
 </template>
