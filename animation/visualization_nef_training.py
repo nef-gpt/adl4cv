@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.gridspec as gridspec
 import os
 import numpy as np
+
 import torch
 from torchvision import datasets
 import matplotlib.pyplot as plt
@@ -36,13 +37,7 @@ model_config = {
     "input_dims": 2,
     "multires": 4,
 }
-    "out_size": 1,
-    "hidden_neurons": [16, 16],
-    "use_leaky_relu": False,
-    "output_type": "logits",
-    "input_dims": 2,
-    "multires": 4,
-}
+    
 
 
 
@@ -190,17 +185,6 @@ def visualize_learning_process(
     fps: int = 10,
     comparison_model: torch.nn.Module = None,
 ):
-def visualize_learning_process(
-    image_idx: int,
-    num_epochs: int,
-    model_config: dict,
-    foldername: str,
-    video_name: str = "learning_process",
-    v: tuple = None,
-    fps: int = 10,
-    comparison_model: torch.nn.Module = None,
-):
-
     frames_dir = "frames"
     frames = []
 
@@ -375,13 +359,7 @@ def create_all_videos():
         )
 
 
-def compare_different_runs(
-    image_idxs: List[int],
-    num_epoch: int,
-    model_config: dict,
-    subfoldernames: List[str],
-    comparison_model: torch.nn.Module = None,
-):
+
 def compare_different_runs(
     image_idxs: List[int],
     num_epoch: int,
@@ -429,7 +407,7 @@ def compare_different_runs(
         save_folder = f"./animation/comparison_with_comparison_model_{'_'.join(map(str, image_idxs))}"
     else:
         save_folder = f"./animation/comparison_{'_'.join(map(str, image_idxs))}"
-    """
+
     for idx in image_idxs:
         for subfoldername in subfoldernames:
             foldername =  f"./datasets/mnist-nerfs/{subfoldername}"
@@ -437,8 +415,7 @@ def compare_different_runs(
 
             ensure_folder_exists(save_folder)
             visualize_learning_process(idx, num_epoch, model_config, foldername,  video_name=video_name, v= (vmin, vmax), comparison_model=comparison_model)
-    """
-    """
+
     save_colorbar(save_folder + "/colorbar.png", vmin, vmax)
 
 

@@ -192,19 +192,17 @@ class DWSNetsDataset(BaseDataset):
 class ModelTransform(nn.Module):
     def forward(self, weights_dict, y):
         model = MLP3D(**weights_dict["model_config"])
-        model.load_state_dict(weights_dict["state_directory"])
-        weights = torch.cat(
-            [weights_dict[key].flatten() for key in weights_dict.keys()]
-        )
-        return weights, y
+        model.load_state_dict(weights_dict["state_dict"])
+        return model, y
 
 class FlattenTransform(nn.Module):
     def forward(self, weights_dict, y):
         weights = torch.cat(
-            [weights_dict[key].flatten() for key in weights_dict.keys()]
+            [weights_dict["state_dict"][key].flatten() for key in weights_dict["state_dict"].keys()]
         )
         return weights, y
-    
+
+"""
 class ModelTransform(nn.Module):
     def __init__(self, model: RQAutoencoder):
         super().__init__()
@@ -222,7 +220,7 @@ class ModelTransform(nn.Module):
             )
         )
         return x, y
-
+"""
 
 class LayerOneHotTransform(nn.Module):
     def forward(self, weights_dict, y):
