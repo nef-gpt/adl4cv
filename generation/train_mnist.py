@@ -75,7 +75,7 @@ skip_unconditioned = False
 multi_process = False
 
 config_file = "./datasets/mnist-nerfs/overview.json"
-device = torch.device("cpu") # get_default_device()
+device = get_default_device()
 
 print("Using device", device)
 
