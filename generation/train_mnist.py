@@ -2,8 +2,9 @@
 import os
 import sys
 from torch.multiprocessing import Pool, Process, set_start_method
+
 try:
-     set_start_method('spawn')
+    set_start_method("spawn")
 except RuntimeError:
     pass
 
@@ -29,6 +30,7 @@ from munch import DefaultMunch
 config = {}
 config["unconditioned"] = {}
 config["pretrained"] = {}
+
 
 class MNISTNeRFDataset(Dataset):
     def __init__(self, image):
@@ -63,21 +65,24 @@ model_config = {
     "output_type": "logits",  # "
     "input_dims": 2,
     "multires": 4,
-    "weight_init": lambda tensor: torch.nn.init.xavier_uniform_(tensor, gain=torch.nn.init.calculate_gain('relu'))
+    "weight_init": lambda tensor: torch.nn.init.xavier_uniform_(
+        tensor, gain=torch.nn.init.calculate_gain("relu")
+    ),
 }
 
 # settings
-only_label = 5  # can also be None
-idx_range = range(0, 500) # , range(0, 100)  # can also be None
-save_during_epochs = None # 1
+only_label = None  # can also be None
+idx_range = None  # range(0, 500) # , range(0, 100)  # can also be None
+save_during_epochs = None  # 1
 skip_existing_models = True
-skip_unconditioned = False
+skip_unconditioned = True
 multi_process = False
 
 config_file = "./datasets/mnist-nerfs/overview.json"
-device = get_default_device()
+device = torch.device("cpu")  # get_default_device()
 
 print("Using device", device)
+
 
 def load_config():
     # create config file if it does not exist
@@ -128,9 +133,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
 
     subfoldername = "pretrained" if init_model_path else "unconditioned"
-    foldername = (
-        f"./datasets/mnist-nerfs/{subfoldername}"
-    )
+    foldername = f"./datasets/mnist-nerfs/{subfoldername}"
 
     train_config = {
         "epochs": 250,
@@ -161,7 +164,10 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     }
 
     # check if we already trained this model (eg. if filename exists), then skip training and just return object
-    if os.path.exists(train_config["filename"] + "_model_final.pth") and skip_existing_models:
+    if (
+        os.path.exists(train_config["filename"] + "_model_final.pth")
+        and skip_existing_models
+    ):
         print("Model already trained, skipping")
         return {
             "file-prefix": train_config["filename"],
@@ -191,7 +197,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         summary_fn=None,
         save_epoch_interval=save_during_epochs,
         device=device,
-        disable_tqdm=False
+        disable_tqdm=False,
     )
 
     return {
@@ -209,6 +215,7 @@ mnist = datasets.MNIST("mnist-data", train=True, download=True)
 # load config
 config = load_config()
 
+
 def train_unconditioned_single(i, data):
     if (idx_range is not None) and (i not in idx_range):
         return
@@ -219,12 +226,13 @@ def train_unconditioned_single(i, data):
         return
 
     global config
-    
+
     print(f"Training image {i} with label {label} and no pretrained model")
     entry = fit_single_batch(image, label, i, None)
     # update config
     config = update_config(config, entry)
     save_config(config)
+
 
 def train_unconditioned():
     if multi_process:
@@ -242,20 +250,24 @@ def lookup_pretrained(label, config):
             return entry
     return None
 
-def train_pretrained_single(i, data):
-        if (idx_range is not None) and (i not in idx_range):
-            return
-        image, label = data
 
-        if only_label is not None and label != only_label:
-            return
-        global config
-        pretrained_entry = lookup_pretrained(label, config)
-        print(f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}")
-        entry = fit_single_batch(image, label, i, pretrained_entry["output"])
-        
-        # update config
-        config = update_config(config, entry)
+def train_pretrained_single(i, data):
+    if (idx_range is not None) and (i not in idx_range):
+        return
+    image, label = data
+
+    if only_label is not None and label != only_label:
+        return
+    global config
+    pretrained_entry = lookup_pretrained(label, config)
+    print(
+        f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}"
+    )
+    entry = fit_single_batch(image, label, i, pretrained_entry["output"])
+
+    # update config
+    config = update_config(config, entry)
+
 
 def train_pretrained():
     if multi_process:
@@ -264,6 +276,7 @@ def train_pretrained():
     else:
         for i, data in enumerate(mnist):
             train_pretrained_single(i, data)
+
 
 def main():
     # ensure save config is called in the end

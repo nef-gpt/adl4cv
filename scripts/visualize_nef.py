@@ -31,6 +31,12 @@ def main():
     args = parser.parse_args()
     img = visualize_nef(args.model_path)
 
+    # and display using matplotlib
+    import matplotlib.pyplot as plt
+
+    plt.imshow(img)
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
