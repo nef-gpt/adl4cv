@@ -96,11 +96,12 @@ class MLP3D(nn.Module):
         output_type=None,
         input_dims=2,
         weight_init=None,
+        include_input=True,
         **kwargs,
     ):
         super().__init__()
         self.embedder = Embedder(
-            include_input=True,
+            include_input=include_input,
             input_dims=input_dims,
             max_freq_log2=multires - 1,
             num_freqs=multires,

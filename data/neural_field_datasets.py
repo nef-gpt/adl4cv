@@ -11,6 +11,7 @@ import torch.nn as nn
 from networks.mlp_models import MLP3D
 
 from networks.naive_rq_ae import RQAutoencoder
+from vector_quantize_pytorch import VectorQuantize
 
 
 def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=5000):
@@ -59,6 +60,7 @@ class MnistNeFDataset(BaseDataset):
         self,
         path: Union[str, Path],
         type: str = "unconditioned",
+        quantized: bool = False,
         transform: Optional[Union[Callable, Dict[str, Callable]]] = None,
         download_url: str = None,
         force_download: bool = False,
@@ -86,7 +88,7 @@ class MnistNeFDataset(BaseDataset):
 
         self.dataset = json.load(open(Path(path) / "overview.json", "r"))
         self.transform = transform
-        self.type = type
+        self.type = type + " quantized" if quantized else type
         self.fixed_label = fixed_label
 
         self.length, self.mapping = self.calculate_length_and_mapping()
@@ -194,6 +196,34 @@ class ModelTransform(nn.Module):
         model = MLP3D(**weights_dict["model_config"])
         model.load_state_dict(weights_dict["state_dict"])
         return model, y
+
+
+def quantize_model(model, vq):
+    # Quantize and replace each parameter
+    for name, param in model.named_parameters():
+        shape = param.shape
+        flattened_param = param.flatten()
+        quantized_params, _, _ = vq(flattened_param.unsqueeze(-1))
+        param.data = quantized_params.squeeze(-1).view(shape)
+    return model
+
+
+class QuantizeTransform(nn.Module):
+    def __init__(self, vq: VectorQuantize):
+        super().__init__()
+        self.vq = vq
+        self.model_transform = ModelTransform()
+    def forward(self, weights_dict, y):
+        model, y = self.model_transform(weights_dict, y)
+        for param in model.parameters():
+            param.requires_grad = False
+
+        for param in self.vq.parameters():
+            param.requires_grad = True
+
+        return quantize_model(model, self.vq), y
+
+
 
 class FlattenTransform(nn.Module):
     def forward(self, weights_dict, y):

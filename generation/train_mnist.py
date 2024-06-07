@@ -8,7 +8,6 @@ try:
 except RuntimeError:
     pass
 
-from utils import get_default_device
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -20,18 +19,26 @@ from PIL import Image
 import json
 import numpy as np
 import torch
-import loss_functions
 import train_nerf as training
 import wandb
 import time
 from torch.utils.data import DataLoader, Dataset
 from munch import DefaultMunch
+import argparse
 
 config = {}
 config["unconditioned"] = {}
 config["pretrained"] = {}
 
+from vector_quantize_pytorch import VectorQuantize
+from data.neural_field_datasets import quantize_model
 
+vq = VectorQuantize(
+    dim = 1,
+    codebook_size = 1024,     # codebook size
+    decay = 0.65,             # the exponential moving average decay, lower means the dictionary will change faster
+    commitment_weight = 1.,   # the weight on the commitment loss
+)
 class MNISTNeRFDataset(Dataset):
     def __init__(self, image):
         self.image = image
@@ -65,18 +72,18 @@ model_config = {
     "output_type": "logits",  # "
     "input_dims": 2,
     "multires": 4,
-    "weight_init": lambda tensor: torch.nn.init.xavier_uniform_(
-        tensor, gain=torch.nn.init.calculate_gain("relu")
-    ),
+    "weight_init": lambda tensor: torch.nn.init.xavier_uniform_(tensor, gain=torch.nn.init.calculate_gain('relu')),
+    "include_input": False
 }
 
 # settings
-only_label = None  # can also be None
-idx_range = None  # range(0, 500) # , range(0, 100)  # can also be None
-save_during_epochs = None  # 1
-skip_existing_models = True
-skip_unconditioned = True
+only_label = 5  # can also be None
+idx_range = range(0, 500) # , range(0, 100)  # can also be None
+save_during_epochs = None # 1
+skip_existing_models = False
+skip_unconditioned = False
 multi_process = False
+quantization = False
 
 config_file = "./datasets/mnist-nerfs/overview.json"
 device = torch.device("cpu")  # get_default_device()
@@ -88,7 +95,7 @@ def load_config():
     # create config file if it does not exist
     if not os.path.exists(config_file):
         with open(config_file, "w") as f:
-            json.dump({"pretrained": {}, "unconditioned": {}}, f)
+            json.dump({"pretrained": {}, "unconditioned": {}, "pretrained quantized": {}, "unconditioned quantized": {}}, f)
     with open(config_file, "r") as f:
         return json.load(f)
 
@@ -100,10 +107,16 @@ def update_config(config, entry):
 
     First match the type of the entry, then use the idx to set the config
     """
-    if entry["type"] == "pretrained":
-        config["pretrained"][entry["idx"]] = entry
+    if entry["quantization"]:
+        if entry["type"] == "pretrained":
+            config["pretrained quantized"][entry["idx"]] = entry
+        else:
+            config["unconditioned quantized"][entry["idx"]] = entry
     else:
-        config["unconditioned"][entry["idx"]] = entry
+        if entry["type"] == "pretrained":
+            config["pretrained"][entry["idx"]] = entry
+        else:
+            config["unconditioned"][entry["idx"]] = entry
 
     return config
 
@@ -125,6 +138,11 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
 
     model = MLP3D(**model_config)
 
+    if quantization:
+        model = quantize_model(model, vq)
+
+    
+
     if init_model_path:
         model.load_state_dict(torch.load(init_model_path)["state_dict"])
 
@@ -133,10 +151,14 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
 
     subfoldername = "pretrained" if init_model_path else "unconditioned"
-    foldername = f"./datasets/mnist-nerfs/{subfoldername}"
+    if quantization:
+        subfoldername += "_quantized"
+    foldername = (
+        f"./datasets/mnist-nerfs/{subfoldername}"
+    )
 
     train_config = {
-        "epochs": 250,
+        "epochs": 750,
         "lr": 4e-3 if init_model_path is None else 4e-3,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
@@ -182,23 +204,39 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
     # init wandb
     wandb.init(
         project="nerfs",
-        name="image-" + str(i) + "-run-" + time.strftime("%Y-%m-%d-%H-%M-%S"),
+        name="image-" + str(i) + "-" + ("quantized-" if quantization else "" ) + ("pretrained" if init_model_path else "unconditioned") + "-run-" + time.strftime("%Y-%m-%d-%H-%M-%S"),
         config=model_config | train_config | cfg,
     )
 
-    total_loss, output_name = training.train(
-        model,
-        train_dataloader=dataloader,
-        loss_fn=loss_fn,
-        **train_config,
-        cfg=DefaultMunch.fromDict(cfg),
-        wandb=wandb,
-        model_config=model_config,
-        summary_fn=None,
-        save_epoch_interval=save_during_epochs,
-        device=device,
-        disable_tqdm=False,
-    )
+    if quantization:
+        total_loss, output_name = training.train(
+            model,
+            train_dataloader=dataloader,
+            loss_fn=loss_fn,
+            **train_config,
+            cfg=DefaultMunch.fromDict(cfg),
+            wandb=wandb,
+            model_config=model_config,
+            summary_fn=None,
+            save_epoch_interval=save_during_epochs,
+            device=device,
+            disable_tqdm=False,
+            vq=vq
+        )
+    else:
+        total_loss, output_name = training.train(
+            model,
+            train_dataloader=dataloader,
+            loss_fn=loss_fn,
+            **train_config,
+            cfg=DefaultMunch.fromDict(cfg),
+            wandb=wandb,
+            model_config=model_config,
+            summary_fn=None,
+            save_epoch_interval=save_during_epochs,
+            device=device,
+            disable_tqdm=False
+        )
 
     return {
         "file-prefix": train_config["filename"],
@@ -206,6 +244,7 @@ def fit_single_batch(image: Image.Image, label: int, i: int, init_model_path=Non
         "label": label,
         "loss": total_loss,
         "type": "pretrained" if init_model_path else "unconditioned",
+        "quantization": quantization,
         "init_model": init_model_path if init_model_path else "None",  # "None
         "idx": i,
     }
@@ -245,7 +284,7 @@ def train_unconditioned():
 
 def lookup_pretrained(label, config):
     # config[unconditioned] is a dictionary with keys as indices and values as dictionaries
-    for key, entry in config["unconditioned"].items():
+    for key, entry in config["unconditioned quantized"].items() if quantization else config["unconditioned"].items():
         if entry["label"] == label:
             return entry
     return None
@@ -256,17 +295,16 @@ def train_pretrained_single(i, data):
         return
     image, label = data
 
-    if only_label is not None and label != only_label:
-        return
-    global config
-    pretrained_entry = lookup_pretrained(label, config)
-    print(
-        f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}"
-    )
-    entry = fit_single_batch(image, label, i, pretrained_entry["output"])
-
-    # update config
-    config = update_config(config, entry)
+        if only_label is not None and label != only_label:
+            return
+        global config
+        pretrained_entry = lookup_pretrained(label, config)
+        print(f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}")
+        entry = fit_single_batch(image, label, i, pretrained_entry["output"])
+        
+        # update config
+        config = update_config(config, entry)
+        save_config(config)
 
 
 def train_pretrained():
@@ -288,6 +326,7 @@ def main():
         train_pretrained()
     finally:
         save_config(config)
+
 
 
 if __name__ == "__main__":
