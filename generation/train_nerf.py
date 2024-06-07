@@ -17,6 +17,9 @@ import torch
 import utils
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau, StepLR
 from tqdm.autonotebook import tqdm
+from data.neural_field_datasets import quantize_model
+from itertools import chain
+
 
 
 def train(
@@ -41,12 +44,14 @@ def train(
     cfg=None,
     disable_tqdm=False,
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    vq=None,
 ):
     # Check for GPU
     print(f"Using device: {device}")
 
     model.to(device)
-    optim = torch.optim.Adam(lr=lr, params=model.parameters())
+    vq.to(device)
+    optim = torch.optim.Adam(lr=lr, params=chain(model.parameters(), vq.parameters()) if vq else model.parameters())
     if cfg.scheduler.type == "step":
         scheduler = StepLR(
             optim,
@@ -69,7 +74,7 @@ def train(
     if use_lbfgs:
         optim = torch.optim.LBFGS(
             lr=lr,
-            params=model.parameters(),
+            params=chain(model.parameters(), vq.parameters()) if vq else model.parameters(),
             max_iter=50000,
             max_eval=50000,
             history_size=50,
@@ -133,7 +138,8 @@ def train(
                         return train_loss
 
                     optim.step(closure)
-
+                if vq:
+                    model = quantize_model(model, vq)
                 model_output = model(model_input)
                 losses = loss_fn(model_output, gt.unsqueeze(-1))
 
@@ -260,7 +266,8 @@ def train(
             torch.save(
                 {
                     "state_dict" : model.state_dict(),
-                    "model_config" : copied_dict
+                    "model_config" : copied_dict,
+                    "vq_state_dict" : vq.state_dict() if vq else {}, 
                 },
                 f"{filename}_model_final.pth"
             )
