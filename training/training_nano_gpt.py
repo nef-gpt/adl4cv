@@ -20,6 +20,7 @@ import time
 import math
 import wandb
 from utils import get_default_device
+import time
 
 wandb.login()
 
@@ -108,15 +109,15 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig):
     elif config.init_from == "resume":
         print(f"Resuming training from {config.out_dir}")
         # resume training from a checkpoint.
-        ckpt_path = os.path.join(config.out_dir, "ckpt.pt")
+        ckpt_path = os.path.join(config.out_dir, "ckpt-2024-06-07-23-38-44.pt")
         checkpoint = torch.load(ckpt_path, map_location=device)
         checkpoint_model_args = checkpoint["model_args"]
         # force these config attributes to be equal otherwise we can't even resume training
         # the rest of the attributes (e.g. dropout) can stay as desired from command line
-        for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
-            model_config[k] = checkpoint_model_args[k]
+        #for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
+        #    model_config[k] = checkpoint_model_args[k]
         # create the model
-        model = GPT(model_config)
+        model = GPT(checkpoint_model_args)
         state_dict = checkpoint["model"]
         # fix the keys of the state dictionary :(
         # honestly no idea how checkpoints sometimes get this prefix, have to debug more
@@ -203,11 +204,11 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig):
                     "mfu": running_mfu * 100,  # convert to percentage
                 }
             )
-            if losses["val"] < best_val_loss or config.always_save_checkpoint:
+            if losses["val"] < 0.95*best_val_loss or config.always_save_checkpoint:
                 best_val_loss = losses["val"]
                 if iter_num > 0:
                     checkpoint = {
-                        "model": raw_model.state_dict(),
+                        "model": model.state_dict(),
                         "optimizer": optimizer.state_dict(),
                         "model_args": model_config,
                         "iter_num": iter_num,
@@ -215,7 +216,7 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig):
                         "config": config,
                     }
                     print(f"saving checkpoint to {config.out_dir}")
-                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
+                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt-" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".pt"))
         if iter_num == 0 and config.eval_only:
             break
 
@@ -264,6 +265,6 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig):
 
         # termination conditions
         if iter_num > config.max_iters:
-            break
+            return model
 
     pass
