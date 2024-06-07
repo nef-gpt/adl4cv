@@ -53,8 +53,7 @@ def generate_splits(data_path, save_path, name="mnist_splits.json", val_size=500
         json.dump(data_split, file)
 
 
-
-# OUR DATASET 
+# OUR DATASET
 class MnistNeFDataset(BaseDataset):
     def __init__(
         self,
@@ -103,38 +102,49 @@ class MnistNeFDataset(BaseDataset):
         min = torch.Tensor(mins).min()
         max = torch.Tensor(maxs).max()
         return min, max
-            
+
     def calculate_length_and_mapping(self):
         # check for entry label for calculation
         if self.fixed_label is not None:
             keys = [
-                    (i, k)
-                    for i, k in enumerate(self.dataset[self.type].keys())
-                    if self.dataset[self.type][k]["label"] == self.fixed_label
-                ]
-            
+                (i, k)
+                for i, k in enumerate(self.dataset[self.type].keys())
+                if self.dataset[self.type][k]["label"] == self.fixed_label
+            ]
+
             return len(keys), [i for i, k in keys]
         else:
-            return len(self.dataset[self.type].keys()), list(range(len(self.dataset[self.type].keys())))
+            return len(self.dataset[self.type].keys()), list(
+                range(len(self.dataset[self.type].keys()))
+            )
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
         target = torch.load(
-            self.dataset[self.type][list(self.dataset[self.type].keys())[self.mapping[idx]]]["output"], map_location=torch.device("cpu")
+            self.dataset[self.type][
+                list(self.dataset[self.type].keys())[self.mapping[idx]]
+            ]["output"],
+            map_location=torch.device("cpu"),
         )
 
-        label = self.dataset[self.type][list(self.dataset[self.type].keys())[self.mapping[idx]]]["label"]
+        label = self.dataset[self.type][
+            list(self.dataset[self.type].keys())[self.mapping[idx]]
+        ]["label"]
 
         if self.fixed_label is not None:
-            assert label == self.fixed_label, f"Label {label} does not match fixed label {self.fixed_label}"
+            assert (
+                label == self.fixed_label
+            ), f"Label {label} does not match fixed label {self.fixed_label}"
 
         result = (target, label)
+
         if self.transform:
             result = self.transform(*result)
 
         return result
+
 
 # Taken from neural-field-arena
 class DWSNetsDataset(BaseDataset):
@@ -208,11 +218,29 @@ def quantize_model(model, vq):
     return model
 
 
+# Transform that uses vq, first flatten data, then use vq for quantization and return indices and label
+class TokenTransform(nn.Module):
+    def __init__(self, vq: VectorQuantize):
+        super().__init__()
+        self.flatten = FlattenTransform()
+        self.vq = vq
+        self.vq.eval()
+
+    def forward(self, weights_dict, y):
+        # Apply min-max normalization
+        weigths, y = self.flatten(weights_dict, y)
+        with torch.no_grad():
+            _x, indices, _commit_loss = self.vq(weigths.unsqueeze(-1))
+            # plus one so that SOS can be 0
+            return indices + 1, y
+
+
 class QuantizeTransform(nn.Module):
     def __init__(self, vq: VectorQuantize):
         super().__init__()
         self.vq = vq
         self.model_transform = ModelTransform()
+
     def forward(self, weights_dict, y):
         model, y = self.model_transform(weights_dict, y)
         for param in model.parameters():
@@ -224,13 +252,16 @@ class QuantizeTransform(nn.Module):
         return quantize_model(model, self.vq), y
 
 
-
 class FlattenTransform(nn.Module):
     def forward(self, weights_dict, y):
         weights = torch.cat(
-            [weights_dict["state_dict"][key].flatten() for key in weights_dict["state_dict"].keys()]
+            [
+                weights_dict["state_dict"][key].flatten()
+                for key in weights_dict["state_dict"].keys()
+            ]
         )
         return weights, y
+
 
 """
 class ModelTransform(nn.Module):
@@ -251,6 +282,7 @@ class ModelTransform(nn.Module):
         )
         return x, y
 """
+
 
 class LayerOneHotTransform(nn.Module):
     def forward(self, weights_dict, y):
@@ -283,25 +315,6 @@ class BiasFlagTransform(nn.Module):
 #         return weights, y
 
 
-class TokenTransform(nn.Module):
-    def __init__(self, model: RQAutoencoder):
-        super().__init__()
-        self.model = model
-
-    def forward(self, weights, y):
-        # Apply min-max normalization
-        _x, indices, _commit_loss = self.model.encode_to_cb(weights)
-        codes = self.model.vq.get_codes_from_indices(indices)
-        x = torch.cat(
-            (
-                torch.Tensor([self.model.codebook_size]),
-                indices,
-                torch.Tensor([self.model.codebook_size + 1]),
-            )
-        )
-        return x, y
-
-
 class MinMaxTransform(nn.Module):
     def __init__(self, min_value: float = -0.3587, max_value: float = 0.4986):
         super().__init__()
@@ -312,22 +325,25 @@ class MinMaxTransform(nn.Module):
         # Apply min-max normalization
         weights = (weights - self.min_value) / (self.max_value - self.min_value)
         return weights, y
-    
+
     def reverse(self, normalized_weights):
         # Reverse the min-max normalization
-        original_weights = normalized_weights * (self.max_value - self.min_value) + self.min_value
+        original_weights = (
+            normalized_weights * (self.max_value - self.min_value) + self.min_value
+        )
         return original_weights
-    
-class FlattenMinMaxTransform(torch.nn.Module):
-  def __init__(self, min_max: tuple = None):
-    super().__init__()
-    self.flatten = FlattenTransform()
-    if min_max:
-      self.minmax = MinMaxTransform(*min_max)
-    else:
-      self.minmax = MinMaxTransform()
 
-  def forward(self, x, y):
-    x, _ = self.flatten(x, y)
-    x, _ = self.minmax(x, y)
-    return x, y
+
+class FlattenMinMaxTransform(torch.nn.Module):
+    def __init__(self, min_max: tuple = None):
+        super().__init__()
+        self.flatten = FlattenTransform()
+        if min_max:
+            self.minmax = MinMaxTransform(*min_max)
+        else:
+            self.minmax = MinMaxTransform()
+
+    def forward(self, x, y):
+        x, _ = self.flatten(x, y)
+        x, _ = self.minmax(x, y)
+        return x, y

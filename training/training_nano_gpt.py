@@ -21,6 +21,8 @@ import math
 import wandb
 from utils import get_default_device
 
+wandb.login()
+
 
 @dataclass
 class Config:
@@ -44,7 +46,7 @@ class Config:
     gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
     batch_size = 8  # 8  # effective batch size
 
-    wandb_project = "naive_transformer"
+    wandb_project = "naive_token_transformer"
     wandb_run_name = "run-" + time.strftime("%Y-%m-%d-%H-%M-%S")
 
     # adamw optimizer
@@ -79,9 +81,7 @@ def get_lr(it, config: Config):
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def train(
-    get_batch: callable, config: Config, model_config: GPTConfig
-):
+def train(get_batch: callable, config: Config, model_config: GPTConfig):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -187,6 +187,7 @@ def train(
             param_group["lr"] = lr
 
         # evaluate the loss on train/val sets and write checkpoints
+
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss()
             print(
