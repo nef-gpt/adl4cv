@@ -224,13 +224,14 @@ class TokenTransform(nn.Module):
         super().__init__()
         self.flatten = FlattenTransform()
         self.vq = vq
-        self.vq.eval()
+        self.vq.ema_update = False
+        self.eval()
 
     def forward(self, weights_dict, y):
         # Apply min-max normalization
         weigths, y = self.flatten(weights_dict, y)
         with torch.no_grad():
-            _x, indices, _commit_loss = self.vq(weigths.unsqueeze(-1))
+            _x, indices, _commit_loss = self.vq(weigths.unsqueeze(-1), freeze_codebook=True)
             # plus one so that SOS can be 0
             return indices + 1, y
 

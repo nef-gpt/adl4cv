@@ -9,6 +9,7 @@ TODO:
 """
 
 from contextlib import nullcontext
+from vector_quantize_pytorch import VectorQuantize
 from dataclasses import asdict, dataclass
 import os
 from networks.nano_gpt import (
@@ -82,7 +83,7 @@ def get_lr(it, config: Config):
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def train(get_batch: callable, config: Config, model_config: GPTConfig):
+def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: VectorQuantize = None, vq_config: dict = None):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -214,6 +215,8 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig):
                         "iter_num": iter_num,
                         "best_val_loss": best_val_loss,
                         "config": config,
+                        "vq_state_dict": vq.state_dict() if vq else {},
+                        "vq_config": vq_config if vq_config else {},
                     }
                     print(f"saving checkpoint to {config.out_dir}")
                     torch.save(checkpoint, os.path.join(config.out_dir, "ckpt-" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".pt"))
