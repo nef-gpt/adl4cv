@@ -106,3 +106,15 @@ https://link.springer.com/chapter/10.1007/978-3-031-20068-7_13
 
 - get distribution of all weights
 - do both VQ-VAE and naive dicretization
+
+
+## 07.06
+
+- Talking points
+  - Train a large portion of mnist (conditioned / pretrained)
+  - VectorQuantize only for weights (naive discretization with loss)
+  -> Train normal nanoGPT model
+
+- Questions?
+  - Quantize every node (FAN IN + BIAS -> Vector -> Quantized)
+  - Train Transformer (good to knows)

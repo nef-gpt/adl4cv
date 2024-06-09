@@ -381,6 +381,7 @@ Train sample on randomly initialized weights (unconditioned)
 <!--  [Luis Muschal]
 5:45-6:15
 
+Now train neural fields
 
 hypotheses: minimize structural change by conditioning the training process using weight initialization
 
