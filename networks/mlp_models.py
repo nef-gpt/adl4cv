@@ -95,11 +95,13 @@ class MLP3D(nn.Module):
         multires=10,
         output_type=None,
         input_dims=2,
+        weight_init=None,
+        include_input=True,
         **kwargs,
     ):
         super().__init__()
         self.embedder = Embedder(
-            include_input=True,
+            include_input=include_input,
             input_dims=input_dims,
             max_freq_log2=multires - 1,
             num_freqs=multires,
@@ -110,12 +112,20 @@ class MLP3D(nn.Module):
         self.output_type = output_type
         self.use_leaky_relu = use_leaky_relu
         in_size = self.embedder.out_dim
-        self.layers.append(nn.Linear(in_size, hidden_neurons[0], bias=use_bias))
+        first_layer = nn.Linear(in_size, hidden_neurons[0], bias=use_bias)
+        if weight_init:
+            weight_init(first_layer.weight)
+        self.layers.append(first_layer)
         for i, _ in enumerate(hidden_neurons[:-1]):
-            self.layers.append(
-                nn.Linear(hidden_neurons[i], hidden_neurons[i + 1], bias=use_bias)
-            )
-        self.layers.append(nn.Linear(hidden_neurons[-1], out_size, bias=use_bias))
+                hidden_layer = nn.Linear(hidden_neurons[i], hidden_neurons[i + 1], bias=use_bias)
+                if weight_init:
+                    weight_init(hidden_layer.weight)
+                self.layers.append(hidden_layer)
+
+        output_layer = nn.Linear(hidden_neurons[-1], out_size, bias=use_bias)
+        if weight_init:
+            weight_init(output_layer.weight)
+        self.layers.append(output_layer)
 
     def forward(self, model_input):
         coords_org = model_input.clone().detach().requires_grad_(True)

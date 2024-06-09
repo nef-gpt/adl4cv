@@ -9,6 +9,7 @@ TODO:
 """
 
 from contextlib import nullcontext
+from vector_quantize_pytorch import VectorQuantize
 from dataclasses import asdict, dataclass
 import os
 from networks.nano_gpt import (
@@ -20,6 +21,9 @@ import time
 import math
 import wandb
 from utils import get_default_device
+import time
+
+wandb.login()
 
 
 @dataclass
@@ -44,7 +48,7 @@ class Config:
     gradient_accumulation_steps = 1  # 5 * 8  # used to simulate larger batch sizes
     batch_size = 8  # 8  # effective batch size
 
-    wandb_project = "naive_transformer"
+    wandb_project = "naive_token_transformer"
     wandb_run_name = "run-" + time.strftime("%Y-%m-%d-%H-%M-%S")
 
     # adamw optimizer
@@ -79,9 +83,7 @@ def get_lr(it, config: Config):
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def train(
-    get_batch: callable, config: Config, model_config: GPTConfig
-):
+def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: VectorQuantize = None, vq_config: dict = None):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -113,10 +115,10 @@ def train(
         checkpoint_model_args = checkpoint["model_args"]
         # force these config attributes to be equal otherwise we can't even resume training
         # the rest of the attributes (e.g. dropout) can stay as desired from command line
-        for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
-            model_config[k] = checkpoint_model_args[k]
+        #for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
+        #    model_config[k] = checkpoint_model_args[k]
         # create the model
-        model = GPT(model_config)
+        model = GPT(checkpoint_model_args)
         state_dict = checkpoint["model"]
         # fix the keys of the state dictionary :(
         # honestly no idea how checkpoints sometimes get this prefix, have to debug more
@@ -187,6 +189,7 @@ def train(
             param_group["lr"] = lr
 
         # evaluate the loss on train/val sets and write checkpoints
+
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss()
             print(
@@ -202,16 +205,18 @@ def train(
                     "mfu": running_mfu * 100,  # convert to percentage
                 }
             )
-            if losses["val"] < best_val_loss or config.always_save_checkpoint:
+            if losses["val"] < 0.95*best_val_loss or config.always_save_checkpoint:
                 best_val_loss = losses["val"]
                 if iter_num > 0:
                     checkpoint = {
-                        "model": raw_model.state_dict(),
+                        "model": model.state_dict(),
                         "optimizer": optimizer.state_dict(),
                         "model_args": model_config,
                         "iter_num": iter_num,
                         "best_val_loss": best_val_loss,
                         "config": config,
+                        "vq_state_dict": vq.state_dict() if vq else {},
+                        "vq_config": vq_config if vq_config else {},
                     }
                     print(f"saving checkpoint to {config.out_dir}")
                     torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
@@ -263,6 +268,6 @@ def train(
 
         # termination conditions
         if iter_num > config.max_iters:
-            break
+            return model
 
     pass
