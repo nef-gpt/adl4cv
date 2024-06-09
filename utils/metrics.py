@@ -105,9 +105,13 @@ def compute_all_metrics(generated, reference):
     result = {}
 
     distances = pairwise_ssim_distance(generated, reference)
+    distances_gen = pairwise_ssim_distance(generated, generated)
+    distances_ref = pairwise_ssim_distance(reference, reference)
 
     # compute knn
-    # TODO:
+    knn_result = knn(distances_gen, distances, distances_ref, 1)
+    for key, value in knn_result.items():
+        result[f"KNN-{key}"] = value
 
     # compute lgan_mmd_cov
     result.update(lgan_mmd_cov(distances))
