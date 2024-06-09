@@ -110,7 +110,7 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: Vect
     elif config.init_from == "resume":
         print(f"Resuming training from {config.out_dir}")
         # resume training from a checkpoint.
-        ckpt_path = os.path.join(config.out_dir, "ckpt-2024-06-07-23-38-44.pt")
+        ckpt_path = os.path.join(config.out_dir, "ckpt.pt")
         checkpoint = torch.load(ckpt_path, map_location=device)
         checkpoint_model_args = checkpoint["model_args"]
         # force these config attributes to be equal otherwise we can't even resume training
@@ -219,7 +219,7 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: Vect
                         "vq_config": vq_config if vq_config else {},
                     }
                     print(f"saving checkpoint to {config.out_dir}")
-                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt-" + time.strftime("%Y-%m-%d-%H-%M-%S") + ".pt"))
+                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
         if iter_num == 0 and config.eval_only:
             break
 

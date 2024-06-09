@@ -224,7 +224,6 @@ class TokenTransform(nn.Module):
         super().__init__()
         self.flatten = FlattenTransform()
         self.vq = vq
-        self.vq.ema_update = False
         self.eval()
 
     def forward(self, weights_dict, y):

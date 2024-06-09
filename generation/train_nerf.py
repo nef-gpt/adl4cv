@@ -50,7 +50,8 @@ def train(
     print(f"Using device: {device}")
 
     model.to(device)
-    vq.to(device)
+    if vq:
+        vq.to(device)
     optim = torch.optim.Adam(lr=lr, params=chain(model.parameters(), vq.parameters()) if vq else model.parameters())
     if cfg.scheduler.type == "step":
         scheduler = StepLR(

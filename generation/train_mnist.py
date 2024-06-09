@@ -73,20 +73,20 @@ model_config = {
     "input_dims": 2,
     "multires": 4,
     "weight_init": lambda tensor: torch.nn.init.xavier_uniform_(tensor, gain=torch.nn.init.calculate_gain('relu')),
-    "include_input": False
+    "include_input": True
 }
 
 # settings
 only_label = 5  # can also be None
-idx_range = range(0, 500) # , range(0, 100)  # can also be None
+idx_range = None # , range(0, 100)  # can also be None
 save_during_epochs = None # 1
-skip_existing_models = False
-skip_unconditioned = False
+skip_existing_models = True
+skip_unconditioned = True
 multi_process = False
 quantization = False
 
 config_file = "./datasets/mnist-nerfs/overview.json"
-device = torch.device("cpu")  # get_default_device()
+device = torch.device("cuda") # get_default_device()
 
 print("Using device", device)
 
@@ -107,7 +107,7 @@ def update_config(config, entry):
 
     First match the type of the entry, then use the idx to set the config
     """
-    if entry["quantization"]:
+    if quantization:
         if entry["type"] == "pretrained":
             config["pretrained quantized"][entry["idx"]] = entry
         else:
@@ -295,16 +295,16 @@ def train_pretrained_single(i, data):
         return
     image, label = data
 
-        if only_label is not None and label != only_label:
-            return
-        global config
-        pretrained_entry = lookup_pretrained(label, config)
-        print(f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}")
-        entry = fit_single_batch(image, label, i, pretrained_entry["output"])
-        
-        # update config
-        config = update_config(config, entry)
-        save_config(config)
+    if only_label is not None and label != only_label:
+        return
+    global config
+    pretrained_entry = lookup_pretrained(label, config)
+    print(f"Training image {i} with label {label} and pretrained model {pretrained_entry['output']}")
+    entry = fit_single_batch(image, label, i, pretrained_entry["output"])
+    
+    # update config
+    config = update_config(config, entry)
+    save_config(config)
 
 
 def train_pretrained():
