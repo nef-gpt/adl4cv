@@ -29,6 +29,7 @@ opencv-python = "^4.9.0.80"
 plotly = "^5.22.0"
 imageio = "^2.34.1"
 pyqt6 = "^6.7.0"
+torchmetrics = "^1.4.0.post0"
 
 
 [tool.poetry.group.dev.dependencies]
