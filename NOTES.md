@@ -106,3 +106,29 @@ https://link.springer.com/chapter/10.1007/978-3-031-20068-7_13
 
 - get distribution of all weights
 - do both VQ-VAE and naive dicretization
+
+### 10.06.24
+- overfitted all 5s (NeF training)
+- VQ directly on weights -> discrete tokens
+- use tokens to train transformers
+- transformer doesnt seem to generalize 
+  - overparameterized (?)
+
+## Meeting
+
+avoid overfitting:
+  - learning rate search
+  - add dropout / weight regularization
+  - less parameters
+    - MeshGPT: 20.000seq -> 300.000 parameters
+  - train all MNIST data (all initialized with same pretrained weights)
+    - SOS - conditioned (0, 1, 2 ...)
+vocab size:
+  - grid search - trail and error
+reconstruction loss:
+  - FID/IS (I=Inception)
+  - CE-loss MNIST-Classification
+  - MMD-score
+
+TODO:
+- 
