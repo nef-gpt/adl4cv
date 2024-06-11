@@ -25,6 +25,23 @@ import time
 
 wandb.login()
 
+class EarlyStopper:
+    def __init__(self, patience=1, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = float('inf')
+
+    def __call__(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+
 
 @dataclass
 class Config:
@@ -83,7 +100,7 @@ def get_lr(it, config: Config):
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: VectorQuantize = None, vq_config: dict = None):
+def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: VectorQuantize = None, vq_config: dict = None, early_stop:EarlyStopper = None):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -205,7 +222,7 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: Vect
                     "mfu": running_mfu * 100,  # convert to percentage
                 }
             )
-            if losses["val"] < 0.95*best_val_loss or config.always_save_checkpoint:
+            if losses["val"] < best_val_loss or config.always_save_checkpoint:
                 best_val_loss = losses["val"]
                 if iter_num > 0:
                     checkpoint = {
@@ -220,6 +237,12 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: Vect
                     }
                     print(f"saving checkpoint to {config.out_dir}")
                     torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
+            
+            if early_stop:
+                if early_stop(losses["val"]):
+                    print("Early stopping due to increasing validation loss!")
+                    return model
+            
         if iter_num == 0 and config.eval_only:
             break
 
