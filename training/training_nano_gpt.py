@@ -58,6 +58,7 @@ class Config:
 
     # training loop
     eval_interval = 100
+    metric_interval = 100
     log_interval = 1
     eval_iters = 16  # 200
     eval_only = False  # if True, script exits right after the first eval
@@ -214,6 +215,8 @@ def train(
             param_group["lr"] = lr
 
         # evaluate the loss on train/val sets and write checkpoints
+        if iter_num % config.metric_interval == 0:
+            metrics = compute_metrics()
 
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss()
