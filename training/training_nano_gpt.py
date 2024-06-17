@@ -108,6 +108,7 @@ def train(
     vq: VectorQuantize = None,
     vq_config: dict = None,
     early_stop: EarlyStopper = None,
+    token_dict: dict = None,
 ):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
@@ -242,6 +243,7 @@ def train(
                         "config": config,
                         "vq_state_dict": vq.state_dict() if vq else {},
                         "vq_config": vq_config if vq_config else {},
+                        "token_dict": token_dict if token_dict else {},
                     }
                     print(f"saving checkpoint to {config.out_dir}")
                     torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
