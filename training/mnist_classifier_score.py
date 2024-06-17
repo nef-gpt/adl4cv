@@ -6,8 +6,13 @@ from utils.animation import generate_neural_field
 from vector_quantize_pytorch import VectorQuantize
 from PIL import Image
 
-# compute metrics
-mnist_classifier = torch.hub.load("pytorch/vision:v0.10.0", "mnist", pretrained=True)
+# Load model directly
+from transformers import AutoImageProcessor, AutoModelForImageClassification
+
+processor = AutoImageProcessor.from_pretrained("fxmarty/resnet-tiny-mnist")
+mnist_classifier = AutoModelForImageClassification.from_pretrained(
+    "fxmarty/resnet-tiny-mnist"
+)
 mnist_classifier.eval()
 
 
@@ -54,4 +59,4 @@ def compute_mnist_score(
         loss = -torch.log_softmax(mlp3d(image), dim=1)[0, label]
         total_loss += loss
 
-    pass
+    return total_loss / num_images

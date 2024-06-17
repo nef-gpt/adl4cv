@@ -20,10 +20,16 @@ def generate_neural_field(
     novel_tokens = novel_tokens.unsqueeze(-1).to("cpu")
     novel_weights = vq.get_codes_from_indices((novel_tokens))
 
-    dataset_no_transform = MnistNeFDataset(os.path.join(os.path.dirname(os.path.abspath(os.getcwd()))root, "datasets", "mnist-nerfs"))
+    dataset_no_transform = MnistNeFDataset(
+        os.path.join(
+            os.path.dirname(os.path.abspath(os.getcwd())), "datasets", "mnist-nerfs"
+        )
+    )
     original_dict = dataset_no_transform[0][0]
 
-    reconstructed_dict = backtransform_weights(novel_weights, original_dict["state_dict"])
+    reconstructed_dict = backtransform_weights(
+        novel_weights, original_dict["state_dict"]
+    )
 
     mlp3d = MLP3D(**original_dict["model_config"])
     mlp3d.load_state_dict(reconstructed_dict)

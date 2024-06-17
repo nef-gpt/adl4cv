@@ -9,6 +9,7 @@ TODO:
 """
 
 from contextlib import nullcontext
+from training.mnist_classifier_score import compute_mnist_score
 from vector_quantize_pytorch import VectorQuantize
 from dataclasses import asdict, dataclass
 import os
@@ -179,6 +180,11 @@ def train(
         unoptimized_model = model
         model = torch.compile(model)  # requires PyTorch 2.0
 
+    # compute mnist metric score
+    @torch.no_grad()
+    def compute_metrics():
+        return compute_mnist_score(model, vq, token_dict)
+
     # helps estimate an arbitrarily accurate loss over either split using many batches
     @torch.no_grad()
     def estimate_loss():
@@ -218,6 +224,15 @@ def train(
         # evaluate the loss on train/val sets and write checkpoints
         if iter_num % config.metric_interval == 0:
             metrics = compute_metrics()
+            print(
+                f"step {iter_num}: mnist loss {metrics['mnist_loss']:.4f}, mnist acc {metrics['mnist_acc']:.4f}"
+            )
+            wandb.log(
+                {
+                    "iter": iter_num,
+                    "mnist_loss": metrics,
+                }
+            )
 
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss()
