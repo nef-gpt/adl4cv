@@ -25,12 +25,13 @@ import time
 
 wandb.login()
 
+
 class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0
-        self.min_validation_loss = float('inf')
+        self.min_validation_loss = float("inf")
 
     def __call__(self, validation_loss):
         if validation_loss < self.min_validation_loss:
@@ -100,7 +101,14 @@ def get_lr(it, config: Config):
     return config.min_lr + coeff * (config.learning_rate - config.min_lr)
 
 
-def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: VectorQuantize = None, vq_config: dict = None, early_stop:EarlyStopper = None):
+def train(
+    get_batch: callable,
+    config: Config,
+    model_config: GPTConfig,
+    vq: VectorQuantize = None,
+    vq_config: dict = None,
+    early_stop: EarlyStopper = None,
+):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -127,12 +135,12 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: Vect
     elif config.init_from == "resume":
         print(f"Resuming training from {config.out_dir}")
         # resume training from a checkpoint.
-        ckpt_path = os.path.join(config.out_dir, "ckpt.pt")
+        ckpt_path = os.path.join(config.out_dir, "N_ALL_SAMPLES_0_88M.pt")
         checkpoint = torch.load(ckpt_path, map_location=device)
         checkpoint_model_args = checkpoint["model_args"]
         # force these config attributes to be equal otherwise we can't even resume training
         # the rest of the attributes (e.g. dropout) can stay as desired from command line
-        #for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
+        # for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
         #    model_config[k] = checkpoint_model_args[k]
         # create the model
         model = GPT(checkpoint_model_args)
@@ -237,12 +245,12 @@ def train(get_batch: callable, config: Config, model_config: GPTConfig, vq: Vect
                     }
                     print(f"saving checkpoint to {config.out_dir}")
                     torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
-            
+
             if early_stop:
                 if early_stop(losses["val"]):
                     print("Early stopping due to increasing validation loss!")
                     return model
-            
+
         if iter_num == 0 and config.eval_only:
             break
 

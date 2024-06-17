@@ -231,8 +231,7 @@ class TokenTransform(nn.Module):
         weigths, y = self.flatten(weights_dict, y)
         with torch.no_grad():
             _x, indices, _commit_loss = self.vq(weigths.unsqueeze(-1), freeze_codebook=True)
-            # plus one so that SOS can be 0
-            return indices + 1, y
+            return indices, y
 
 
 class QuantizeTransform(nn.Module):
