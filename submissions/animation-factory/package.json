@@ -11,7 +11,8 @@
     "@motion-canvas/2d": "^3.16.0",
     "@motion-canvas/core": "^3.16.0",
     "@motion-canvas/ffmpeg": "^1.1.0",
-    "katex": "^0.16.10"
+    "katex": "^0.16.10",
+    "npyjs": "^0.6.0"
   },
   "devDependencies": {
     "@motion-canvas/ui": "^3.16.0",
