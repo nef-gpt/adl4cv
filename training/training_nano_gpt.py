@@ -138,7 +138,7 @@ def train(
     elif config.init_from == "resume":
         print(f"Resuming training from {config.out_dir}")
         # resume training from a checkpoint.
-        ckpt_path = os.path.join(config.out_dir, "N_ALL_SAMPLES_0_88M.pt")
+        ckpt_path = os.path.join(config.out_dir, "funktioniert_okeisch.pt")
         checkpoint = torch.load(ckpt_path, map_location=device)
         checkpoint_model_args = checkpoint["model_args"]
         # force these config attributes to be equal otherwise we can't even resume training
@@ -183,7 +183,7 @@ def train(
     # compute mnist metric score
     @torch.no_grad()
     def compute_metrics():
-        return compute_mnist_score(model, vq, token_dict)
+        return compute_mnist_score(model, vq, device, token_dict)
 
     # helps estimate an arbitrarily accurate loss over either split using many batches
     @torch.no_grad()
@@ -223,16 +223,11 @@ def train(
 
         # evaluate the loss on train/val sets and write checkpoints
         if iter_num % config.metric_interval == 0:
-            metrics = compute_metrics()
+            acc, metrics = compute_metrics()
             print(
-                f"step {iter_num}: mnist loss {metrics['mnist_loss']:.4f}, mnist acc {metrics['mnist_acc']:.4f}"
+                f"step {iter_num}: mnist classifier loss: {metrics}, mnist accuracy: {acc}"
             )
-            wandb.log(
-                {
-                    "iter": iter_num,
-                    "mnist_loss": metrics,
-                }
-            )
+            wandb.log({"iter": iter_num, "mnist_loss": metrics, "mnist_acc": acc})
 
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss()

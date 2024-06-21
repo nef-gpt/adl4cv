@@ -1,10 +1,17 @@
+from random import randrange
 from animation.util import reconstruct_image
 from networks.nano_gpt import GPT
 import torch
 import torchvision.transforms as transforms
+from utils import decorator_timer
 from utils.animation import generate_neural_field
 from vector_quantize_pytorch import VectorQuantize
+from torchvision.transforms import Normalize
 from PIL import Image
+
+normalizer = Normalize(mean=0.45, std=0.22)
+
+import matplotlib.pyplot as plt
 
 # Load model directly
 from transformers import AutoImageProcessor, AutoModelForImageClassification
@@ -17,11 +24,16 @@ mnist_classifier.eval()
 
 
 @torch.no_grad()
+# @decorator_timer
 def compute_mnist_score(
     model: GPT,
     vq: VectorQuantize,
+    device,
     special_tokens: dict[str, int],
-    num_images: int = 1000,
+    num_iters: int = 1,
+    batch_size: int = 64,
+    top_k: int = None,
+    temperature: float =1.0,
 ):
     """
     Compute the average cross entropy loss when using the model to generate neural fields
@@ -38,25 +50,46 @@ def compute_mnist_score(
 
     # main loop
     total_loss = 0
-    for i in range(num_images):
+    acc = 0
+    batch_size = 64
+    for i in range(num_iters):
         # generate neural field
 
         # randomly select a special token
+
+        label = str(i % 10)
         model.eval()
-        mlp3d = generate_neural_field(
-            model, vq, [special_tokens["SOS"], special_tokens[str(i % 10)]]
+        mlp3ds = generate_neural_field(
+            model,
+            vq,
+            special_tokens["SOS"],
+            [special_tokens[str(i % 10)] for i in range(batch_size)],
+            device,
+            top_k=top_k,
+            temperature=temperature,
         )
 
         # get image
-        image = reconstruct_image(mlp3d)
-        image = Image.fromarray((image * 255).astype("uint8"))
-        image = transforms.ToTensor()(image).unsqueeze(0)
+        for i, mlp3d in enumerate(mlp3ds):
+            image = reconstruct_image(mlp3d)
+            image = Image.fromarray(image)
 
-        # classify image
-        label = mnist_classifier(image).argmax().item()
+            image = transforms.ToTensor()(image).unsqueeze(0)
+            image = normalizer(image)
 
-        # compute loss
-        loss = -torch.log_softmax(mlp3d(image), dim=1)[0, label]
-        total_loss += loss
+            # classify image
+            label = mnist_classifier(image).logits
+            predicted = torch.zeros_like(label)
+            predicted[:, label.argmax()] = 1
 
-    return total_loss / num_images
+            gt = torch.zeros_like(label)
+            gt[:, i % 10] = 1
+
+            loss = torch.nn.functional.cross_entropy(label, gt)
+
+            acc += torch.dot(predicted.flatten(), gt.flatten())
+            total_loss += loss
+
+    return acc.item() / (num_iters * batch_size), total_loss.item() / (
+        num_iters * batch_size
+    )

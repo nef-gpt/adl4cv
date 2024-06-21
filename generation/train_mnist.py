@@ -19,7 +19,7 @@ from PIL import Image
 import json
 import numpy as np
 import torch
-import train_nerf as training
+import generation.train_nerf as training
 import wandb
 import time
 from torch.utils.data import DataLoader, Dataset
@@ -81,10 +81,10 @@ model_config = {
 }
 
 # settings
-only_label = 5  # can also be None
-idx_range = None  # , range(0, 100)  # can also be None
+only_label = None  # can also be None
+idx_range = [57980, 57981, 57983, 57985]  # can also be None
 save_during_epochs = None  # 1
-skip_existing_models = False
+skip_existing_models = True
 skip_unconditioned = True
 multi_process = False
 quantization = False
@@ -303,8 +303,8 @@ def lookup_pretrained(label, config):
         if quantization
         else config["unconditioned"].items()
     ):
-        if entry["label"] == label:
-            return entry
+        # if entry["label"] == label:
+        return entry
     return None
 
 
