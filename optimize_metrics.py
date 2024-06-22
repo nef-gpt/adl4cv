@@ -48,13 +48,54 @@ def scores_from_path(
                 print(results)
     
         return results
+    
+def get_best_result(path: str):
+    results = torch.load(path)
+
+    best_acc = None
+    best_key_acc = None
+    best_temp_acc = None
+
+    best_loss = None
+    best_key_loss = None
+    best_temp_loss = None
+
+    for top_k in results.keys():
+        for temp in results[str(top_k)].keys():
+            current_acc = results[str(top_k)][str(temp)]["acc"]
+
+            if best_acc is None:
+                best_acc = current_acc
+                best_key_acc = top_k
+                best_temp_acc = temp
+            elif current_acc > best_acc:
+                best_acc = current_acc
+                best_key_acc = top_k
+                best_temp_acc = temp
+
+            current_loss = results[str(top_k)][str(temp)]["loss"]
+
+            if best_loss is None:
+                best_loss = current_loss
+                best_key_loss = top_k
+                best_temp_acc = temp
+            elif current_loss < best_loss:
+                best_loss = current_loss
+                best_key_loss = top_k
+                best_temp_loss = temp
+
+    print(f"best_key_acc: {best_key_acc} best_temp_acc: {best_temp_acc}")
+    print(f"best_key_loss: {best_key_loss} best_temp_loss: {best_temp_loss}")
+
+    return best_acc, best_loss
 
 
 def main():
     path = "./models/token_transformer/N_ALL_5M_LARGE_GOOD.pth"
-    results = scores_from_path(path, top_ks=range(3, 10), temperatures=np.arange(0.5, 1.5, 0.1))
-    
-    torch.save(results, "performance_models.pth")
+    #results = scores_from_path(path, top_ks=range(3, 10), temperatures=np.arange(0.5, 1.5, 0.1))
+    results = get_best_result(path)
+    print(results)
+    #torch.save(results, "performance_models.pth")
 
 if __name__ == "__main__":
     main()
