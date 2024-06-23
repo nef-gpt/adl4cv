@@ -2,19 +2,17 @@ import { makeScene2D, Txt, Line } from '@motion-canvas/2d';
 import { createRef, all, waitFor } from '@motion-canvas/core';
 import { Rect } from '@motion-canvas/2d/lib/components';
 
-const offset_x = -400;
-const offset_y = -800;
+const offset_x = - 100;
+const offset_y = - 200;
 
-const factor = 4
-
-const tokenPositions = [0, factor*55, factor*110, factor*165, factor*220];
+const tokenPositions = [0, 55, 110, 165, 220];
 const tokenColors = ['#21918c', '#21918c', '#21918c', '#21918c', '#21918c', '#21918c'];
 const tokenNames = ["SOS", "C", "ID.2", "ID.1", "ID.6", "ID.3"];
 const novelColor = '#1a2145'
 const otherNovelColor = "#21918c"//#3b528b"
 
-const token_box_grid = factor*55;
-const token_length = factor*50;
+const token_box_grid = 55;
+const token_length = 50;
 
 const xMovements = [0, token_box_grid, token_box_grid]; // Add more if needed
 const yMovements = [token_box_grid, token_box_grid, 6 * token_box_grid]; // Add more if needed
@@ -92,7 +90,7 @@ export default makeScene2D(function* (view) {
                 text={tokenNames[i]}
                 ref={tokenTexts[i]}
                 fill="#ffffff"
-                fontSize={factor*20}
+                fontSize={20}
                 opacity={0}
                 position={[x + offset_x, offset_y]}
                 fontFamily={"Noto Sans Math"}
@@ -118,7 +116,7 @@ export default makeScene2D(function* (view) {
             ref={novelText}
             text={"ppeace"}
             fill="#FFFFFF"
-            fontSize={factor*20}
+            fontSize={20}
             opacity={0}
             position={[300, 0]}
             fontFamily={"Noto Sans Math"}
@@ -143,7 +141,7 @@ export default makeScene2D(function* (view) {
             ref={transformerText}
             text="Transformer(θᵢ₋₁, θᵢ₋₂...θ₀, C, SOS)"
             fill="#ffffff"
-            fontSize={factor*20}
+            fontSize={20}
             position={[3*token_box_grid + offset_x, 4*token_box_grid + offset_y - token_box_grid/1.5]}
             fontFamily={"Inter"}
         />
@@ -198,7 +196,7 @@ export default makeScene2D(function* (view) {
                 }).filter(Boolean),
                 ...tokenTexts.map((tokenText, k) => {
                     if (k < i + 1) {
-                        return tokenText().position([tokenPositions[k] + xMovements[j] + offset_x, offset_y + yMovements[j]], 1);
+                        return tokenText().position([tokenPositions[k] + xMovements[j] + offset_x, offset_y + yMovements[j]], 1.08);
                     }
                 }).filter(Boolean),
                 ...tokenTexts.map((tokenText, k) => {
@@ -264,11 +262,11 @@ export default makeScene2D(function* (view) {
             }).filter(Boolean),
             ...tokenTexts.map((tokenText, k) => {
                 if (k < i + 1) {
-                    return tokenText().position([tokenPositions[k] + xMovements[xMovements.length - 1] + offset_x, offset_y + yMovements[yMovements.length - 1]], 1);
+                    return tokenText().position([tokenPositions[k] + xMovements[xMovements.length - 1] + offset_x, offset_y + yMovements[yMovements.length - 1]], 1.08);
                 }
             }).filter(Boolean),
-            novelToken().position([tokenPositions[i] + xMovements[xMovements.length - 1] + offset_x, offset_y + yMovements[yMovements.length - 1]], 1),
-            novelText().position([tokenPositions[i] + xMovements[xMovements.length - 1] + offset_x, offset_y + yMovements[yMovements.length - 1]], 1),
+            novelToken().position([tokenPositions[i] + xMovements[xMovements.length - 1] + offset_x, offset_y + yMovements[yMovements.length - 1]], 1.08),
+            novelText().position([tokenPositions[i] + xMovements[xMovements.length - 1] + offset_x, offset_y + yMovements[yMovements.length - 1]], 1.08),
             novelText().opacity(1, 0),
             novelToken().opacity(1, 0),
 

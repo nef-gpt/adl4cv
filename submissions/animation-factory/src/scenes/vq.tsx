@@ -7,17 +7,18 @@ const offset_y = -800;
 
 const factor = 4
 
-const tokenPositions = [0, factor*55, factor*110, factor*165, factor*220];
+const tokenPositions = [0,factor*55, factor*110, factor*165, factor*220];
 const tokenColors = ['#21918c', '#21918c', '#21918c', '#21918c', '#21918c', '#21918c'];
-const tokenNames = ["SOS", "C", "ID.2", "ID.1", "ID.6", "ID.3"];
-const novelColor = '#1a2145'
-const otherNovelColor = "#21918c"//#3b528b"
+const scalarNames = ["0.1", "-0.1", "0.4", "0.3", "0.42", "-0.2"];
+const tokenNames = ["ID.2", "ID.1", "ID.6", "ID.3", "ID.6", "ID.4"];
+const novelColor = '#3b528b'
+const otherNovelColor = "#3b528b"
 
 const token_box_grid = factor*55;
 const token_length = factor*50;
 
-const xMovements = [0, token_box_grid, token_box_grid]; // Add more if needed
-const yMovements = [token_box_grid, token_box_grid, 6 * token_box_grid]; // Add more if needed
+const xMovements = [0, 0]; // Add more if needed
+const yMovements = [0, 6 * token_box_grid]; // Add more if needed
 
 export default makeScene2D(function* (view) {
     // Create references for the boxes and lines
@@ -25,53 +26,24 @@ export default makeScene2D(function* (view) {
     const transformerText = createRef<Text>();
     const tokenRects = tokenPositions.map(() => createRef<Rect>());
     const tokenTexts = tokenPositions.map(() => createRef<Txt>());
-    const tokenVerLines1 = tokenPositions.map(() => createRef<Line>());
-    const tokenVerLines2 = tokenPositions.map(() => createRef<Line>());
-    const tokenHorLines = tokenPositions.map(() => createRef<Line>());
+    const tokenVerLines = tokenPositions.map(() => createRef<Line>());
     const novelToken = createRef<Rect>()
     const novelText = createRef<Txt>()
 
     // Create the initial input box and lines
-    tokenHorLines.forEach((horLine, i) => {
+    tokenVerLines.forEach((verLine, i) => {
         view.add(
             <Line
-                ref={tokenHorLines[i]}
-                points={[[tokenPositions[i] + offset_x + xMovements[0], offset_y + yMovements[0]],
-                [tokenPositions[i] + offset_x + xMovements[1], offset_y + yMovements[0]]]}
+                ref={tokenVerLines[i]}
+                points={[[tokenPositions[i] + offset_x, offset_y + yMovements[0] + token_length/2],
+                [tokenPositions[i] + offset_x, offset_y + yMovements[yMovements.length - 1] - token_length/2]]}
                 stroke="#FFFFFF"
                 lineWidth={4}
-                opacity={0}
+                opacity={1}
             />
         );
-
-        view.add(
-            <Line
-                ref={tokenVerLines1[i]}
-                points={[[tokenPositions[i] + offset_x, offset_y + token_length / 2],
-                [tokenPositions[i] + offset_x, offset_y + yMovements[0]]]}
-                stroke="#FFFFFF"
-                lineWidth={4}
-                opacity={0}
-            />
-        );
-        view.add(
-            <Line
-                ref={tokenVerLines2[i]}
-                points={[[tokenPositions[i] + offset_x + xMovements[1], offset_y + yMovements[0]],
-                [tokenPositions[i] + offset_x + xMovements[1], offset_y + yMovements[yMovements.length - 1] - token_length / 2]]}
-                stroke="#FFFFFF"
-                lineWidth={4}
-                opacity={0}
-            />
-        );
-
 
     });
-
-
-
-
-
 
     // Create the initial input box and lines
     tokenPositions.forEach((x, i) => {
@@ -84,17 +56,17 @@ export default makeScene2D(function* (view) {
                 height={token_length}
                 fill={tokenColors[i]}
                 radius={10}
-                position={[x + offset_x, offset_y]}
+                position={[tokenPositions[i] + offset_x, offset_y]}
             />
         );
         view.add(
             <Txt
-                text={tokenNames[i]}
+                text={scalarNames[i]}
                 ref={tokenTexts[i]}
                 fill="#ffffff"
                 fontSize={factor*20}
                 opacity={0}
-                position={[x + offset_x, offset_y]}
+                position={[tokenPositions[i] + offset_x, offset_y]}
                 fontFamily={"Noto Sans Math"}
             />
         );
@@ -133,7 +105,7 @@ export default makeScene2D(function* (view) {
             height={yMovements[yMovements.length - 1]/2 + token_box_grid/2}
             fill="#5ec962"
             radius={10}
-            position={[3*token_box_grid + offset_x, 4*token_box_grid + offset_y - token_box_grid/1.5]}
+            position={[2*token_box_grid + offset_x, 4*token_box_grid + offset_y - token_box_grid/1]}
         />
     );
 
@@ -141,49 +113,28 @@ export default makeScene2D(function* (view) {
     view.add(
         <Txt
             ref={transformerText}
-            text="Transformer(θᵢ₋₁, θᵢ₋₂...θ₀, C, SOS)"
+            text="Vector Quantization"
             fill="#ffffff"
             fontSize={factor*20}
-            position={[3*token_box_grid + offset_x, 4*token_box_grid + offset_y - token_box_grid/1.5]}
+            position={[2*token_box_grid + offset_x, 4*token_box_grid + offset_y - token_box_grid/1]}
             fontFamily={"Inter"}
         />
     );
 
-    yield* all(
-        ...tokenHorLines.map((horLine, i) =>
-            horLine().opacity(0.2, 0.5),
-        ),
-        ...tokenVerLines1.map((verLine, i) =>
-            verLine().opacity(0.2, 0.5),
-        ),
-        ...tokenVerLines2.map((verLine, i) =>
-            verLine().opacity(0.2, 0.5),
-        ),
-    );
 
-
-
-    for (let i = 0; i < tokenPositions.length; i++) {
-
-        yield* all(
-            tokenTexts[0]().position([tokenPositions[0] + offset_x, offset_y - 2*token_box_grid], 0),
-            tokenRects[0]().position([tokenPositions[0] + offset_x, offset_y - 2*token_box_grid], 0),
-        );
+    for (let i = tokenPositions.length-1; i < tokenPositions.length; i++) {
 
         yield* all(
             tokenTexts[0]().position([tokenPositions[0] + offset_x, offset_y], 1),
             tokenRects[0]().position([tokenPositions[0] + offset_x, offset_y], 1),
-            tokenHorLines[i]().opacity(1, 0.5),
-            tokenVerLines1[i]().opacity(1, 0.5),
-            tokenVerLines2[i]().opacity(1, 0.5),
             ...tokenTexts.map((tokenText, k) => {
                 if (k < i + 1) {
-                    return tokenText().opacity(1, 0.5);
+                    return tokenText().opacity(1, 1);
                 }
             }).filter(Boolean),
             ...tokenRects.map((tokenRect, k) => {
                 if (k < i + 1) {
-                    return tokenRect().opacity(1, 0.5);
+                    return tokenRect().opacity(1, 1);
                 }
             }).filter(Boolean),
         );
