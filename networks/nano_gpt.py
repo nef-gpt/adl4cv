@@ -370,6 +370,20 @@ class GPT(nn.Module):
         return mfu
 
     @torch.no_grad()
+    def generate_logits(self, idx):
+        """
+        Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and predict the next token.
+        Most likely you'll want to make sure to be in model.eval() mode of operation for this.
+        """
+        idx_cond = (
+            idx
+            if idx.size(1) <= self.config.block_size
+            else idx[:, -self.config.block_size :]
+        )
+        logits, _ = self(idx_cond)
+        return logits[:, -1, :]
+
+    @torch.no_grad()
     def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
         """
         Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
