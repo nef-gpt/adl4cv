@@ -1,4 +1,5 @@
 import copy
+from matplotlib import animation
 import torch
 import numpy as np
 from vector_quantize_pytorch import VectorQuantize
@@ -12,11 +13,15 @@ from data.neural_field_datasets import (
 from animation.util import reconstruct_image
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-
+from PIL import Image
 
 import os
 
 from utils import get_default_device
+
+dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
+dataset_path = os.path.join(dir_path, "adl4cv", "datasets", "mnist-nerfs")
+plt.style.use("dark_background")
 
 
 def cat_weights(dataset, n=None):
@@ -91,17 +96,61 @@ def save_vq_dict(path: str, vq: VectorQuantize, vq_config: dict):
     # Define the transform to convert the images to tensors
 transform = transforms.Compose([transforms.ToTensor()])
 mnist = datasets.MNIST("mnist-data", train=True, download=True, transform=transform)
+dataset_gt_model = MnistNeFDataset(dataset_path, type="unconditioned", transform=ModelTransform())
+
+
+    
+def plot_images(images, gt_idx, losses):
+    # Create a figure and axis
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 5))
+
+    ax1.axis("off")
+    # Create a placeholder for the image display
+    cat_image = torch.cat((torch.Tensor(images[0]), torch.Tensor(reconstruct_image(dataset_gt_model[gt_idx][0]))), dim=1)
+    im = ax1.imshow(cat_image, cmap='gray', vmin=0, vmax=1)
+
+
+
+
+    # Function to update the frame
+    def update(image_idx):
+        image = images[image_idx]
+        ground_truth_image = torch.Tensor(reconstruct_image(dataset_gt_model[gt_idx][0]))
+        cat_image = torch.cat((torch.Tensor(images[image_idx]), ground_truth_image), dim=1)
+        im.set_array(cat_image.numpy())
+        ax1.set_title(f"Iteration: {image_idx}")
+        # Update loss plot
+        ax2.clear()
+        ax2.plot(range(image_idx + 1), losses[:image_idx + 1], color='red')
+        ax2.set_xlim([0, len(losses)])
+        ax2.set_ylim([0, max(losses)])
+        ax2.set_xlabel('Iteration')
+        ax2.set_ylabel('Loss')
+
+        return [im]
+
+    # Create animation
+    ani = animation.FuncAnimation(fig, update, frames=len(images), blit=True)
+
+    # Save the animation as an MP4 file
+    FFwriter = animation.FFMpegWriter(fps=len(images)/5)
+    ani.save("./submissions/presentation_2/public/concatenated_images_animation.mp4", writer=FFwriter)
+
+    #plt.show()
+
 
 
 def main():
-    dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
-    dataset_path = os.path.join(dir_path, "adl4cv", "datasets", "mnist-nerfs")
     dataset = MnistNeFDataset(
         dataset_path, type="unconditioned", transform=FlattenTransform()
     )
 
+
+    
+
     weights = cat_weights(dataset, n=len(dataset))
-    vq, vq_config, losses, vqs_parameters = find_best_vq(weights.unsqueeze(-1), False, 0, training_iters=100)
+    #weights = dataset[0][0]
+    vq, vq_config, losses, vqs_parameters = find_best_vq(weights.unsqueeze(-1), False, 0, training_iters=1000 + 1)
 
 
 
@@ -110,7 +159,7 @@ def main():
 
     images = []
 
-    image_idx = 0
+    image_idx = 2
 
     dataset = MnistNeFDataset(dataset_path, type="unconditioned", transform=None)
 
@@ -121,16 +170,10 @@ def main():
         dataset.transform = quantize
         images.append(reconstruct_image(dataset[image_idx][0]))
 
-
-    for image in images:
-        ground_truth_image, _ = mnist[image_idx]
-        cat_image = torch.cat((torch.Tensor(image).unsqueeze(0), ground_truth_image), dim=2).squeeze(0)
-        plt.imshow(cat_image)
-        plt.show()
+    plot_images(images, image_idx, losses)
 
 
-    plt.plot(losses)
-    plt.show()
+    
 
     """
     quantized_dataset_conditioned = MnistNeFDataset(
