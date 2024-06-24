@@ -423,9 +423,16 @@ TODO: Fix Graph and double check graph to maje sure everything wor
 -->
 
 ---
+layout: two-cols-header
 ---
 
 # Preliminary Results
+
+::left::
+
+::right:: 
+
+<img src="/transformer_naive.png" alt="Training_Transformer">
 
 <!-- [Luis]
 - TODO: Inference animation
