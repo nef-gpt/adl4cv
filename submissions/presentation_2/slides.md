@@ -78,12 +78,14 @@ same distribution of MNIST digits
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 
 # Discretization
 Tokenization of weights using Vector Quantization
+
+::left::
 
 **Approach**: Continuous Neural Field weights are discretized using Vector Quantization
 
@@ -97,11 +99,12 @@ Tokenization of weights using Vector Quantization
 4. Assigned rarely used elements to weights
 5. goto 2.
 
-<template v-slot:right>
+::right::
+
+<video src="/vq_1.mp4" autoplay loop muted></video>
 
 
 
-</template>
 
 
 <!-- [Luis]
@@ -306,13 +309,28 @@ MNIST Classifier Score
 
 
 ---
-layout: two-cols-header
+layout: flex
 ---
 
 # Training a Transformer Model
 Hyperparameters
 
-::left::
+<style>
+
+td {
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+}
+
+th {
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+}
+
+</style>
+
+<div class="flex flex-row gap-4 items-center">
+<div class="flex-1">
 
 <table class="font-size-3">
   <thead>
@@ -336,8 +354,6 @@ Hyperparameters
     </tr>
   </tbody>
 </table>
-
-
 
 <table class="font-size-3">
   <thead>
@@ -366,11 +382,15 @@ Hyperparameters
   </tbody>
 </table>
 
+</div>
 
-::right::
 
-image content
+<div class="flex-basis-60% flex-grow-0">
 
+<img src="public/plot_training.png" alt="Training_Transformer">
+
+</div>
+</div>
 
 <!-- [Luis]
 Table of Hyperparameters
