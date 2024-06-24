@@ -65,8 +65,11 @@ TODO: reuse visualization from other presentation
 ---
 ---
 
+
 # Experiment
 From Regression Transformer to Traditional Transformer
+
+
 
 General Procedure:
 - Tokenization of weights using Vector Quantization
@@ -74,7 +77,7 @@ General Procedure:
 - Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
 
 <!-- [Luis]
-same distribution of MNIST digits
+TODO: change Layout
 -->
 
 ---
@@ -87,17 +90,13 @@ Tokenization of weights using Vector Quantization
 
 ::left::
 
+
 **Approach**: Continuous Neural Field weights are discretized using Vector Quantization
 
 **Procedure**:
 - Learning Codebook using weights of all MNIST Neural Fields
 
-**Training**:
-1. Codebook elements randomly initialized
-2. Assign to the closest Codebook element
-3. Update Codebook elements using L2-loss
-4. Assigned rarely used elements to weights
-5. goto 2.
+
 
 ::right::
 
@@ -109,7 +108,14 @@ Tokenization of weights using Vector Quantization
 
 <!-- [Luis]
 
+TODO: add slide with training visualization and:
 
+**Training**:
+1. Codebook elements randomly initialized
+2. Assign to the closest Codebook element
+3. Update Codebook elements using L2-loss
+4. Assigned rarely used elements to weights
+5. goto 2.
 
 -->
 
@@ -168,6 +174,9 @@ Structural Similarity Index (SSIM) - a metric to measure the similarity between 
  works by comparing the similarity of the luminance, contrast, and structure of two images
  two windows of the images are compared, and the SSIM is calculated based on the comparison of the windows
  each window is compared in terms of mean, variance, and covariance
+
+TODO: Maybe layout
+
 -->
 
 
@@ -306,6 +315,8 @@ MNIST Classifier Score
 - Generate a novel neural field using a conditioning token 
 - Use the data pair (neural field, digit) to get a score from the classifier
 
+<span class="h-8 block" />
+
 <img src="/mnist-metric.png" class="w-[100%] mx-auto my-[16px]" />
 
 <!-- [Luca]
@@ -320,7 +331,7 @@ MNIST Classifier Score
 layout: flex
 ---
 
-# Training a Transformer Model
+# Training a Transformer
 Hyperparameters
 
 <style>
@@ -409,17 +420,50 @@ Table of Hyperparameters
 Loss function for training and validation
 MNIST Metrics
 Pictures of Training Results (Just save pictures of MNIST Metrics)
-TODO:
-loss function, MNIST metrics, training result
+TODO: Fix Graph and double check graph to maje sure everything wor
+-->
+
+---
+---
+
+# Preliminary Results
+
+<!-- [Luis]
+- TODO: Inference animation
+- TODO: MNIST - TopK None, temperature 1.0
+
 -->
 
 ---
 ---
 
 # Tuning Inference Parameters
-Determining top-k, temperature and top-p
+Determining top-k, temperature
+
+
 
 <!-- [Luca]
+- Input to the generation procedure -> top-k temperature
+
+
+- TODO: Animated effect of temperature
+
+- Performed a grid search over the hyperparameters top-k and temperature
+- Combination of metrics
+-->
+
+
+---
+---
+
+# Results
+For all conditioning tokens
+
+<!--  [Luca]
+
+- Results for all conditioning tokens with nearest neighbor
+- Achieved metrics for best configuration (?)
+
 -->
 
 ---
@@ -427,7 +471,11 @@ Determining top-k, temperature and top-p
 
 # Outlook & Further Work
 
-- maybe show first working prototype
+- **State**: Generate conditioned neural fields for ShapeNet
+- **Future**: Retraining Transformer
+- **Future**: Qualitative comparison to State-of-the-Art methods
+
+- TODO: Graphic showing difference in pipeline
 
 <!-- [Luis]
 -->
