@@ -4,7 +4,7 @@ from networks.nano_gpt import GPT
 import torch
 import torchvision.transforms as transforms
 from utils import decorator_timer
-from utils.animation import generate_neural_field
+from utils.visualization import generate_neural_field
 from vector_quantize_pytorch import VectorQuantize
 from torchvision.transforms import Normalize
 from PIL import Image

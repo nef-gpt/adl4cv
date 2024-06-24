@@ -3,6 +3,7 @@ import os
 import torch
 from collections import OrderedDict
 import numpy as np
+
 def ensure_folder_exists(folder_path: str):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -23,6 +24,18 @@ def make_coordinates(
     coordinates = np.stack([x_coordinates, y_coordinates]).T
     coordinates = np.repeat(coordinates[np.newaxis, ...], bs, axis=0)
     return torch.from_numpy(coordinates).type(torch.float)
+
+def reconstruct_image_correct_and_not_luis_bs(model: torch.nn.Module, image_size: tuple = (28, 28)):
+
+    input_coords = make_coordinates(image_size, 1)
+     # Generate image using the INR model
+    with torch.no_grad():
+        reconstructed_image = model(input_coords)
+        reconstructed_image = torch.sigmoid(reconstructed_image)
+        reconstructed_image = reconstructed_image.view(*image_size, -1)
+        reconstructed_image = reconstructed_image.permute(2, 0, 1)
+
+    return reconstructed_image
 
 def reconstruct_image(model: torch.nn.Module, image_size: tuple = (28, 28)):
 
