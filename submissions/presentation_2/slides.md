@@ -441,12 +441,30 @@ layout: two-cols-header
 -->
 
 ---
+layout: two-cols-default
 ---
 
 # Tuning Inference Parameters
 Determining top-k, temperature
 
+::left::
 
+- **Top-k**: Reduces number of considered tokens
+- **Temperature**: Smooths the distribution of the logits
+
+$$
+
+L \hat{=} \text{Logits} \\
+T \hat{=} \text{Temperature} \\
+\text{Softmax}(L) = \frac{\exp(L/T)}{\sum_{i}\exp(L_i/T)} \\
+
+$$
+
+::right::
+
+<div class="p-2 rounded-[8px] border border-[#212121] bg-[black] shadow-xl">
+<video src="/animated_bar_chart.mp4" autoplay loop muted></video>
+</div>
 
 <!-- [Luca]
 - Input to the generation procedure -> top-k temperature
@@ -457,6 +475,7 @@ Determining top-k, temperature
 - Performed a grid search over the hyperparameters top-k and temperature
 - Combination of metrics
 -->
+
 
 
 ---
