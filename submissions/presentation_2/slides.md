@@ -399,7 +399,7 @@ th {
 
 <div class="flex-basis-60% flex-grow-0">
 
-<img src="public/plot_training.png" alt="Training_Transformer">
+<img src="/plot_training.png" alt="Training_Transformer">
 
 </div>
 </div>
