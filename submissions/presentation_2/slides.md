@@ -57,7 +57,6 @@ Weight initialization for neural fields
 </template>
 
 <!-- [Luca]
-TODO: reuse visualization from other presentation
 - When transforming neural fields into sequences, the permutation problem arises
 
 -->
@@ -71,10 +70,10 @@ From Regression Transformer to Traditional Transformer
 
 
 
-General Procedure:
-- Tokenization of weights using Vector Quantization
-- Training Transformer with special tokens for start of sequence and conditioning
-- Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
+**General Procedure**:
+1. Tokenization of weights using Vector Quantization
+2. Training Transformer with special tokens for start of sequence and conditioning
+3. Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
 
 <!-- [Luis]
 TODO: change Layout
