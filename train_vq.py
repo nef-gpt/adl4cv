@@ -1,6 +1,8 @@
+import copy
 import torch
 import numpy as np
 from vector_quantize_pytorch import VectorQuantize
+from torchvision import datasets, transforms
 from data.neural_field_datasets import (
     MnistNeFDataset,
     FlattenTransform,
@@ -36,8 +38,6 @@ def find_best_vq(
     vq_lowest_loss = None
     lowest_loss = np.inf
 
-    vq_parameters = []
-
     vq_config = {
         "dim": 1,
         "codebook_size": codebook_size,  #   2**8 - 11,
@@ -67,12 +67,16 @@ def find_best_vq(
 
     vq = vq_lowest_loss
     losses = []
+    vq_parameters = []
 
     print("Training Vector Quantize")
     for _ in tqdm(range(training_iters)):
+        vq_parameters.append(copy.deepcopy(vq.state_dict()))
         weights_quantized, indices, loss = vq(input)
-        vq_parameters.append(vq.state_dict())
         losses.append(loss.item())
+    
+    vq_parameters.append(vq.state_dict())
+    losses.append(loss.item())
     return vq, vq_config, losses, vq_parameters
 
 def save_vq_dict(path: str, vq: VectorQuantize, vq_config: dict):
@@ -84,19 +88,46 @@ def save_vq_dict(path: str, vq: VectorQuantize, vq_config: dict):
         path,
     )
 
+    # Define the transform to convert the images to tensors
+transform = transforms.Compose([transforms.ToTensor()])
+mnist = datasets.MNIST("mnist-data", train=True, download=True, transform=transform)
+
 
 def main():
     dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
     dataset_path = os.path.join(dir_path, "adl4cv", "datasets", "mnist-nerfs")
     dataset = MnistNeFDataset(
-        dataset_path, type="pretrained", fixed_label=5, transform=FlattenTransform()
+        dataset_path, type="unconditioned", transform=FlattenTransform()
     )
 
     weights = cat_weights(dataset, n=len(dataset))
-    vq, vq_config, losses, vq_parameters = find_best_vq(dataset[0][0].unsqueeze(-1), False, 0, training_iters=2000)
+    vq, vq_config, losses, vqs_parameters = find_best_vq(weights.unsqueeze(-1), False, 0, training_iters=100)
+
+
 
     #vq, vq_config, losses = find_best_vq(weights.unsqueeze(-1), 10, training_iters=2000)
     #save_vq_dict(os.path.join(dir_path, "adl4cv", "models", "vqs", "vq_mnist_with_all_5_conditioned_n_501.pt"), vq, vq_config)
+
+    images = []
+
+    image_idx = 0
+
+    dataset = MnistNeFDataset(dataset_path, type="unconditioned", transform=None)
+
+    for vq_params in vqs_parameters:
+        vq = VectorQuantize(**vq_config)
+        vq.load_state_dict(vq_params)
+        quantize = QuantizeTransform(vq)
+        dataset.transform = quantize
+        images.append(reconstruct_image(dataset[image_idx][0]))
+
+
+    for image in images:
+        ground_truth_image, _ = mnist[image_idx]
+        cat_image = torch.cat((torch.Tensor(image).unsqueeze(0), ground_truth_image), dim=2).squeeze(0)
+        plt.imshow(cat_image)
+        plt.show()
+
 
     plt.plot(losses)
     plt.show()

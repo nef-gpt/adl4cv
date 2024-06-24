@@ -155,14 +155,14 @@ export default makeScene2D(function* (view) {
                 ...tokenTexts.map((tokenText, k) => {
                     if (k < i + 1) {
                         if (j == xMovements.length - 1) {
-                            return tokenText().opacity(0, 0.5);
+                            return tokenText().opacity(0, 0.8);
                         }
                     }
                 }).filter(Boolean),
                 ...tokenRects.map((tokenRect, k) => {
                     if (k < i + 1) {
                         if (j == xMovements.length - 1) {
-                            return tokenRect().opacity(0, 0.5);
+                            return tokenRect().opacity(0, 0.8);
                         }
                     }
                 }).filter(Boolean),

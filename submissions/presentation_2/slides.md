@@ -109,23 +109,31 @@ Tokenization of weights using Vector Quantization
 
 <!-- [Luis]
 
+
+
 -->
 
 ---
+layout: two-cols-header
 ---
-
-
-
 
 # Discretization
 Special Tokens
 
+::left::
 
-**Spezial Tokens**:
+
+**Special Tokens**:
 - “Start of Sequence” Token **SOS**
   - indicating the start of the sequence
 - “Conditioning” Token **C** 
-  - indicating which to which number weights belong
+  - indicating to which number the weights belong
+
+::right::
+
+
+<video src="/vq_2.mp4" autoplay loop muted></video>
+
 
 <!-- [Luis]
 
@@ -277,7 +285,7 @@ th {
     </tr>
     <tr>
       <td>Iterations</td>
-      <td style="text-align: right;">30000</td>
+      <td style="text-align: right;">40000</td>
     </tr>
     <tr>
       <td>Batch Size</td>
@@ -296,7 +304,7 @@ th {
   <tbody>
     <tr>
       <td>Embedding Size</td>
-      <td style="text-align: right;">64</td>
+      <td style="text-align: right;">240</td>
     </tr>
     <tr>
       <td>Numbers of Heads</td>
@@ -309,6 +317,10 @@ th {
     <tr>
       <td>Vocabulary Size</td>
       <td style="text-align: right;">256</td>
+    </tr>
+     <tr>
+      <td>Context Length</td>
+      <td style="text-align: right;">562</td>
     </tr>
   </tbody>
 </table>
