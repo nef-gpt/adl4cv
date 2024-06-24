@@ -1,0 +1,3 @@
+,config,name
+0,"{'bias': True, 'device': 'cuda', 'n_embd': 240, 'n_head': 12, 'dropout': 0, 'n_layer': 8, 'out_dir': 'models/token_transformer', 'block_size': 561, 'vocab_size': 256}",run-2024-06-22-00-23-47
+1,"{'bias': True, 'device': 'cuda', 'n_embd': 240, 'n_head': 12, 'dropout': 0, 'n_layer': 8, 'out_dir': 'models/token_transformer', 'block_size': 561, 'vocab_size': 256}",run-2024-06-22-00-23-47

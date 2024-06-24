@@ -10,6 +10,7 @@ https://github.com/huggingface/transformers/blob/main/src/transformers/models/gp
 import math
 import inspect
 from dataclasses import dataclass
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -128,8 +129,8 @@ class Block(nn.Module):
         self.mlp = MLP(config)
 
     def forward(self, x):
-        x = x + self.attn(x)#self.ln_1(x))
-        x = x + self.mlp(x)#self.ln_2(x))
+        x = x + self.attn(x)  # self.ln_1(x))
+        x = x + self.mlp(x)  # self.ln_2(x))
         return x
 
 
@@ -147,6 +148,34 @@ class GPTConfig:
         True  # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
     )
 
+    max_len: Optional[int] = (
+        None  # 36737  # maximum number of tokens in a sequence (for global positional encoding)
+    )
+
+
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
+        )
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer("pe", pe)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Arguments:
+            x: Tensor, shape ``[seq_len, batch_size, embedding_dim]``
+        """
+        x = x + self.pe[: x.size(0)]
+        return self.dropout(x)
+
 
 class GPT(nn.Module):
 
@@ -155,6 +184,11 @@ class GPT(nn.Module):
         assert config.vocab_size is not None
         assert config.block_size is not None
         self.config = config
+
+        if self.config.max_len is not None:
+            self.global_pos_emb = PositionalEncoding(
+                config.n_embd, max_len=config.max_len
+            )
 
         self.transformer = nn.ModuleDict(
             dict(
@@ -206,7 +240,7 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx, targets=None, offset=0):
         device = idx.device
         b, t = idx.size()
         assert (
@@ -216,7 +250,13 @@ class GPT(nn.Module):
 
         # forward the GPT model itself
         tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
-        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
+        # pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
+        pos_emb = (
+            self.global_pos_emb(pos)
+            if self.config.max_len is not None
+            else self.transformer.wpe(pos)
+        )
+
         x = self.transformer.drop(tok_emb + pos_emb)
         for block in self.transformer.h:
             x = block(x)
