@@ -142,12 +142,17 @@ TODO: Create animation
 -->
 
 ---
-layout: flex
+layout: two-cols-default
+transition: fade
 ---
 
 
 # Metrics
 Introduction
+
+::left::
+
+<div class="p-4 border border-[#333] rounded-[8px] bg-[#181818]">
 
 - $S_g$: Set of **evaluated** generated neural fields
   - Images generated from novel neural fields
@@ -156,6 +161,7 @@ Introduction
 - $D(X,Y)$: Distance between elements $X, Y \in S_g \cup S_r$
   - Here Structural Similarity Index (SSIM) is used
 
+</div>
 <!-- [Luca]
 
 Structural Similarity Index (SSIM) - a metric to measure the similarity between two images
@@ -166,58 +172,121 @@ Structural Similarity Index (SSIM) - a metric to measure the similarity between 
 
 
 ---
-layout: flex
+layout: two-cols-default
+transition: fade
 ---
 
 # Metrics
 Minimum Matching Distance (MMD)
 
-- Average minimum distance for each element in $S_r$ to $S_g$
-- Lower is better
+::left::
 
+<div class="p-4 border border-[#333] rounded-[8px] bg-[#181818]">
 
-<span class="h-8" />
+- $S_g$: Set of **evaluated** generated neural fields
+  - Images generated from novel neural fields
+- $S_r$: Set of **evaluated** reference neural fields
+  - Images generated from training neural fields
+- $D(X,Y)$: Distance between elements $X, Y \in S_g \cup S_r$
+  - Here Structural Similarity Index (SSIM) is used
+
+</div>
+
+::right::
 
 $$
 \mathrm{MMD}(S_g,S_r) =\frac{1}{|S_{r}|}\sum_{Y\in S_{r}}\min_{X\in S_{g}}D(X,Y)
 $$
+
+
+<span class="h-8" />
+
+- Average minimum distance for each element in $S_r$ to $S_g$
+- Lower is better
+
+
+
 
 <!-- [Luca]
 Is there a close match in the generated set for each reference image?
 -->
 
 ---
-layout: flex
+layout: two-cols-default
+transition: fade
 ---
+
 
 # Metrics
 Coverage
+
+::left::
+
+<div class="p-4 border border-[#333] rounded-[8px] bg-[#181818]">
+
+- $S_g$: Set of **evaluated** generated neural fields
+  - Images generated from novel neural fields
+- $S_r$: Set of **evaluated** reference neural fields
+  - Images generated from training neural fields
+- $D(X,Y)$: Distance between elements $X, Y \in S_g \cup S_r$
+  - Here Structural Similarity Index (SSIM) is used
+
+</div>
+
+
+::right::
+
+
+$$
+\mathrm{COV}(S_g,S_r) =\frac{|\{\arg\min_{Y\in S_r}D(X,Y)|X\in S_g\}|}{|S_r|}
+$$
+
+<span class="h-8" />
 
 - Percentage of reference images that are a closest neighbor in the generated set
 - Amount of reference images that are covered by the generated set
 - Higher is better
 
 
-<span class="h-8" />
-
-$$
-\mathrm{COV}(S_g,S_r) =\frac{|\{\arg\min_{Y\in S_r}D(X,Y)|X\in S_g\}|}{|S_r|}
-$$
 
 ---
-layout: flex
+layout: two-cols-default
 ---
+
 
 # Metrics
 1-Nearest Neighbor Accuracy (1-NNA)
+
+::left::
+
+<div class="p-4 border border-[#333] rounded-[8px] bg-[#181818]">
+
+- $S_g$: Set of **evaluated** generated neural fields
+  - Images generated from novel neural fields
+- $S_r$: Set of **evaluated** reference neural fields
+  - Images generated from training neural fields
+- $D(X,Y)$: Distance between elements $X, Y \in S_g \cup S_r$
+  - Here Structural Similarity Index (SSIM) is used
+
+</div>
+
+::right::
+
+$$
+\begin{gather*}
+1-\mathrm{NNA}(S_g,S_r) = \\ 
+\frac{\sum_{X\in S_g}\mathbb{1}[N_X\in S_g]+\sum_{Y\in S_r}\mathbb{1}[N_Y\in S_r]}{|S_g|+|S_r|}
+\end{gather*}
+$$
+
+<span class="h-8" />
+
 
 - 50% is the optimal value
 - Sum of the elements of $S_g$ and $S_r$ that are closest neighbors in their respective sets
 - Divided by the total number of elements in $S_g$ and $S_r$
 
-$$
-1-\mathrm{NNA}(S_g,S_r) =\frac{\sum_{X\in S_g}\mathbb{1}[N_X\in S_g]+\sum_{Y\in S_r}\mathbb{1}[N_Y\in S_r]}{|S_g|+|S_r|}
-$$
+
 
 
 <!--  [Luca]
