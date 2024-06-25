@@ -68,15 +68,15 @@ Weight initialization for neural fields
 # Experiment
 From Regression Transformer to Traditional Transformer
 
-
+<img src="/general-approach.png" alt="Training_Transformer">
 
 **General Procedure**:
 1. Tokenization of weights using Vector Quantization
 2. Training Transformer with special tokens for start of sequence and conditioning
 3. Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
 
-<!-- [Luis]
-TODO: change Layout
+<!-- [Luca/Luis]
+LUCA: TODO: Change Layout
 -->
 
 ---
@@ -101,14 +101,8 @@ Tokenization of weights using Vector Quantization
 
 <video src="/vq_1.mp4" autoplay loop muted></video>
 
-
-
-
-
 <!-- [Luis]
-
-TODO: add slide with training visualization and:
-
+- LUCA TODO: Center Text Left-hand-side
 
 -->
 
@@ -125,7 +119,7 @@ Training of Vector Quantization
 **Training**:
 1. Codebook elements randomly initialized
 2. Assign to the closest Codebook element
-3. Update Codebook elements using L2-loss
+3. Update Codebook elements by minimizing L2-loss
 4. Assigned rarely used elements to weights
 5. goto 2.
 
@@ -152,15 +146,18 @@ Special Tokens
 - “Conditioning” Token **C** 
   - indicating to which number the weights belong
 
+
 ::right::
 
 
 <video src="/vq_2.mp4" autoplay loop muted></video>
 
 
+
+
 <!-- [Luis]
 
-TODO: Create animation
+TODO: Center DIV
 
 -->
 
@@ -192,7 +189,7 @@ Structural Similarity Index (SSIM) - a metric to measure the similarity between 
  two windows of the images are compared, and the SSIM is calculated based on the comparison of the windows
  each window is compared in terms of mean, variance, and covariance
 
-TODO: Maybe layout
+TODO: Layout LATEX stuff
 
 -->
 
@@ -425,7 +422,7 @@ th {
 </div>
 
 
-<div class="flex-basis-60% flex-grow-0">
+<div class="flex-basis-60% flex-grow-0 pt-2em">
 
 <img src="/plot_training.png" alt="Training_Transformer">
 
@@ -437,7 +434,7 @@ Table of Hyperparameters
 Loss function for training and validation
 MNIST Metrics
 Pictures of Training Results (Just save pictures of MNIST Metrics)
-TODO: Fix Graph and double check graph to maje sure everything wor
+TODO: Maybe bigger fond, lr two time
 -->
 
 ---
@@ -449,15 +446,15 @@ Autoregressive Generation and Initial Results
 
 ::left::
 
-<video src="/inference.mp4" class="m-auto" autoplay loop muted></video>
+<video controls src="/inference.mp4" class="m-auto" loop muted></video>
 
 ::right:: 
 
-<img src="/transformer_naive.png" class="h-[80%] m-auto" alt="Training_Transformer">
+
+<img v-click src="/transformer_naive.png" class="h-[80%] m-auto" alt="Training_Transformer">
 
 <!-- [Luis]
-- TODO: Inference animation
-- TODO: MNIST - TopK None, temperature 1.0
+- TODO: Maybe some more text
 
 -->
 
@@ -491,10 +488,11 @@ $$
 - Input to the generation procedure -> top-k temperature
 
 
-- TODO: Animated effect of temperature
-
 - Performed a grid search over the hyperparameters top-k and temperature
 - Combination of metrics
+
+TODO: Latex layout / Layout Slides
+TODO: Elaborate on temperature
 -->
 
 
@@ -517,11 +515,22 @@ For all conditioning tokens
 <img src="/nn-plot-final-5-9.png" alt="Results for all conditioning tokens" class="" />
 </div>
 </div>
+<div class="flex flex-row justify-center">
+<span>
+  <span class="text-[#777] font-size-3">
+
+  Results for all conditioning tokens for $T=0.8$ and $\text{top-k}=3$
+  
+  </span>
+</span>
+</div>
 
 <!--  [Luca]
 
 - Results for all conditioning tokens with nearest neighbor
 - Achieved metrics for best configuration (?)
+
+- TODO: Metrics for presented results
 
 -->
 
@@ -531,7 +540,12 @@ For all conditioning tokens
 # Outlook & Further Work
 From MNIST to ShapeNet
 
-**Problem**: 
+<div class="relative">
+<img v-click.hide src="/general-approach.png" alt="Training_Transformer">
+<img v-after src="/general-approach-shapenet.png" alt="Training_Transformer" class="absolute top-0 bottom-0 left-0 right-0">
+</div>
+
+**Challenges**: 
 - Neural Fields for ShapeNet have an increased complexity
 - Context Length would be too high if all weights are used
 
@@ -543,4 +557,23 @@ From MNIST to ShapeNet
 - Qualitative comparison to State-of-the-Art methods
 
 <!-- [Luis]
+
+TODO: Rework text
+
+-->
+
+---
+layout: center
+class: text-center
+hideInToc: true
+---
+# Thank you for your attention!
+We hope you enjoyed our presentation and are looking forward to your questions.
+
+<div class="h-8" />
+<span class="op-[0.5] max-w-30%">
+</span>
+
+<!-- [Luis Muschal]
+
 -->
