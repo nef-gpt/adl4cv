@@ -2,8 +2,8 @@ import { makeScene2D, Txt, Line } from '@motion-canvas/2d';
 import { createRef, all, waitFor } from '@motion-canvas/core';
 import { Rect } from '@motion-canvas/2d/lib/components';
 
-const offset_x = -400;
-const offset_y = -800;
+const offset_x = -200;
+const offset_y = -700;
 
 const factor = 4
 
@@ -141,7 +141,7 @@ export default makeScene2D(function* (view) {
     view.add(
         <Txt
             ref={transformerText}
-            text="Transformer(θᵢ₋₁, θᵢ₋₂...θ₀, C, SOS)"
+            text="Transformer"
             fill="#ffffff"
             fontSize={factor*20}
             position={[3*token_box_grid + offset_x, 4*token_box_grid + offset_y - token_box_grid/1.5]}
