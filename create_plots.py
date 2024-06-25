@@ -36,15 +36,13 @@ axs[1, 0].set_ylabel('Loss')
 axs[1, 0].legend()
 
 # Plot Validation Loss and Learning Rate
-ax2 = axs[1, 1].twinx()
+
 axs[1, 1].plot(data['iter'][data['lr'].notna()], data['lr'][data['lr'].notna()], label='Learning Rate')
 axs[1, 1].set_title('Learning Rate')
 axs[1, 1].set_xlabel('Iterations')
 axs[1, 1].set_ylabel('Learning Rate')
-ax2.plot(data['iter'], data['lr'], label='Learning Rate')
-ax2.set_ylabel('Learning Rate')
 axs[1, 1].legend(loc='upper left')
-ax2.legend(loc='upper right')
+axs[1, 1].legend(loc='upper right')
 
 # Set the face color of the figure and axes to transparent
 fig.patch.set_facecolor('none')
