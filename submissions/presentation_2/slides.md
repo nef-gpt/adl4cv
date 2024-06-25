@@ -99,7 +99,7 @@ layout: two-cols-default
 ---
 
 
-# Discretization
+# Quantization
 Tokenization of weights using Vector Quantization
 
 ::left::
@@ -126,7 +126,7 @@ layout: two-cols-default
 ---
 
 
-# Discretization
+# Quantization
 Training of Vector Quantization
 
 ::left::
@@ -149,7 +149,7 @@ Training of Vector Quantization
 layout: two-cols-default
 ---
 
-# Discretization
+# Quantization
 Special Tokens
 
 ::left::
@@ -368,7 +368,7 @@ MNIST Classifier Score
 layout: flex
 ---
 
-# Training a Transformer
+# Train a Transformer
 Hyperparameters
 
 <style>
@@ -563,7 +563,7 @@ For all conditioning tokens
 ---
 ---
 
-# Outlook & Further Work
+# Outlook
 From MNIST to ShapeNet
 
 <div class="relative">
@@ -573,10 +573,9 @@ From MNIST to ShapeNet
 
 **Challenges**: 
 - Neural Fields for ShapeNet have an increased complexity
-- Context Length would be too high if all weights are used
 
 **Solution**:
-- Add global position using Sinusoidal Position Encoding
+- Map a vector of neural field weights to token
 
 **Future**: 
 - Qualitative comparison to State-of-the-Art methods
