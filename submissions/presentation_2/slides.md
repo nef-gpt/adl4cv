@@ -500,20 +500,23 @@ $$
 
 
 ---
-layout: two-cols
+layout: flex
 ---
 
 # Results
 For all conditioning tokens
 
 
-- **SSIM**: 0.85
-
-
-::right::
-
-
-<img src="/nn-plot-final.png" alt="Results for all conditioning tokens" class="h-480px mx-auto" />
+<div class="flex flex-row items-center h-100% gap-4">
+<div class="flex-1 flex-basis-0px relative">
+<div class="absolute left-0 top-0 bottom-0 w-93px bg-[#333] -z-10 rounded-md"></div>
+<img src="/nn-plot-final-0-4.png" alt="Results for all conditioning tokens" class="" />
+</div>
+<div class="flex-1 flex-basis-0px relative">
+<div class="absolute left-0 top-0 bottom-0 w-93px bg-[#333] -z-10 rounded-md"></div>
+<img src="/nn-plot-final-5-9.png" alt="Results for all conditioning tokens" class="" />
+</div>
+</div>
 
 <!--  [Luca]
 
@@ -528,12 +531,16 @@ For all conditioning tokens
 # Outlook & Further Work
 From MNIST to ShapeNet
 
-- **Problem**: 
+**Problem**: 
 - Neural Fields for ShapeNet have an increased complexity
-- Context Length would be too high if using all weights
+- Context Length would be too high if all weights are used
 
-- **Future**: Retraining Transformer
-- **Future**: Qualitative comparison to State-of-the-Art methods
+**Solution**:
+- Add global position using Sinusoidal Position Encoding
+
+**Future**: 
+- Retraining Transformer and perform Grid Search for optimal parameters
+- Qualitative comparison to State-of-the-Art methods
 
 <!-- [Luis]
 -->
