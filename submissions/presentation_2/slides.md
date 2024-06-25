@@ -473,10 +473,20 @@ $$
 
 
 ---
+layout: two-cols-default
 ---
 
 # Results
 For all conditioning tokens
+
+::left::
+
+- **SSIM**: 0.85
+
+
+::right::
+
+<img src"/nn-plot-final.png" alt="Results for all conditioning tokens" class="w-[100%] mx-auto" />
 
 <!--  [Luca]
 
