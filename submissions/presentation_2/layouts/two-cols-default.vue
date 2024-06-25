@@ -12,7 +12,7 @@ const props = defineProps({
 
 
 <template>
-  <div class="slidev-layout default flex flex-col gap-[2em]">
+  <div class="slidev-layout default flex flex-col gap-[1em]">
     <div>
       <slot />
     </div>

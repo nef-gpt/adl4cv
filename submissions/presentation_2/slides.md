@@ -182,7 +182,7 @@ transition: fade
 ---
 
 
-# Metrics
+# Metrics - Novelty
 Introduction
 
 ::left::
@@ -214,7 +214,7 @@ layout: two-cols-default
 transition: fade
 ---
 
-# Metrics
+# Metrics - Novelty
 Minimum Matching Distance (MMD)
 
 ::left::
@@ -236,10 +236,10 @@ $$
 \mathrm{MMD}(S_g,S_r) =\frac{1}{|S_{r}|}\sum_{Y\in S_{r}}\min_{X\in S_{g}}D(X,Y)
 $$
 
+- Average distance between reference images and their closest neighbor in the generated set
+- Lower is better
 
-<span class="h-8" />
-
-<img src="/mmd.png" class="w-[60%] mx-auto my-[16px]" />
+<img src="/mmd.png" class="w-[80%] mx-auto my-[16px]" />
 
 
 
@@ -254,7 +254,7 @@ transition: fade
 ---
 
 
-# Metrics
+# Metrics - Novelty
 Coverage
 
 ::left::
@@ -280,10 +280,11 @@ $$
 
 <span class="h-8" />
 
-- Percentage of reference images that are a closest neighbor in the generated set
-- Amount of reference images that are covered by the generated set
+- Coverage of the reference by the generated set
 - Higher is better
 
+
+<img src="/cov.png" class="w-[80%] mx-auto my-[16px]" />
 
 
 ---
@@ -291,7 +292,7 @@ layout: two-cols-default
 ---
 
 
-# Metrics
+# Metrics - Novelty
 1-Nearest Neighbor Accuracy (1-NNA)
 
 ::left::
@@ -335,11 +336,14 @@ $$
 -->
 
 ---
+layout: flex
 ---
 
 
-# Metrics
+# Metrics - Image Fidelity
 MNIST Classifier Score
+
+<span class="h-2em block" />
 
 **Proxy metric**: Generate neural fields which lead to *understandable* digits
 
@@ -575,7 +579,6 @@ From MNIST to ShapeNet
 - Add global position using Sinusoidal Position Encoding
 
 **Future**: 
-- Retraining Transformer and perform Grid Search for optimal parameters
 - Qualitative comparison to State-of-the-Art methods
 
 <!-- [Luis]
