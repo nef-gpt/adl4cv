@@ -239,8 +239,7 @@ $$
 
 <span class="h-8" />
 
-- Average minimum distance for each element in $S_r$ to $S_g$
-- Lower is better
+<img src="/mmd.png" class="w-[60%] mx-auto my-[16px]" />
 
 
 
@@ -313,7 +312,12 @@ layout: two-cols-default
 $$
 \begin{gather*}
 1-\mathrm{NNA}(S_g,S_r) = \\ 
-\frac{\sum_{X\in S_g}\mathbb{1}[N_X\in S_g]+\sum_{Y\in S_r}\mathbb{1}[N_Y\in S_r]}{|S_g|+|S_r|}
+\frac{\sum_{X\in S_g}\mathbb{1}[N_X\in S_g]+\sum_{Y\in S_r}\mathbb{1}[N_Y\in S_r]}{|S_g|+|S_r|}\\
+
+\\
+
+N_X = \underset{Y\in S_r \cup S_g}{\text{argmin}} \, D(X,Y) \\
+
 \end{gather*}
 $$
 
@@ -486,11 +490,13 @@ Determining top-k, temperaturen
 - **Temperature**: Smooths the distribution of the logits
 
 $$
-
+\begin{gather*}
 L \hat{=} \text{Logits} \\
 T \hat{=} \text{Temperature} \\
-\text{Softmax}(L) = \frac{\exp(L/T)}{\sum_{i}\exp(L_i/T)} \\
 
+\\
+\text{Softmax}(L) = \frac{\exp(L/T)}{\sum_{i}\exp(L_i/T)} \\
+\end{gather*}
 $$
 
 ::right::
