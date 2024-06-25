@@ -57,7 +57,6 @@ Weight initialization for neural fields
 </template>
 
 <!-- [Luca]
-TODO: reuse visualization from other presentation
 - When transforming neural fields into sequences, the permutation problem arises
 
 -->
@@ -71,17 +70,17 @@ From Regression Transformer to Traditional Transformer
 
 
 
-General Procedure:
-- Tokenization of weights using Vector Quantization
-- Training Transformer with special tokens for start of sequence and conditioning
-- Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
+**General Procedure**:
+1. Tokenization of weights using Vector Quantization
+2. Training Transformer with special tokens for start of sequence and conditioning
+3. Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
 
 <!-- [Luis]
 TODO: change Layout
 -->
 
 ---
-layout: two-cols-header
+layout: two-cols-default
 ---
 
 
@@ -110,6 +109,19 @@ Tokenization of weights using Vector Quantization
 
 TODO: add slide with training visualization and:
 
+
+-->
+
+---
+layout: two-cols-default
+---
+
+
+# Discretization
+Training of Vector Quantization
+
+::left::
+
 **Training**:
 1. Codebook elements randomly initialized
 2. Assign to the closest Codebook element
@@ -117,10 +129,15 @@ TODO: add slide with training visualization and:
 4. Assigned rarely used elements to weights
 5. goto 2.
 
--->
+::right::
+
+<div class="p-2 rounded-[8px] border border-[#212121] bg-[black] shadow-xl">
+<video class="w-80% mx-auto" src="/concatenated_images_animation.mp4" autoplay loop muted></video>
+</div>
+
 
 ---
-layout: two-cols-header
+layout: two-cols-default
 ---
 
 # Discretization
@@ -424,9 +441,20 @@ TODO: Fix Graph and double check graph to maje sure everything wor
 -->
 
 ---
+layout: two-cols-default
 ---
 
 # Preliminary Results
+
+::left::
+
+<div class="p-2 rounded-[8px] border border-[#212121] bg-[black] shadow-xl">
+<video src="/inference.mp4" autoplay loop muted></video>
+</div>
+
+::right:: 
+
+<img src="/transformer_naive.png" alt="Training_Transformer">
 
 <!-- [Luis]
 - TODO: Inference animation
