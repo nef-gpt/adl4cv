@@ -445,16 +445,15 @@ layout: two-cols-default
 ---
 
 # Preliminary Results
+Autoregressive Generation and Initial Results
 
 ::left::
 
-<div class="p-2 rounded-[8px] border border-[#212121] bg-[black] shadow-xl">
-<video src="/inference.mp4" autoplay loop muted></video>
-</div>
+<video src="/inference.mp4" class="m-auto" autoplay loop muted></video>
 
 ::right:: 
 
-<img src="/transformer_naive.png" alt="Training_Transformer">
+<img src="/transformer_naive.png" class="h-[80%] m-auto" alt="Training_Transformer">
 
 <!-- [Luis]
 - TODO: Inference animation
@@ -527,12 +526,14 @@ For all conditioning tokens
 ---
 
 # Outlook & Further Work
+From MNIST to ShapeNet
 
-- **State**: Generate conditioned neural fields for ShapeNet
+- **Problem**: 
+- Neural Fields for ShapeNet have an increased complexity
+- Context Length would be too high if using all weights
+
 - **Future**: Retraining Transformer
 - **Future**: Qualitative comparison to State-of-the-Art methods
-
-- TODO: Graphic showing difference in pipeline
 
 <!-- [Luis]
 -->
