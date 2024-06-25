@@ -68,13 +68,28 @@ Weight initialization for neural fields
 # Experiment
 From Regression Transformer to Traditional Transformer
 
+<span class="block pt-2em"></span>
 <img src="/general-approach.png" alt="Training_Transformer">
 
 **General Procedure**:
-1. Tokenization of weights using Vector Quantization
-2. Training Transformer with special tokens for start of sequence and conditioning
-3. Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
 
+<div class="grid grid-cols-3 grid-rows-1 gap-1em">
+<div class="bg-#444 rounded-md p-6 text-center">
+
+1. Tokenization of weights using Vector Quantization
+
+</div>
+<div class="bg-#444 rounded-md p-6 text-center">
+
+2. Training Transformer and tune hyperparameters
+
+</div>
+<div class="bg-#444 rounded-md p-6 text-center">
+
+3. Optimizing and evaluate inference
+
+</div>
+</div>
 <!-- [Luca/Luis]
 LUCA: TODO: Change Layout
 -->
@@ -446,7 +461,7 @@ Autoregressive Generation and Initial Results
 
 ::left::
 
-<video controls src="/inference.mp4" class="m-auto" loop muted></video>
+<video src="/inference.mp4" class="m-auto" autoplay loop muted></video>
 
 ::right:: 
 
@@ -516,13 +531,14 @@ For all conditioning tokens
 </div>
 </div>
 <div class="flex flex-row justify-center">
-<span>
-  <span class="text-[#777] font-size-3">
 
-  Results for all conditioning tokens for $T=0.8$ and $\text{top-k}=3$
+  <span class="text-[#777] font-size-3 [&>p]:my-1 text-center pt-2">
+
+  Results for all conditioning tokens for $T=0.8$ and $\text{top-k}=3$ 
+
+  $\mathrm{COV}(S_g,S_r) = 13.3 \quad 1 - \mathrm{NNA}(S_g,S_r) = 0.498 \quad \mathrm{MMD}(S_g,S_r) = 2.813$
   
   </span>
-</span>
 </div>
 
 <!--  [Luca]
