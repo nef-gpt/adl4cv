@@ -133,9 +133,9 @@ Training of Vector Quantization
 
 **Training**:
 1. Codebook elements randomly initialized
-2. Assign to the closest Codebook element
-3. Update Codebook elements by minimizing L2-loss
-4. Assigned rarely used elements to weights
+2. **Forward**: Assign Weight to the closest Codebook element
+3. **Backward**: Update Codebook elements by minimizing L2-loss
+4. **Correction**: Assign rarely used elements to weights
 5. goto 2.
 
 ::right::
@@ -486,7 +486,7 @@ layout: two-cols-default
 ---
 
 # Tuning Inference Parameters
-Determining top-k, temperaturen
+Determining top-k, temperature
 
 ::left::
 
@@ -546,7 +546,7 @@ For all conditioning tokens
 
   Results for all conditioning tokens for $T=0.8$ and $\text{top-k}=3$ 
 
-  $\mathrm{COV}(S_g,S_r) = 13.3 \quad 1 - \mathrm{NNA}(S_g,S_r) = 0.498 \quad \mathrm{MMD}(S_g,S_r) = 2.813$
+  $\mathrm{COV}(S_g,S_r) = 0.2773 \quad 1 - \mathrm{NNA}(S_g,S_r) = 0.84 \quad \mathrm{MMD}(S_g,S_r) = 0.2162$
   
   </span>
 </div>
