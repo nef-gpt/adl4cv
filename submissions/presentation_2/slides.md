@@ -467,7 +467,7 @@ layout: two-cols-default
 ---
 
 # Tuning Inference Parameters
-Determining top-k, temperature
+Determining top-k, temperaturen
 
 ::left::
 
@@ -501,20 +501,20 @@ $$
 
 
 ---
-layout: two-cols-default
+layout: two-cols
 ---
 
 # Results
 For all conditioning tokens
 
-::left::
 
 - **SSIM**: 0.85
 
 
 ::right::
 
-<img src"/nn-plot-final.png" alt="Results for all conditioning tokens" class="w-[100%] mx-auto" />
+
+<img src="/nn-plot-final.png" alt="Results for all conditioning tokens" class="h-480px mx-auto" />
 
 <!--  [Luca]
 
