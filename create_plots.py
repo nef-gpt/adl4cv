@@ -1,8 +1,13 @@
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 
 # Load the CSV data into a DataFrame
 data = pd.read_csv('wandb_summery.csv')
+
+font = {'size'   : 14}
+
+matplotlib.rc('font', **font)
 
 plt.style.use('dark_background')
 
