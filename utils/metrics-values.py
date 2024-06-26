@@ -18,7 +18,7 @@ from utils.visualization import generate_neural_field
 
 label = 3
 skip_gt = True
-skip_novel = False
+skip_novel = True
 model_dict = torch.load("./models/token_transformer/proper_tokens.pt")
 
 device = get_default_device()
@@ -110,11 +110,17 @@ if not skip_novel:
         upper_pbar.update(1)
 
 
-# # Load the images
-# imgs = torch.load("./models/metrics/mnist_nerf_images.pt")
-# # only use the first 196 images
-# imgs = imgs[:196]
-# imgs_novel = torch.load("./models/metrics/mnist_novel_images_tk_3_temp_0.8.pt")
+# Load the images
+imgs = torch.load("./models/metrics/mnist_nerf_images.pt")
+
+imgs_novel = torch.load("./models/metrics/mnist_novel_images_tk_None_temp_0.85.pt")
+
+# min length
+min_len = min(imgs.size(0), imgs_novel.size(0))
+
+print(f"comparing {min_len} images")
+# only use the first 196 images
+imgs = imgs[torch.randint(0, imgs.size(0), (min_len,))]
 
 
-# print(compute_all_metrics(imgs_novel, imgs))
+print(compute_all_metrics(imgs_novel, imgs))

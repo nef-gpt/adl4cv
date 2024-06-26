@@ -32,5 +32,9 @@ generation/frames
 
 #*.gif
 *.mp4
-# *.png
+*.png
 *.pt
+
+*.zip
+
+models/vq_search_results

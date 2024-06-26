@@ -193,9 +193,9 @@ def train(
         for split in ["train", "val"]:
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
-                X, Y = get_batch(split)
+                X, Y, idx = get_batch(split)
                 with ctx:
-                    logits, loss = model(X, Y)
+                    logits, loss = model(X, Y, idx)
                 losses[k] = loss.item()
             out[split] = losses.mean()
         model.train()
@@ -209,7 +209,7 @@ def train(
     )
 
     # training loop
-    X, Y = get_batch("train")  # fetch the very first batch
+    X, Y, idx = get_batch("train")  # fetch the very first batch
     t0 = time.time()
     local_iter_num = 0  # number of iterations in the lifetime of this process
     raw_model = model  # unwrap DDP container if needed
@@ -221,13 +221,13 @@ def train(
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
 
-        # evaluate the loss on train/val sets and write checkpoints
-        if iter_num % config.metric_interval == 0:
-            acc, metrics = compute_metrics()
-            print(
-                f"step {iter_num}: mnist classifier loss: {metrics}, mnist accuracy: {acc}"
-            )
-            wandb.log({"iter": iter_num, "mnist_loss": metrics, "mnist_acc": acc})
+        # # evaluate the loss on train/val sets and write checkpoints
+        # if iter_num % config.metric_interval == 0:
+        #     acc, metrics = compute_metrics()
+        #     print(
+        #         f"step {iter_num}: mnist classifier loss: {metrics}, mnist accuracy: {acc}"
+        #     )
+        #     wandb.log({"iter": iter_num, "mnist_loss": metrics, "mnist_acc": acc})
 
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss()
@@ -250,7 +250,7 @@ def train(
                     checkpoint = {
                         "model": model.state_dict(),
                         "optimizer": optimizer.state_dict(),
-                        "model_args": model_config,
+                        "c": model_config,
                         "iter_num": iter_num,
                         "best_val_loss": best_val_loss,
                         "config": config,
@@ -273,12 +273,12 @@ def train(
         # and using the GradScaler if data type is float16
         for micro_step in range(config.gradient_accumulation_steps):
             with ctx:
-                logits, loss = model(X, Y)
+                logits, loss = model(X, Y, idx)
                 loss = (
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
-            X, Y = get_batch("train")
+            X, Y, idx = get_batch("train")
             # backward pass, with gradient scaling if training in fp16
             scaler.scale(loss).backward()
         # clip the gradient
