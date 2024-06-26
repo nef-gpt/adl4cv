@@ -168,6 +168,9 @@ class PositionalEncoding(nn.Module):
         pe[:, 0, 1::2] = torch.cos(position * div_term)
         self.register_buffer("pe", pe)
 
+    def get_pe(self, block_size: int, offset: torch.Tensor):
+        return torch.stack([self.pe[i : i + block_size] for i in offset])
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Arguments:
@@ -240,21 +243,22 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None, offset=0):
+    def forward(self, idx, targets=None, offset=None):
         device = idx.device
         b, t = idx.size()
         assert (
             t <= self.config.block_size
         ), f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
-        pos = torch.arange(0, t, dtype=torch.long, device=device)  # shape (t)
 
         # forward the GPT model itself
         tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
         # pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
         pos_emb = (
-            self.global_pos_emb(pos)
+            self.global_pos_emb.get_pe(self.config.block_size, offset).squeeze(-2)
             if self.config.max_len is not None
-            else self.transformer.wpe(pos)
+            else self.transformer.wpe(
+                torch.arange(0, t, dtype=torch.long, device=device)
+            )
         )
 
         x = self.transformer.drop(tok_emb + pos_emb)
