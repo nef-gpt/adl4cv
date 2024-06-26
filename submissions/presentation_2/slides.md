@@ -68,15 +68,30 @@ Weight initialization for neural fields
 # Experiment
 From Regression Transformer to Traditional Transformer
 
-
+<span class="block pt-2em"></span>
+<img src="/general-approach.png" alt="Training_Transformer">
 
 **General Procedure**:
-1. Tokenization of weights using Vector Quantization
-2. Training Transformer with special tokens for start of sequence and conditioning
-3. Optimizing Transformer Inference Parameters for novel neural fields from the same distribution
 
-<!-- [Luis]
-TODO: change Layout
+<div class="grid grid-cols-3 grid-rows-1 gap-1em">
+<div class="bg-#444 rounded-md p-6 text-center">
+
+1. Tokenization of weights using Vector Quantization
+
+</div>
+<div class="bg-#444 rounded-md p-6 text-center">
+
+2. Training Transformer and tune hyperparameters
+
+</div>
+<div class="bg-#444 rounded-md p-6 text-center">
+
+3. Optimizing and evaluate inference
+
+</div>
+</div>
+<!-- [Luca/Luis]
+LUCA: TODO: Change Layout
 -->
 
 ---
@@ -84,7 +99,7 @@ layout: two-cols-default
 ---
 
 
-# Discretization
+# Quantization
 Tokenization of weights using Vector Quantization
 
 ::left::
@@ -101,14 +116,8 @@ Tokenization of weights using Vector Quantization
 
 <video src="/vq_1.mp4" autoplay loop muted></video>
 
-
-
-
-
 <!-- [Luis]
-
-TODO: add slide with training visualization and:
-
+- LUCA TODO: Center Text Left-hand-side
 
 -->
 
@@ -117,16 +126,16 @@ layout: two-cols-default
 ---
 
 
-# Discretization
+# Quantization
 Training of Vector Quantization
 
 ::left::
 
 **Training**:
 1. Codebook elements randomly initialized
-2. Assign to the closest Codebook element
-3. Update Codebook elements using L2-loss
-4. Assigned rarely used elements to weights
+2. **Forward**: Assign Weight to the closest Codebook element
+3. **Backward**: Update Codebook elements by minimizing L2-loss
+4. **Correction**: Assign rarely used elements to weights
 5. goto 2.
 
 ::right::
@@ -140,7 +149,7 @@ Training of Vector Quantization
 layout: two-cols-default
 ---
 
-# Discretization
+# Quantization
 Special Tokens
 
 ::left::
@@ -152,15 +161,18 @@ Special Tokens
 - “Conditioning” Token **C** 
   - indicating to which number the weights belong
 
+
 ::right::
 
 
 <video src="/vq_2.mp4" autoplay loop muted></video>
 
 
+
+
 <!-- [Luis]
 
-TODO: Create animation
+TODO: Center DIV
 
 -->
 
@@ -170,7 +182,7 @@ transition: fade
 ---
 
 
-# Metrics
+# Metrics - Novelty
 Introduction
 
 ::left::
@@ -192,7 +204,7 @@ Structural Similarity Index (SSIM) - a metric to measure the similarity between 
  two windows of the images are compared, and the SSIM is calculated based on the comparison of the windows
  each window is compared in terms of mean, variance, and covariance
 
-TODO: Maybe layout
+TODO: Layout LATEX stuff
 
 -->
 
@@ -202,7 +214,7 @@ layout: two-cols-default
 transition: fade
 ---
 
-# Metrics
+# Metrics - Novelty
 Minimum Matching Distance (MMD)
 
 ::left::
@@ -224,11 +236,10 @@ $$
 \mathrm{MMD}(S_g,S_r) =\frac{1}{|S_{r}|}\sum_{Y\in S_{r}}\min_{X\in S_{g}}D(X,Y)
 $$
 
-
-<span class="h-8" />
-
-- Average minimum distance for each element in $S_r$ to $S_g$
+- Average distance between reference images and their closest neighbor in the generated set
 - Lower is better
+
+<img src="/mmd.png" class="w-[80%] mx-auto my-[16px]" />
 
 
 
@@ -243,7 +254,7 @@ transition: fade
 ---
 
 
-# Metrics
+# Metrics - Novelty
 Coverage
 
 ::left::
@@ -269,10 +280,11 @@ $$
 
 <span class="h-8" />
 
-- Percentage of reference images that are a closest neighbor in the generated set
-- Amount of reference images that are covered by the generated set
+- Coverage of the reference by the generated set
 - Higher is better
 
+
+<img src="/cov.png" class="w-[80%] mx-auto my-[16px]" />
 
 
 ---
@@ -280,7 +292,7 @@ layout: two-cols-default
 ---
 
 
-# Metrics
+# Metrics - Novelty
 1-Nearest Neighbor Accuracy (1-NNA)
 
 ::left::
@@ -301,7 +313,12 @@ layout: two-cols-default
 $$
 \begin{gather*}
 1-\mathrm{NNA}(S_g,S_r) = \\ 
-\frac{\sum_{X\in S_g}\mathbb{1}[N_X\in S_g]+\sum_{Y\in S_r}\mathbb{1}[N_Y\in S_r]}{|S_g|+|S_r|}
+\frac{\sum_{X\in S_g}\mathbb{1}[N_X\in S_g]+\sum_{Y\in S_r}\mathbb{1}[N_Y\in S_r]}{|S_g|+|S_r|}\\
+
+\\
+
+N_X = \underset{Y\in S_r \cup S_g}{\text{argmin}} \, D(X,Y) \\
+
 \end{gather*}
 $$
 
@@ -319,11 +336,14 @@ $$
 -->
 
 ---
+layout: flex
 ---
 
 
-# Metrics
+# Metrics - Image Fidelity
 MNIST Classifier Score
+
+<span class="h-2em block" />
 
 **Proxy metric**: Generate neural fields which lead to *understandable* digits
 
@@ -348,7 +368,7 @@ MNIST Classifier Score
 layout: flex
 ---
 
-# Training a Transformer
+# Train a Transformer
 Hyperparameters
 
 <style>
@@ -425,7 +445,7 @@ th {
 </div>
 
 
-<div class="flex-basis-60% flex-grow-0">
+<div class="flex-basis-60% flex-grow-0 pt-2em">
 
 <img src="/plot_training.png" alt="Training_Transformer">
 
@@ -437,7 +457,7 @@ Table of Hyperparameters
 Loss function for training and validation
 MNIST Metrics
 Pictures of Training Results (Just save pictures of MNIST Metrics)
-TODO: Fix Graph and double check graph to maje sure everything wor
+TODO: Maybe bigger fond, lr two time
 -->
 
 ---
@@ -445,20 +465,19 @@ layout: two-cols-default
 ---
 
 # Preliminary Results
+Autoregressive Generation and Initial Results
 
 ::left::
 
-<div class="p-2 rounded-[8px] border border-[#212121] bg-[black] shadow-xl">
-<video src="/inference.mp4" autoplay loop muted></video>
-</div>
+<video src="/inference.mp4" class="m-auto" autoplay loop muted></video>
 
 ::right:: 
 
-<img src="/transformer_naive.png" alt="Training_Transformer">
+
+<img v-click src="/transformer_naive.png" class="h-[80%] m-auto" alt="Training_Transformer">
 
 <!-- [Luis]
-- TODO: Inference animation
-- TODO: MNIST - TopK None, temperature 1.0
+- TODO: Maybe some more text
 
 -->
 
@@ -467,7 +486,7 @@ layout: two-cols-default
 ---
 
 # Tuning Inference Parameters
-Determining top-k, temperaturen
+Determining top-k, temperature
 
 ::left::
 
@@ -475,11 +494,13 @@ Determining top-k, temperaturen
 - **Temperature**: Smooths the distribution of the logits
 
 $$
-
+\begin{gather*}
 L \hat{=} \text{Logits} \\
 T \hat{=} \text{Temperature} \\
-\text{Softmax}(L) = \frac{\exp(L/T)}{\sum_{i}\exp(L_i/T)} \\
 
+\\
+\text{Softmax}(L) = \frac{\exp(L/T)}{\sum_{i}\exp(L_i/T)} \\
+\end{gather*}
 $$
 
 ::right::
@@ -492,47 +513,91 @@ $$
 - Input to the generation procedure -> top-k temperature
 
 
-- TODO: Animated effect of temperature
-
 - Performed a grid search over the hyperparameters top-k and temperature
 - Combination of metrics
+
+TODO: Latex layout / Layout Slides
+TODO: Elaborate on temperature
 -->
 
 
 
 ---
-layout: two-cols
+layout: flex
 ---
 
 # Results
 For all conditioning tokens
 
 
-- **SSIM**: 0.85
+<div class="flex flex-row items-center h-100% gap-4">
+<div class="flex-1 flex-basis-0px relative">
+<div class="absolute left-0 top-0 bottom-0 w-93px bg-[#333] -z-10 rounded-md"></div>
+<img src="/nn-plot-final-0-4.png" alt="Results for all conditioning tokens" class="" />
+</div>
+<div class="flex-1 flex-basis-0px relative">
+<div class="absolute left-0 top-0 bottom-0 w-93px bg-[#333] -z-10 rounded-md"></div>
+<img src="/nn-plot-final-5-9.png" alt="Results for all conditioning tokens" class="" />
+</div>
+</div>
+<div class="flex flex-row justify-center">
 
+  <span class="text-[#777] font-size-3 [&>p]:my-1 text-center pt-2">
 
-::right::
+  Results for all conditioning tokens for $T=0.8$ and $\text{top-k}=3$ 
 
-
-<img src="/nn-plot-final.png" alt="Results for all conditioning tokens" class="h-480px mx-auto" />
+  $\mathrm{COV}(S_g,S_r) = 0.2773 \quad 1 - \mathrm{NNA}(S_g,S_r) = 0.84 \quad \mathrm{MMD}(S_g,S_r) = 0.2162$
+  
+  </span>
+</div>
 
 <!--  [Luca]
 
 - Results for all conditioning tokens with nearest neighbor
 - Achieved metrics for best configuration (?)
 
+- TODO: Metrics for presented results
+
 -->
 
 ---
 ---
 
-# Outlook & Further Work
+# Outlook
+From MNIST to ShapeNet
 
-- **State**: Generate conditioned neural fields for ShapeNet
-- **Future**: Retraining Transformer
-- **Future**: Qualitative comparison to State-of-the-Art methods
+<div class="relative">
+<img v-click.hide src="/general-approach.png" alt="Training_Transformer">
+<img v-after src="/general-approach-shapenet.png" alt="Training_Transformer" class="absolute top-0 bottom-0 left-0 right-0">
+</div>
 
-- TODO: Graphic showing difference in pipeline
+**Challenges**: 
+- Neural Fields for ShapeNet have an increased complexity
+
+**Solution**:
+- Map a vector of neural field weights to token
+
+**Future**: 
+- Qualitative comparison to State-of-the-Art methods
 
 <!-- [Luis]
+
+TODO: Rework text
+
+-->
+
+---
+layout: center
+class: text-center
+hideInToc: true
+---
+# Thank you for your attention!
+We hope you enjoyed our presentation and are looking forward to your questions.
+
+<div class="h-8" />
+<span class="op-[0.5] max-w-30%">
+</span>
+
+<!-- [Luis Muschal]
+
 -->
