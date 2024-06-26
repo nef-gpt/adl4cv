@@ -31,7 +31,7 @@ class ShapeNetDataset(Dataset):
     def __getitem__(self, index):
         file = join(self.mlps_folder, self.mlp_files[index])
         out = torch.load(file, map_location=self.device)
-        y = None
+        y = "plane"
 
         if self.transform:
             out, y = self.transform(out)
