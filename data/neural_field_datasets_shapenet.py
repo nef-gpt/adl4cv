@@ -2,7 +2,10 @@ from torch.utils.data import Dataset
 import numpy as np
 import os
 import torch
+import torch.nn as nn
+from vector_quantize_pytorch  import VectorQuantize
 
+from animation.util import backtransform_weights
 from networks.mlp_models import MLP3D
 from os.path import join
 
@@ -15,6 +18,7 @@ mlp_kwargs = {
     "input_dims": 3,
     "multires": 4,
     "include_input": True,
+    "output_type": "occ",
 }
 
 
@@ -34,7 +38,7 @@ class ShapeNetDataset(Dataset):
         y = "plane"
 
         if self.transform:
-            out, y = self.transform(out)
+            out, y = self.transform(out, y)
 
         return out, y
 
@@ -59,3 +63,39 @@ class FlattenTransform3D(torch.nn.Module):
             ]
         )
         return weights, y
+    
+# Transform that uses vq, first flatten data, then use vq for quantization and return indices and label
+class TokenTransform3D(nn.Module):
+    def __init__(self, vq: VectorQuantize):
+        super().__init__()
+        self.flatten = FlattenTransform3D()
+        self.vq = vq
+        self.eval()
+
+    def forward(self, weights_dict, y):
+        # Apply min-max normalization
+        weigths, y = self.flatten(weights_dict, y)
+        with torch.no_grad():
+            _x, indices, _commit_loss = self.vq(weigths.unsqueeze(-1), freeze_codebook=True)
+            return indices, y
+
+    def backproject(self, indices):
+        return self.vq.get_codes_from_indices(indices)
+
+
+class ModelTransform3DFromTokens(torch.nn.Module):
+    def __init__(self, vq: VectorQuantize, weights_dict: dict = mlp_kwargs):
+        super().__init__()
+        self.weights_dict = weights_dict
+        self.vq = vq
+        self.token_transform = TokenTransform3D(vq)
+
+    def forward(self, indices, y=None):
+        weights = self.token_transform.backproject(indices)
+        model = MLP3D(**self.weights_dict)
+
+        prototyp = model.state_dict()
+
+        model.load_state_dict(backtransform_weights(weights.flatten().unsqueeze(0), prototyp))
+
+        return model, y

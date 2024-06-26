@@ -33,7 +33,9 @@ scikit-image = "^0.24.0"
 gdown = "^5.2.0"
 torch = { path = "torch-2.1.2+rocm6.0-cp310-cp310-linux_x86_64.whl" }
 torchvision = { path = "torchvision-0.16.1+rocm6.0-cp310-cp310-linux_x86_64.whl" }
-trimesh = "^4.4.1"
+trimesh = { extras = ["easy"], version = "^4.4.1" }
+pyglet = "<2"
+pyrender = "^0.1.45"
 
 
 [tool.poetry.group.dev.dependencies]
