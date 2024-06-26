@@ -28,10 +28,12 @@ def model_to_mesh(mlp: MLP3D):
         f[:, 2] = tmp
 
     mesh = trimesh.Trimesh(v, f)
-    pass
+    return mesh, sdf
 
 def visualize_model3d(mlp: MLP3D):
-    pass
+    
+    mesh, sdf = model_to_mesh(mlp)
+    mesh.show()
 
 
 if __name__ == '__main__':
