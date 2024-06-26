@@ -17,6 +17,7 @@ from PIL import Image
 
 import os
 
+from data.neural_field_datasets_shapenet import FlattenTransform3D, ShapeNetDataset
 from utils import get_default_device
 
 dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
@@ -28,42 +29,47 @@ def cat_weights(dataset, n=None):
     if n is None:
         n = len(dataset)
 
-    weights_cat = torch.Tensor()
     print("Concatentationg the weights")
-    for j in tqdm(range(0, n)):
-        weights_1d_conditioned = dataset[j][0].numpy()
-        weights_cat = torch.cat((weights_cat, torch.tensor(weights_1d_conditioned)), 0)
+    weights_cat = torch.cat([dataset[j][0] for j in tqdm(range(0, n))])
 
     return weights_cat
 
 
 def find_best_vq(
-    input, kmeans_init, kmean_iters, codebook_size=2**8 - 11, trials=25, training_iters=1000, track_performance = False
+    input, kmean_iters = 0, batch_size = 1028, vec_dim = 1, codebook_size=2**8 - 11, trials=1, training_iters=1000, track_process=False
 ):
     vq_lowest_loss = None
     lowest_loss = np.inf
 
+    assert input.shape[0] % vec_dim == 0, "Shape does not match."
+
+    input = torch.reshape(input[: input.shape[0] - (input.shape[0] % (batch_size*vec_dim))], (-1, batch_size, vec_dim))
+
     vq_config = {
-        "dim": 1,
+        "dim": vec_dim,
         "codebook_size": codebook_size,  #   2**8 - 11,
         "decay": 0.8,
         "commitment_weight": 1.0,
-        "kmeans_init": kmeans_init,
+        "kmeans_init": True if kmean_iters > 0 else False,
         "kmeans_iters": kmean_iters,
     }
 
     input = input.to(get_default_device())
 
+
     
-    if kmeans_init:
+    if kmean_iters:
         print("Performing kMean for Vector Quantize")
         for _ in tqdm(range(trials)):
             vq = None
             if get_default_device() == "cuda":
                 torch.cuda.empty_cache()
-
+            
             vq = VectorQuantize(**vq_config).to(get_default_device())
-            weights_quantized, indices, loss = vq(input)
+
+            batch = input[0]
+            weights_quantized, indices, loss = vq(batch)
+
             if loss < lowest_loss:
                 lowest_loss = loss
                 vq_lowest_loss = vq
@@ -76,12 +82,15 @@ def find_best_vq(
 
     print("Training Vector Quantize")
     for _ in tqdm(range(training_iters)):
-        vq_parameters.append(copy.deepcopy(vq.state_dict()))
-        weights_quantized, indices, loss = vq(input)
-        losses.append(loss.item())
-    
-    vq_parameters.append(vq.state_dict())
-    losses.append(loss.item())
+        if track_process:
+            vq_parameters.append(copy.deepcopy(vq.state_dict()))
+        for i in tqdm(range(input.shape[0])):
+            batch = input[i]
+            weights_quantized, indices, loss = vq(batch)
+            losses.append(loss.item() / batch_size)
+
+    if track_process:
+        vq_parameters.append(vq.state_dict())
     return vq, vq_config, losses, vq_parameters
 
 def save_vq_dict(path: str, vq: VectorQuantize, vq_config: dict):
@@ -138,71 +147,45 @@ def plot_images(images, gt_idx, losses):
 
     #plt.show()
 
-
-
-def main():
+def train_on_mnist():
     dataset = MnistNeFDataset(
         dataset_path, type="unconditioned", transform=FlattenTransform()
     )
-
-
-    
-
     weights = cat_weights(dataset, n=len(dataset))
     #weights = dataset[0][0]
-    vq, vq_config, losses, vqs_parameters = find_best_vq(weights.unsqueeze(-1), False, 0, training_iters=1000 + 1)
+    return find_best_vq(weights.unsqueeze(-1), False, 0, training_iters=1000 + 1)
+
+
+def train_on_shape_net(vocab_sizes):
+    dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
+    weights = cat_weights(dataset, n=len(dataset))
+
+    results = [[], [], [], []]
+
+    for vocab_size in vocab_sizes:
+        print(f"Current vocab size is {vocab_size}")
+        vq, vq_config, loss, vq_parameters = find_best_vq(weights, kmean_iters = 2, codebook_size=vocab_size, batch_size=65536, training_iters=1, vec_dim=17)
+        results[0].append(vq)
+        results[1].append(vq_config)
+        results[2].append(loss)
+        results[3].append(vq_parameters)
+
+    return results
 
 
 
-    #vq, vq_config, losses = find_best_vq(weights.unsqueeze(-1), 10, training_iters=2000)
-    #save_vq_dict(os.path.join(dir_path, "adl4cv", "models", "vqs", "vq_mnist_with_all_5_conditioned_n_501.pt"), vq, vq_config)
-
-    images = []
-
-    image_idx = 2
-
-    dataset = MnistNeFDataset(dataset_path, type="unconditioned", transform=None)
-
-    for vq_params in vqs_parameters:
-        vq = VectorQuantize(**vq_config)
-        vq.load_state_dict(vq_params)
-        quantize = QuantizeTransform(vq)
-        dataset.transform = quantize
-        images.append(reconstruct_image(dataset[image_idx][0]))
-
-    plot_images(images, image_idx, losses)
 
 
+
+def main():
+    vocab_sizes = [256, 512, 1024, 2048, 4096]
+    vq, vq_config, losses, vq_parameters = train_on_shape_net(vocab_sizes)
+
+    for i, loss in enumerate(losses):
+        plt.plot(loss, label = str(vocab_sizes[i]))
+    plt.show()
     
 
-    """
-    quantized_dataset_conditioned = MnistNeFDataset(
-        dataset_path,
-        type="pretrained",
-        fixed_label=3,
-        transform=QuantizeTransform(vq.to(get_default_device)),
-    )
-    no_quantized_dataset_conditioned = MnistNeFDataset(
-        dataset_path, type="pretrained", fixed_label=3, transform=ModelTransform()
-    )
-
-    idx = -3
-    model_quantized_conditioned = quantized_dataset_conditioned[idx][0]
-    model_unquantized_conditioned = no_quantized_dataset_conditioned[idx][0]
-
-    # Plotting the tensors as heatmaps in grayscale
-    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
-    image_quantized_conditioned = reconstruct_image(model_quantized_conditioned)
-    image_unquantized_conditioned = reconstruct_image(model_unquantized_conditioned)
-
-    # image_quantized_conditioned[18][7] = 1
-
-    axes[0].imshow(image_quantized_conditioned, cmap="gray", aspect="auto")
-    axes[1].imshow(image_unquantized_conditioned, cmap="gray", aspect="auto")
-
-    axes[0].set_title("Image using quantized weights")
-    axes[1].set_title("Image using unquantized weights")
-    """
 
 
 if __name__ == "__main__":
