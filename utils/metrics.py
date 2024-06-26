@@ -18,7 +18,7 @@ def ssim_distance(img1, img2):
 
     :return: SSIM distance between img1 and img2 -> torch.Tensor of shape (B?, 1) * 10 ^ 2
     """
-    return ssim(img1, img2) * 10 ** 2
+    return ((ssim(img1, img2) * -1) + 1) / 2
 
 
 def pairwise_ssim_distance(imgs1, imgs2):
@@ -38,10 +38,8 @@ def pairwise_ssim_distance(imgs1, imgs2):
     for i in range(B1):
         # give images as single batch to ssim_distance function
         # have tensor with shape (B1, 1, 28, 28) with the i-th image repeated B1 times
-        imgs1 = imgs1[i].repeat(B2, 1, 1, 1)
-        imgs2 = imgs2
-
-        distances[i] = ssim_distance(imgs1, imgs2)
+        img1repeat = imgs1[i].repeat(B2, 1, 1, 1)
+        distances[i] = ssim_distance(img1repeat, imgs2)
 
     return distances
 
