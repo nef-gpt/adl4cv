@@ -156,15 +156,15 @@ def train_on_mnist():
     return find_best_vq(weights.unsqueeze(-1), False, 0, training_iters=1000 + 1)
 
 
-def train_on_shape_net(vocab_sizes):
+def train_on_shape_net(vocab_sizes, dim = 17):
     dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
     weights = cat_weights(dataset, n=len(dataset))
 
     results = [[], [], [], []]
 
     for vocab_size in vocab_sizes:
-        print(f"Current vocab size is {vocab_size}")
-        vq, vq_config, loss, vq_parameters = find_best_vq(weights, kmean_iters = 2, codebook_size=vocab_size, batch_size=65536, training_iters=1, vec_dim=17)
+        print(f"Current vocab size is {vocab_size} dim is {dim}")
+        vq, vq_config, loss, vq_parameters = find_best_vq(weights, kmean_iters = 2, codebook_size=vocab_size, batch_size=65536, training_iters=1, vec_dim=dim)
         results[0].append(vq)
         results[1].append(vq_config)
         results[2].append(loss)
@@ -174,19 +174,23 @@ def train_on_shape_net(vocab_sizes):
 
 
 
-
-
-
 def main():
-    vocab_sizes = [256, 512, 1024, 2048, 4096]
-    vq, vq_config, losses, vq_parameters = train_on_shape_net(vocab_sizes)
+    vocab_sizes = [256]  # [256, 512, 1024, 2048, 4096]
+    dims = [1, 17]
 
-    for i, loss in enumerate(losses):
-        plt.plot(loss, label = str(vocab_sizes[i]))
+    for dim in dims:
+        vqs, vq_configs, losses, vqs_parameters = train_on_shape_net(vocab_sizes, dim=dim)
+
+        for i, loss in enumerate(losses):
+            label = f"Vocab size: {vocab_sizes[i]}, Dim: {dim}"
+            plt.plot(loss, label=label)
+        plt.legend()
+        
+
+        # Save the results
+        for i, vq in enumerate(vqs):
+            save_vq_dict(f"./models/vq_search_results/vq_model_dim_{dim}_vocab_{vocab_sizes[i]}.pth", vq, vq_configs[i])
     plt.show()
-    
-
-
 
 if __name__ == "__main__":
     main()
