@@ -19,7 +19,7 @@ mlp_kwargs = {
 
 
 
-class WeightDataset(Dataset):
+class ShapeNetDataset(Dataset):
     def __init__(
         self, mlps_folder, transform=None
     ):
@@ -31,11 +31,12 @@ class WeightDataset(Dataset):
     def __getitem__(self, index):
         file = join(self.mlps_folder, self.mlp_files[index])
         out = torch.load(file, map_location=self.device)
+        y = None
 
         if self.transform:
-            out = self.transform(out)
+            out, y = self.transform(out)
 
-        return out
+        return out, y
 
     def __len__(self):
         return len(self.mlp_files)
@@ -44,17 +45,17 @@ class ModelTransform3D(torch.nn.Module):
     def __init__(self, weights_dict: dict = mlp_kwargs):
         super().__init__()
         self.weights_dict = weights_dict
-    def forward(self, state_dict):
+    def forward(self, state_dict, y=None):
         model = MLP3D(**self.weights_dict)
         model.load_state_dict(state_dict)
-        return model
+        return model, y
     
 class FlattenTransform3D(torch.nn.Module):  
-    def forward(self, state_dict):
+    def forward(self, state_dict, y=None):
         weights = torch.cat(
             [
                 state_dict[key].flatten()
                 for key in state_dict.keys()
             ]
         )
-        return weights
+        return weights, y
