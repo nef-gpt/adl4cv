@@ -183,7 +183,7 @@ def train(
     # compute mnist metric score
     @torch.no_grad()
     def compute_metrics():
-        return compute_mnist_score(model, vq, device, token_dict)
+        pass # return compute_mnist_score(model, vq, device, token_dict)
 
     # helps estimate an arbitrarily accurate loss over either split using many batches
     @torch.no_grad()

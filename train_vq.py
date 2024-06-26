@@ -187,17 +187,17 @@ def train_on_mnist():
 
 def train_on_shape_net(
     weights,
-    vocab_sizes,
+    vocab_size,
     batch_size=32768,
     dim=17,
     kmean_iters=1,
     threshold_ema_dead_code=0,
 ):
 
-    for vocab_size in vocab_sizes:
-        print(
-            f"Current vocab size is {vocab_size}, dim is {dim}, batch size is {batch_size}"
-        )
+    if not os.path.exists(
+        f"./models/vq_search_results/vq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}.pth"
+    ):
+
         vq, vq_config, loss, vq_parameters = find_best_vq(
             weights,
             kmean_iters=kmean_iters,
@@ -207,6 +207,7 @@ def train_on_shape_net(
             vec_dim=dim,
             threshold_ema_dead_code=threshold_ema_dead_code,
         )
+
         save_vq_dict(
             f"./models/vq_search_results/vq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}.pth",
             vq,
@@ -218,36 +219,41 @@ def train_on_shape_net(
         label = f"Vocab size: {vocab_size}, Dim: {dim}, Batch Size: {batch_size}, Treshhold: {threshold_ema_dead_code}, kmean iters: {kmean_iters},"
 
         plt.plot(loss, label=label)
-
-        if dim == 1:
-            break
+    else:
+        print(
+            f"./models/vq_search_results/vq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}.pth already exists"
+        )
 
 
 def main():
     vocab_sizes = [256, 512, 1024, 2048]
 
     dims = [17]  # [1, 17]
-    batch_sizes = [2**17 * 2]  # [2**15, 2**16, 2**17]
-    threshold_ema_dead_codes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    kmean_iters_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    batch_sizes = [2**15, 2**16, 2**17]
+    threshold_ema_dead_codes = [0, 1, 2, 4, 8]
+    kmean_iters_list = [0, 1, 2, 4, 8]
 
     dataset = ShapeNetDataset(
         "./datasets/plane_mlp_weights", transform=FlattenTransform3D()
     )
     weights = cat_weights(dataset, n=len(dataset))
 
-    for dim in dims:
-        for batch_size in batch_sizes:
-            for threshold_ema_dead_code in threshold_ema_dead_codes:
-                for kmean_iters in kmean_iters_list:
-                    train_on_shape_net(
-                        weights,
-                        vocab_sizes,
-                        batch_size=batch_size,
-                        dim=dim,
-                        kmean_iters=kmean_iters,
-                        threshold_ema_dead_code=threshold_ema_dead_code,
-                    )
+    for vocab_size in vocab_sizes:
+        for dim in dims:
+            for batch_size in batch_sizes:
+                for threshold_ema_dead_code in threshold_ema_dead_codes:
+                    for kmean_iters in kmean_iters_list:
+                        print(
+                            f"Current vocab size: {vocab_size}, dim: {dim}, batch size: {batch_size}, threshold: {threshold_ema_dead_code}, kmean iters: {kmean_iters}"
+                        )
+                        train_on_shape_net(
+                            weights,
+                            vocab_size,
+                            batch_size=batch_size,
+                            dim=dim,
+                            kmean_iters=kmean_iters,
+                            threshold_ema_dead_code=threshold_ema_dead_code,
+                        )
     plt.legend()
 
     plt.show()

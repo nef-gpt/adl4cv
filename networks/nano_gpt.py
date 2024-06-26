@@ -254,7 +254,7 @@ class GPT(nn.Module):
         tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
         # pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
         pos_emb = (
-            self.global_pos_emb.get_pe(self.config.block_size, offset).squeeze(-2)
+            self.global_pos_emb.get_pe(self.config.block_size, offset)[:, 0:t].squeeze(-2)
             if self.config.max_len is not None
             else self.transformer.wpe(
                 torch.arange(0, t, dtype=torch.long, device=device)
@@ -442,7 +442,9 @@ class GPT(nn.Module):
                 else idx[:, -self.config.block_size :]
             )
             # forward the model to get the logits for the index in the sequence
-            logits, _ = self(idx_cond)
+            # offset = torch.arange(idx.size(1))[-self.config.block_size :].to(idx.device).int()
+            offset = torch.Tensor([max(0, idx.size(1) - self.config.block_size)]).int().unsqueeze(0).to(idx.device)
+            logits, _ = self(idx_cond, offset=offset)
             # pluck the logits at the final step and scale by desired temperature
             logits = logits[:, -1, :] / temperature
             # optionally crop the logits to only the top k options
