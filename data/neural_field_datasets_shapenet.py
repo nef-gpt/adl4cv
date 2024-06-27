@@ -99,3 +99,18 @@ class ModelTransform3DFromTokens(torch.nn.Module):
         model.load_state_dict(backtransform_weights(weights.flatten().unsqueeze(0), prototyp))
 
         return model, y
+    
+
+# Transform that uses vq, first flatten data, then use vq for quantization and return indices and label
+class WeightTransform3D(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, state_dict, y):
+        # Apply min-max normalization
+        state_dict[f"layers.0.weight"]
+        weights = torch.stack(state_dict[f"layers.0.weight"], state_dict[f"layers.1.weight"], state_dict[f"layers.2.weight"], torch.transpose(state_dict[f"layers.3.weight"], 0, 1))
+        return weights, y
+
+    def backproject(self, indices):
+        return self.vq.get_codes_from_indices(indices)

@@ -6,6 +6,7 @@ from networks.regression_transformer import (
     RegressionTransformerConfig,
     RegressionTransformer,
 )
+from networks.vq_ae import VQAutoencoder
 import torch
 import time
 import math
@@ -86,7 +87,7 @@ def train_model(
     # Set device
     device = config.device
 
-    model = RQAutoencoder(model_config)
+    model = VQAutoencoder(model_config)
 
     # Initialize model, loss function, and optimizer
     model = model.to(device)

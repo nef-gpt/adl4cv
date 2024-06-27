@@ -1,5 +1,8 @@
 import copy
 from matplotlib import animation
+from data.hdf5_dataset import HDF5Dataset
+from torch.utils.data import DataLoader
+
 import torch
 import numpy as np
 from vector_quantize_pytorch import VectorQuantize
@@ -45,11 +48,8 @@ def find_best_vq(
     trials=1,
     training_iters=1000,
     track_process=False,
-    model=None
 ):
-    if model:
         
-
     vq_lowest_loss = None
     lowest_loss = np.inf
 
@@ -108,6 +108,70 @@ def find_best_vq(
     return vq, vq_config, losses, vq_parameters
 
 
+def find_best_vq_hdf5(
+    dataloader,
+    kmean_iters=0,
+    batch_size=1028,
+    vec_dim=1,
+    codebook_size=2**8 - 11,
+    threshold_ema_dead_code=0,
+    trials=1,
+    training_iters=1000,
+    track_process=False,
+):
+    dataloader = DataLoader(hdf5_dataset, batch_size=batch_size, shuffle=True)
+
+        
+    vq_lowest_loss = None
+    lowest_loss = np.inf
+
+    vq_config = {
+        "dim": vec_dim,
+        "codebook_size": codebook_size,  #   2**8 - 11,
+        "decay": 0.8,
+        "commitment_weight": 1.0,
+        "kmeans_init": True if kmean_iters > 0 else False,
+        "kmeans_iters": kmean_iters,
+        "threshold_ema_dead_code": threshold_ema_dead_code,
+    }
+
+
+    if kmean_iters:
+        print("Performing kMean for Vector Quantize")
+        for _ in tqdm(range(trials)):
+            for batch in dataloader:
+                vq = None
+                if get_default_device() == "cuda":
+                    torch.cuda.empty_cache()
+
+                vq = VectorQuantize(**vq_config).to(get_default_device())
+                weights_quantized, indices, loss = vq(batch)
+
+                if loss < lowest_loss:
+                    lowest_loss = loss
+                    vq_lowest_loss = vq
+                
+                break
+    else:
+        vq_lowest_loss = VectorQuantize(**vq_config).to(get_default_device())
+
+    vq = vq_lowest_loss
+    losses = []
+    vq_parameters = []
+
+    print("Training Vector Quantize")
+    for _ in tqdm(range(training_iters)):
+        if track_process:
+            vq_parameters.append(copy.deepcopy(vq.state_dict()))
+        for batch in tqdm(dataloader):
+            weights_quantized, indices, loss = vq(batch)
+            losses.append(loss.item())
+
+    if track_process:
+        vq_parameters.append(vq.state_dict())
+    return vq, vq_config, losses, vq_parameters
+
+
 def save_vq_dict(
     path: str, vq: VectorQuantize, vq_config: dict, loss: list, vq_parameter: dict
 ):
@@ -131,21 +195,33 @@ def train_on_shape_net(
     dim=17,
     kmean_iters=1,
     threshold_ema_dead_code=0,
+    hdf5 = False
 ):
 
     if not os.path.exists(
         f"./models/vq_search_results/vq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}.pth"
     ):
 
-        vq, vq_config, loss, vq_parameters = find_best_vq(
-            weights,
-            kmean_iters=kmean_iters,
-            codebook_size=vocab_size,
-            batch_size=batch_size,
-            training_iters=1,
-            vec_dim=dim,
-            threshold_ema_dead_code=threshold_ema_dead_code,
-        )
+        if hdf5:
+            vq, vq_config, loss, vq_parameters = find_best_vq(
+                weights,
+                kmean_iters=kmean_iters,
+                codebook_size=vocab_size,
+                batch_size=batch_size,
+                training_iters=1,
+                vec_dim=dim,
+                threshold_ema_dead_code=threshold_ema_dead_code,
+            )
+        else:
+            vq, vq_config, loss, vq_parameters = find_best_vq_hdf5(
+                weights,
+                kmean_iters=kmean_iters,
+                codebook_size=vocab_size,
+                batch_size=batch_size,
+                training_iters=1,
+                vec_dim=dim,
+                threshold_ema_dead_code=threshold_ema_dead_code,
+            )
 
         save_vq_dict(
             f"./models/vq_search_results/vq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}.pth",
@@ -164,18 +240,7 @@ def train_on_shape_net(
         )
 
 
-def main():
-    vocab_sizes = [256, 512, 1024, 2048]
-
-    dims = [17]  # [1, 17]
-    batch_sizes = [2**15, 2**16, 2**17]
-    threshold_ema_dead_codes = [0, 1, 2, 4, 8]
-    kmean_iters_list = [0, 1, 2, 4, 8]
-
-    dataset = ShapeNetDataset(
-        "./datasets/plane_mlp_weights", transform=FlattenTransform3D()
-    )
-    weights = cat_weights(dataset, n=len(dataset))
+def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], threshold_ema_dead_codes = [0], kmean_iters_list = [0]):
 
     for vocab_size in vocab_sizes:
         for dim in dims:
@@ -199,4 +264,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
+    # weights = cat_weights(dataset, n=len(dataset))
+    
+    # Instantiate the dataset and dataloader
+    hdf5_dataset = HDF5Dataset('datasets/plane_mlp_weights.h5', 'dataset')
+    main(hdf5_dataset, dims=[128], vocab_sizes=[1024], batch_sizes=[2**19], threshold_ema_dead_codes=[1], kmean_iters_list=[1])

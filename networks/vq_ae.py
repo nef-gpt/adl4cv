@@ -3,24 +3,23 @@ import math
 import torch.nn as nn
 import torch.optim as optim
 from utils import get_default_device
-from vector_quantize_pytorch import ResidualVQ, VectorQuantize
-from dataclasses import dataclass
+from vector_quantize_pytorch import VectorQuantize
+from dataclasses import asdict, dataclass
 
 
 @dataclass
 class VQAutoencoderConfig:
     dim_enc: tuple = (4, 2, 1)
     dim_dec: tuple = (1, 2, 4)
-    num_quantizers: int = 8  # specify number of quantizers
+    with_vq: bool = True
     codebook_size: int = 1024  # codebook size
     activation: nn.Module = nn.ReLU(True)
-    vq_decay = 0.99  # decay for the vq layer
     kmeans_init = False  # set to True
     kmeans_iters = 10  # number of kmeans iterations to calculate the centroids for the codebook on init
 
 
 class VQAutoencoder(nn.Module):
-    def __init__(self, config: VQAutoencoderConfig, vq_config: dict):
+    def __init__(self, config: VQAutoencoderConfig):
         super().__init__()
         self.codebook_size = config.codebook_size
 
@@ -71,7 +70,10 @@ class VQAutoencoder(nn.Module):
         else:
             self.decoder = nn.Identity()
 
-        self.vq = VectorQuantize(**vq_config).to(get_default_device())
+        if config.with_vq:
+            self.vq = VectorQuantize(config.dim_dec[0], config.codebook_size, kmeans_init=config.kmeans_init, kmeans_iters=config.kmeans_iters).to(get_default_device())
+        else:
+            self.vq = None
 
     def encode(self, x):
         return self.encoder(x)
@@ -84,7 +86,8 @@ class VQAutoencoder(nn.Module):
         return self.decoder(x)
 
     def forward(self, x):
-        x_encoded = self.encoder(x)
-        latent, _indices, _commit_loss = self.vq(x_encoded)
-        y = self.decoder(latent)
-        return x, torch.nn.functional.mse(x_encoded, y)
+        x = self.encoder(x)
+        if self.vq:
+            x, _indices, _commit_loss = self.vq(x)
+        x = self.decoder(x)
+        return x
