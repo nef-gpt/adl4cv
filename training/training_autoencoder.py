@@ -73,21 +73,19 @@ def get_lr_scheduler(optimizer, config):
 
 def train_model(
     config: TrainingConfig,
-    model_config: RQAutoencoderConfig,
+    model: torch.nn.Module,
     train_loader,
     eval_loader,
     loss: torch.nn.Module,
 ):
     # Initialize Weights and Biases
-    super_config = asdict(config) | asdict(model_config)
+    super_config = asdict(config)
     wandb.init(
         project=config.wandb_project, name=config.wandb_run_name, config=super_config
     )
 
     # Set device
     device = config.device
-
-    model = VQAutoencoder(model_config)
 
     # Initialize model, loss function, and optimizer
     model = model.to(device)
@@ -112,7 +110,7 @@ def train_model(
 
             with autocast(device_type=device.type, enabled=bool(scaler)):
                 outputs = model(inputs)
-                loss = criterion(outputs, inputs)
+                loss = criterion(outputs.z.squeeze(-1), inputs)
 
             if scaler:
                 scaler.scale(loss).backward()
