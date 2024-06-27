@@ -21,6 +21,7 @@ frames
 *.synctex(busy)
 *.synctex.gz(busy)
 *.brf
+*.pth
 mnist-nerfs/*.pth
 mnist-data
 generation/mnist-nerfs
