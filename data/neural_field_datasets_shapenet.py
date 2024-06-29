@@ -114,3 +114,21 @@ class WeightTransform3D(nn.Module):
 
     def backproject(self, indices):
         return self.vq.get_codes_from_indices(indices)
+    
+# Transform that uses vq, first flatten data, then use vq for quantization and return indices and label
+class AllWeights3D(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, state_dict, y):
+        # Apply min-max normalization
+        all_weights = torch.cat((
+                state_dict[f"layers.0.weight"].T, 
+                state_dict[f"layers.1.weight"].T, 
+                state_dict[f"layers.2.weight"].T, 
+                state_dict[f"layers.3.weight"],
+                state_dict[f"layers.0.bias"].unsqueeze(0),
+                state_dict[f"layers.1.bias"].unsqueeze(0),
+                state_dict[f"layers.2.bias"].unsqueeze(0),
+        ))
+        return all_weights, state_dict[f"layers.3.bias"]
