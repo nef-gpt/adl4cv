@@ -45,6 +45,8 @@ class ShapeNetDataset(Dataset):
     def __len__(self):
         return len(self.mlp_files)
     
+    
+    
 class ModelTransform3D(torch.nn.Module):
     def __init__(self, weights_dict: dict = mlp_kwargs):
         super().__init__()
@@ -100,6 +102,7 @@ class ModelTransform3DFromTokens(torch.nn.Module):
 
         return model, y
     
+    
 
 # Transform that uses vq, first flatten data, then use vq for quantization and return indices and label
 class WeightTransform3D(nn.Module):
@@ -114,6 +117,15 @@ class WeightTransform3D(nn.Module):
 
     def backproject(self, indices):
         return self.vq.get_codes_from_indices(indices)
+    
+def get_neuron_mean_n_std(dataset: ShapeNetDataset):
+    all_weights = torch.stack([sample[0]for sample in dataset])
+    neuron_count = all_weights.shape[1]
+    means = torch.stack([all_weights[:, i, :].mean(dim = 0) for i in range(neuron_count)])
+    stds = torch.stack([all_weights[:, i, :].std(dim = 0) for i in range(neuron_count)])
+    return means, stds
+    
+    
     
 # Transform that uses vq, first flatten data, then use vq for quantization and return indices and label
 class AllWeights3D(nn.Module):

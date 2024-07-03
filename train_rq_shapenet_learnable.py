@@ -228,6 +228,6 @@ if __name__ == "__main__":
     #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0, 2, 4, 8, 16], kmean_iters_list=[0], num_quantizers_list=[4], use_inits=[True], training_iters=10, force=True)
     #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[4], use_inits=[False], training_iters=10)
     #main(dataset, dims=[128], vocab_sizes=[512, 1048], batch_sizes=[512, 1024, 2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1, 2, 3, 4], use_inits=[False], training_iters=3)
-    main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[1024], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[2], use_inits=[True], training_iters=20, force=True)
+    main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[1024], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[2], use_inits=[True], training_iters=20, force=False)
 
 
