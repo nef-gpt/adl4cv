@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 import torch
 import numpy as np
-from vector_quantize_pytorch import ResidualVQ, kmeans
+from vector_quantize_pytorch import ResidualVQ
 from torchvision import datasets, transforms
 from data.neural_field_datasets import (
     MnistNeFDataset,
@@ -20,14 +20,18 @@ from PIL import Image
 
 import os
 
-from data.neural_field_datasets_shapenet import AllWeights3D, FlattenTransform3D, ShapeNetDataset
+from data.neural_field_datasets_shapenet import (
+    AllWeights3D,
+    FlattenTransform3D,
+    ShapeNetDataset,
+)
 from utils import get_default_device
+
 
 def uniform_init(*shape):
     t = torch.empty(shape)
     torch.nn.init.kaiming_uniform_(t)
     return t
-
 
 
 def find_best_rq_dataset(
@@ -41,13 +45,11 @@ def find_best_rq_dataset(
     training_iters=1000,
     track_process=False,
     num_quantizers=1,
-    use_init=True
+    use_init=True,
 ):
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    
-        
     rq_lowest_loss = None
     lowest_loss = np.inf
 
@@ -62,7 +64,6 @@ def find_best_rq_dataset(
         "num_quantizers": num_quantizers,
     }
 
-
     if kmean_iters:
         print("Performing kMean for Vector Quantize")
         for _ in tqdm(range(trials)):
@@ -73,29 +74,29 @@ def find_best_rq_dataset(
                     torch.cuda.empty_cache()
 
                 rq = ResidualVQ(**rq_config).to(get_default_device())
-                
+
                 if use_init:
                     pass
 
-                    
-                
                 weights_quantized, indices, loss = rq(batch)
 
                 if loss[0][-1] < lowest_loss:
                     lowest_loss = loss[0][-1]
                     rq_lowest_loss = rq
-                
+
                 break
-            
+
     else:
         rq_lowest_loss = ResidualVQ(**rq_config).to(get_default_device())
         if use_init:
             rq_lowest_loss.layers[0]._codebook.initted = torch.Tensor([1.0])
             embed = uniform_init(1, codebook_size, vec_dim)
-            embed[0, :dataset[0][0].shape[0], :] = dataset[0][0]
+            embed[0, : dataset[0][0].shape[0], :] = dataset[0][0]
             rq_lowest_loss.layers[0]._codebook.embed.data.copy_(embed)
             rq_lowest_loss.layers[0]._codebook.embed_avg.data.copy_(embed.clone())
-            rq_lowest_loss.layers[0]._codebook.cluster_size.data.copy_(torch.zeros(1, codebook_size))
+            rq_lowest_loss.layers[0]._codebook.cluster_size.data.copy_(
+                torch.zeros(1, codebook_size)
+            )
             rq_lowest_loss.layers[0]._codebook.initted.data.copy_(torch.Tensor([True]))
 
     rq = rq_lowest_loss
@@ -143,11 +144,11 @@ def train_on_shape_net(
     num_quantizers=1,
     use_init=True,
     training_iters=1,
-    force=False
-):   
+    force=False,
+):
     path = f"./models/rq_search_results/rq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}_num_quantizers_{num_quantizers}_use_init_{use_init}.pth"
     label = f"Vocab size: {vocab_size}, Dim: {dim}, Batch Size: {batch_size}, Treshhold: {threshold_ema_dead_code}, kmean iters: {kmean_iters}, num quantizers: {num_quantizers}, use_init: {use_init}"
-   
+
     if not os.path.exists(path) or force:
 
         rq, rq_config, loss, rq_parameters = find_best_rq_dataset(
@@ -163,13 +164,13 @@ def train_on_shape_net(
         )
 
         save_rq_dict(
-            path,            
+            path,
             rq,
             rq_config,
             loss,
             rq_parameters,
         )
-        
+
     else:
         print(f"{path} already exists")
         loss = torch.load(path)["loss"]
@@ -177,7 +178,18 @@ def train_on_shape_net(
     plt.plot(loss, label=label)
 
 
-def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], threshold_ema_dead_codes = [0], kmean_iters_list = [0], num_quantizers_list=[1], use_inits=[True], force=False, training_iters=1):
+def main(
+    weights,
+    dims=[17],
+    vocab_sizes=[1024],
+    batch_sizes=[2**15],
+    threshold_ema_dead_codes=[0],
+    kmean_iters_list=[0],
+    num_quantizers_list=[1],
+    use_inits=[True],
+    force=False,
+    training_iters=1,
+):
 
     for vocab_size in vocab_sizes:
         for dim in dims:
@@ -199,23 +211,32 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
                                     num_quantizers=num_quantizers,
                                     use_init=use_init,
                                     training_iters=training_iters,
-                                    force=force
-                                    
+                                    force=force,
                                 )
     plt.legend()
 
     plt.show()
-   
+
 
 if __name__ == "__main__":
     # dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
     # weights = cat_weights(dataset, n=len(dataset))
-    
+
     # Instantiate the dataset and dataloader
     dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=AllWeights3D())
-    #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0, 2, 4, 8, 16], kmean_iters_list=[0], num_quantizers_list=[4], use_inits=[True], training_iters=10, force=True)
-    #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[4], use_inits=[False], training_iters=10)
-    #main(dataset, dims=[128], vocab_sizes=[512, 1048], batch_sizes=[512, 1024, 2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1, 2, 3, 4], use_inits=[False], training_iters=3)
-    main(dataset, dims=[16, 32, 64, 128], vocab_sizes=[512], batch_sizes=[128], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[2, 4], use_inits=[False], training_iters=3, force=True)
 
-
+    # main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0, 2, 4, 8, 16], kmean_iters_list=[0], num_quantizers_list=[4], use_inits=[True], training_iters=10, force=True)
+    # main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[4], use_inits=[False], training_iters=10)
+    # main(dataset, dims=[128], vocab_sizes=[512, 1048], batch_sizes=[512, 1024, 2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1, 2, 3, 4], use_inits=[False], training_iters=3)
+    main(
+        dataset,
+        dims=[8],
+        vocab_sizes=[1024],
+        batch_sizes=[128],
+        threshold_ema_dead_codes=[0],
+        kmean_iters_list=[0],
+        num_quantizers_list=[2],
+        use_inits=[False],
+        training_iters=3,
+        force=True,
+    )

@@ -6,21 +6,16 @@ from torch.utils.data import DataLoader
 import torch
 import numpy as np
 from vector_quantize_pytorch import VectorQuantize
-from torchvision import datasets, transforms
-from data.neural_field_datasets import (
-    MnistNeFDataset,
-    FlattenTransform,
-    ModelTransform,
-    QuantizeTransform,
-)
-from animation.util import reconstruct_image
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
 
 import os
 
-from data.neural_field_datasets_shapenet import FlattenTransform3D, ShapeNetDataset
+from data.neural_field_datasets_shapenet import (
+    FlattenTransform3D,
+    ImageTransform3D,
+    ShapeNetDataset,
+)
 from utils import get_default_device
 
 dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
@@ -277,6 +272,7 @@ def main(
                             dim=dim,
                             kmean_iters=kmean_iters,
                             threshold_ema_dead_code=threshold_ema_dead_code,
+                            hdf5=False,
                         )
     plt.legend()
 
@@ -288,11 +284,21 @@ if __name__ == "__main__":
     # weights = cat_weights(dataset, n=len(dataset))
 
     # Instantiate the dataset and dataloader
-    hdf5_dataset = HDF5Dataset("datasets/plane_mlp_weights.h5", "dataset")
+    # hdf5_dataset = HDF5Dataset("datasets/plane_mlp_weights.h5", "dataset")
+    shapenet = ShapeNetDataset(
+        "./datasets/plane_mlp_weights", transform=ImageTransform3D()
+    )
+    shapenet_all = torch.stack(
+        [shapenet[i][0] for i in range(len(shapenet))], dim=0
+    ).squeeze(1)
+    dataset = shapenet_all[
+        : (shapenet_all.flatten().shape[0] - shapenet_all.flatten().shape[0] % 3)
+    ]
+
     main(
-        hdf5_dataset,
-        dims=[128],
-        vocab_sizes=[2**11, 2**12, 2**13],
+        dataset,
+        dims=[3],
+        vocab_sizes=[1048],
         batch_sizes=[2**16],
         threshold_ema_dead_codes=[0],
         kmean_iters_list=[1],
