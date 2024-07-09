@@ -20,7 +20,7 @@ from PIL import Image
 
 import os
 
-from data.neural_field_datasets_shapenet import AllWeights3D, FlattenTransform3D, ShapeNetDataset
+from data.neural_field_datasets_shapenet import AllWeights3D, FlattenTransform3D, ShapeNetDataset, ZScore3D, get_neuron_mean_n_std, get_total_mean_n_std
 from utils import get_default_device
 
 def uniform_init(*shape):
@@ -64,31 +64,27 @@ def find_best_rq_dataset(
         "learnable_codebook": True,
         "in_place_codebook_optimizer": torch.optim.Adam,
         "learnable_codebook": True,
-        "use_cosine_sim": True
     }
-
 
     if kmean_iters:
         print("Performing kMean for Vector Quantize")
         for _ in tqdm(range(trials)):
-            for batch in dataloader:
-                batch = batch[0].view(-1, vec_dim)
-                rq = None
-                if get_default_device() == "cuda":
-                    torch.cuda.empty_cache()
+            all_weights = torch.cat([batch[0] for batch in dataloader])
+            batch = all_weights[:2048, :, :].view(-1, vec_dim)
+            rq = None
+            if get_default_device() == "cuda":
+                torch.cuda.empty_cache()
 
-                rq = ResidualVQ(**rq_config).to(get_default_device())
-                
-                if use_init:
-                    pass
+            rq = ResidualVQ(**rq_config).to(get_default_device())
+            
+            if use_init:
+                pass
+                 
+            weights_quantized, indices, loss = rq(batch)
 
-                    
-                
-                weights_quantized, indices, loss = rq(batch)
-
-                if loss[0][-1] < lowest_loss:
-                    lowest_loss = loss[0][-1]
-                    rq_lowest_loss = rq
+            if loss[0][-1] < lowest_loss:
+                lowest_loss = loss[0][-1]
+                rq_lowest_loss = rq
                 
                 break
             
@@ -105,7 +101,7 @@ def find_best_rq_dataset(
     
     for layer in rq_lowest_loss.layers:
         for g in layer.in_place_codebook_optimizer.param_groups:
-            g['lr'] = 5e-1
+            g['lr'] = 1e-1
 
     rq = rq_lowest_loss
     losses = []
@@ -122,7 +118,7 @@ def find_best_rq_dataset(
             losses.append(loss[0][-1].item())
         for layer in rq_lowest_loss.layers:
             for g in layer.in_place_codebook_optimizer.param_groups:
-                g['lr'] = g['lr'] * 8e-1
+                g['lr'] = g['lr'] * 5e-1
 
     if track_process:
         rq_parameters.append(rq.state_dict())
@@ -223,11 +219,16 @@ if __name__ == "__main__":
     # dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
     # weights = cat_weights(dataset, n=len(dataset))
     
-    # Instantiate the dataset and dataloader
     dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=AllWeights3D())
-    #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0, 2, 4, 8, 16], kmean_iters_list=[0], num_quantizers_list=[4], use_inits=[True], training_iters=10, force=True)
-    #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[4], use_inits=[False], training_iters=10)
-    #main(dataset, dims=[128], vocab_sizes=[512, 1048], batch_sizes=[512, 1024, 2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1, 2, 3, 4], use_inits=[False], training_iters=3)
-    main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[1024], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[2], use_inits=[True], training_iters=20, force=False)
+    means_neurons, _ = get_neuron_mean_n_std(dataset)
+    shapeNetData_normalized = ShapeNetDataset("./datasets/plane_mlp_weights", transform=[AllWeights3D(), ZScore3D(means_neurons, 1)])
+    mean_total, std_total = get_total_mean_n_std(shapeNetData_normalized)
+    shapeNetData_normalized = ShapeNetDataset("./datasets/plane_mlp_weights", transform=[AllWeights3D(), ZScore3D(means_neurons, 1), ZScore3D(mean_total, std_total)])
+
+
+    #main(shapeNetData_normalized, dims=[128], vocab_sizes=[128], batch_sizes=[2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[16], use_inits=[False], training_iters=10, force=True)
+    main(shapeNetData_normalized, dims=[128], vocab_sizes=[512], batch_sizes=[256], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[8], use_inits=[False], training_iters=1, force=True)
+
+
 
 

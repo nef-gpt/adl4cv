@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import torch
 import numpy as np
 from vector_quantize_pytorch import ResidualVQ
+from vector_quantize_pytorch import ResidualVQ
 from torchvision import datasets, transforms
 from data.neural_field_datasets import (
     MnistNeFDataset,

@@ -74,6 +74,7 @@ def create_mesh_v2(
 
     while head < num_samples:
         sample_subset = samples[head : min(head + max_batch, num_samples), 0:3]
+        sample_subset = samples[head : min(head + max_batch, num_samples), 0:3]
 
         samples[head : min(head + max_batch, num_samples), 3] = (
             decoder(sample_subset).squeeze().detach().cpu()  # .squeeze(1)
@@ -187,6 +188,7 @@ def create_mesh(
             sample_subset = torch.hstack(
                 (
                     sample_subset,
+                    torch.ones((sample_subset.shape[0], 1)) * time_val,
                     torch.ones((sample_subset.shape[0], 1)) * time_val,
                 )
             )
