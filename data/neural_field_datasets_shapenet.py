@@ -21,6 +21,22 @@ mlp_kwargs = {
     "output_type": "occ",
 }
 
+outliers = [  16,   31,   47,   53,   90,  184,  201,  222,  223,  282,  315,  342,
+         344,  377,  435,  438,  469,  508,  513,  527,  531,  598,  675,  691,
+         723,  766,  794,  828,  830,  909,  959,  992, 1015, 1045, 1091, 1097,
+        1208, 1243, 1290, 1395, 1476, 1500, 1503, 1504, 1514, 1528, 1546, 1548,
+        1557, 1601, 1644, 1658, 1718, 1735, 1756, 1783, 1815, 1860, 1913, 1963,
+        1979, 2047, 2071, 2094, 2187, 2222, 2242, 2273, 2307, 2314, 2341, 2376,
+        2388, 2409, 2489, 2509, 2552, 2562, 2570, 2576, 2590, 2651, 2662, 2678,
+        2696, 2733, 2747, 2767, 2776, 2778, 2782, 2802, 2804, 2854, 2858, 2872,
+        2893, 2940, 2948, 2953, 2958, 2964, 2980, 2986, 3018, 3020, 3043, 3057,
+        3082, 3098, 3099, 3105, 3157, 3160, 3168, 3169, 3228, 3264, 3286, 3308,
+        3320, 3341, 3342, 3360, 3378, 3390, 3399, 3414, 3472, 3480, 3483, 3504,
+        3525, 3569, 3591, 3699, 3721, 3748, 3765, 3857, 3877, 3891, 3912, 3914,
+        3944, 3948, 3967, 4002, 4011, 4016, 4042,
+        221,  301,  576,  610,  632,  748, 1311, 1421, 1905, 2017, 2798]
+
+outliers_set = set(outliers)
 
 
 class ShapeNetDataset(Dataset):
@@ -28,17 +44,26 @@ class ShapeNetDataset(Dataset):
         self, mlps_folder, transform=None
     ):
         self.mlps_folder = mlps_folder
-        self.transform = transform
+        
+        if hasattr(transform, '__iter__'):
+            self.transform = transform
+        else:
+            self.transform = [transform]
+            
         self.mlp_files = [file for file in list(os.listdir(mlps_folder))]
+        self.mlp_files =  [file for i, file in enumerate( self.mlp_files) if i not in outliers_set]
+
         self.device = torch.device(get_default_device())
+        self.mlp_kwargs = mlp_kwargs
+        
 
     def __getitem__(self, index):
         file = join(self.mlps_folder, self.mlp_files[index])
         out = torch.load(file, map_location=self.device)
         y = "plane"
 
-        if self.transform:
-            out, y = self.transform(out, y)
+        for t in self.transform:
+            out, y = t(out, y)
 
         return out, y
 
@@ -52,12 +77,18 @@ class ModelTransform3D(torch.nn.Module):
         super().__init__()
         self.weights_dict = weights_dict
     def forward(self, state_dict, y=None):
-        model = MLP3D(**self.weights_dict)
-        model.load_state_dict(state_dict)
+        if "state_dict" in state_dict:
+            model = MLP3D(**state_dict["model_config"])
+            model.load_state_dict(state_dict["state_dict"])
+        else:
+            model = MLP3D(**self.weights_dict)
+            model.load_state_dict(state_dict)
         return model, y
     
 class FlattenTransform3D(torch.nn.Module):  
-    def forward(self, state_dict, y=None):
+    def forward(self, state_dict, y):
+        if "state_dict" in state_dict:
+            state_dict = state_dict["state_dict"]
         weights = torch.cat(
             [
                 state_dict[key].flatten()
@@ -124,6 +155,31 @@ def get_neuron_mean_n_std(dataset: ShapeNetDataset):
     means = torch.stack([all_weights[:, i, :].mean(dim = 0) for i in range(neuron_count)])
     stds = torch.stack([all_weights[:, i, :].std(dim = 0) for i in range(neuron_count)])
     return means, stds
+
+def get_total_mean_n_std(dataset: ShapeNetDataset, dim=128, norm_over_dim=None):
+    all_weights = torch.stack([sample[0]for sample in dataset])
+    if norm_over_dim:
+        return all_weights.view(-1, dim).mean(dim=norm_over_dim), all_weights.view(-1, dim).std(dim=norm_over_dim)
+    else:
+        return all_weights.view(-1, dim).mean(), all_weights.view(-1, dim).std()
+
+
+class ZScore3D(nn.Module):
+    def __init__(self, neuron_means, neuron_stds):
+        super().__init__()
+        self.neuron_means = neuron_means
+        self.neuron_stds = neuron_stds
+        
+    def forward(self, neuron_weights, last_bias):
+        # Apply min-max normalization
+        normalized_neurons = (neuron_weights - self.neuron_means) / self.neuron_stds
+        return normalized_neurons, last_bias
+    
+    def reverse(self, neuron_weights, last_bias):
+        # Revers min-max normalization
+        normalized_neurons = neuron_weights * self.neuron_stds  + self.neuron_means
+        return normalized_neurons, last_bias
+        
     
     
     

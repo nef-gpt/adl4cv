@@ -90,7 +90,7 @@ class MLP3D(nn.Module):
         self,
         out_size,
         hidden_neurons,
-        use_leaky_relu=False,
+        use_gelu=False,
         use_bias=True,
         multires=10,
         output_type=None,
@@ -110,7 +110,7 @@ class MLP3D(nn.Module):
         )
         self.layers = nn.ModuleList([])
         self.output_type = output_type
-        self.use_leaky_relu = use_leaky_relu
+        self.use_gelu = use_gelu
         in_size = self.embedder.out_dim
         first_layer = nn.Linear(in_size, hidden_neurons[0], bias=use_bias)
         if weight_init:
@@ -122,7 +122,7 @@ class MLP3D(nn.Module):
                     weight_init(hidden_layer.weight)
                 self.layers.append(hidden_layer)
 
-        output_layer = nn.Linear(hidden_neurons[-1], out_size, bias=use_bias)
+        output_layer = nn.Linear(hidden_neurons[-1], out_size, bias=False)
         if weight_init:
             weight_init(output_layer.weight)
         self.layers.append(output_layer)
@@ -131,10 +131,11 @@ class MLP3D(nn.Module):
         coords_org = model_input.clone().detach().requires_grad_(True)
         x = coords_org
         x = self.embedder.embed(x)
+        # using a relu in the last hidden layer improves the performance
         for i, layer in enumerate(self.layers[:-1]):
             x = layer(x)
-            # x = F.tanh(x)
-            x = F.leaky_relu(x) if self.use_leaky_relu else F.relu(x)
+            x = F.gelu(x) if self.use_gelu else F.relu(x)
+            
         x = self.layers[-1](x)
 
         if self.output_type == "occ":

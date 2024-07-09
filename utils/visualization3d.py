@@ -11,9 +11,8 @@ import trimesh
 
 from utils.hd_utils import render_mesh
 
-res=512
 
-def model_to_mesh(mlp: MLP3D):
+def model_to_mesh(mlp: MLP3D, res=512):
     effective_file_name = "models/visualization/tmp.ply"
     v, f, sdf = sdf_meshing.create_mesh(
       mlp,
@@ -36,8 +35,6 @@ def model_to_mesh(mlp: MLP3D):
 
 def visualize_model3d(mlp: MLP3D):
     
-
-    mlp.cuda()
     mesh, sdf = model_to_mesh(mlp)
     
     mesh.show()
