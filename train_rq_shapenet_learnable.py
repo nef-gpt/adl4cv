@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 import torch
 import numpy as np
-from vector_quantize_pytorch import ResidualVQ, kmeans
+from vector_quantize_pytorch import ResidualVQ
 from torchvision import datasets, transforms
 from data.neural_field_datasets import (
     MnistNeFDataset,
@@ -17,10 +17,11 @@ from animation.util import reconstruct_image
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
+import wandb
 
 import os
 
-from data.neural_field_datasets_shapenet import AllWeights3D, FlattenTransform3D, ShapeNetDataset, ZScore3D, get_neuron_mean_n_std, get_total_mean_n_std
+from data.neural_field_datasets_shapenet import AllWeights3D, FlattenTransform3D, ImageTransform3D, ShapeNetDataset, ZScore3D, get_neuron_mean_n_std, get_total_mean_n_std
 from utils import get_default_device
 
 def uniform_init(*shape):
@@ -107,14 +108,19 @@ def find_best_rq_dataset(
     losses = []
     rq_parameters = []
 
+    mov_avg_loss = None
+
     print("Training Vector Quantize")
     for _ in tqdm(range(training_iters)):
         if track_process:
             rq_parameters.append(copy.deepcopy(rq.state_dict()))
-        for batch in tqdm(dataloader):
+        bar = tqdm(dataloader)
+        for batch in bar:
             batch = batch[0].view(-1, vec_dim)
             weights_quantized, indices, loss = rq(batch)
-            print(loss)
+            bar.set_description(f"Loss: {loss[0][-1].item()}")
+            # log loss wandb
+            wandb.log({"loss": loss[0][-1].item()})
             losses.append(loss[0][-1].item())
         for layer in rq_lowest_loss.layers:
             for g in layer.in_place_codebook_optimizer.param_groups:
@@ -194,6 +200,21 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
                     for kmean_iters in kmean_iters_list:
                         for num_quantizers in num_quantizers_list:
                             for use_init in use_inits:
+                                # init wand with current setup
+                                wandb.init(
+                                    # unique name with hyperparameters
+                                    project=f"learnable_rq_shapenet",
+                                    name=f"vocab_size_{vocab_size}_dim_{dim}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}_num_quantizers_{num_quantizers}_use_init_{use_init}",
+                                    config={
+                                        "vocab_size": vocab_size,
+                                        "dim": dim,
+                                        "batch_size": batch_size,
+                                        "threshold_ema_dead_code": threshold_ema_dead_code,
+                                        "kmean_iters": kmean_iters,
+                                        "num_quantizers": num_quantizers,
+                                        "use_init": use_init,
+                                    },
+                                )
                                 print(
                                     f"Current vocab size: {vocab_size}, dim: {dim}, batch size: {batch_size}, threshold: {threshold_ema_dead_code}, kmean iters: {kmean_iters}, num quantizers: {num_quantizers}, use init: {use_init}"
                                 )
@@ -216,18 +237,9 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
    
 
 if __name__ == "__main__":
-    # dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
-    # weights = cat_weights(dataset, n=len(dataset))
     
-    dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=AllWeights3D())
-    means_neurons, _ = get_neuron_mean_n_std(dataset)
-    shapeNetData_normalized = ShapeNetDataset("./datasets/plane_mlp_weights", transform=[AllWeights3D(), ZScore3D(means_neurons, 1)])
-    mean_total, std_total = get_total_mean_n_std(shapeNetData_normalized)
-    shapeNetData_normalized = ShapeNetDataset("./datasets/plane_mlp_weights", transform=[AllWeights3D(), ZScore3D(means_neurons, 1), ZScore3D(mean_total, std_total)])
-
-
-    #main(shapeNetData_normalized, dims=[128], vocab_sizes=[128], batch_sizes=[2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[16], use_inits=[False], training_iters=10, force=True)
-    main(shapeNetData_normalized, dims=[128], vocab_sizes=[512], batch_sizes=[256], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[8], use_inits=[False], training_iters=1, force=True)
+    dataset_model = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"), transform=ImageTransform3D())
+    main(dataset_model, dims=[2], vocab_sizes=[2048 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
 
 
 

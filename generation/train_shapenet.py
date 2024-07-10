@@ -4,6 +4,8 @@ import sys
 from torch.multiprocessing import Pool, Process, set_start_method
 from tqdm import tqdm
 
+from utils import get_default_device
+
 try:
     set_start_method("spawn")
 except RuntimeError:
@@ -32,10 +34,7 @@ config = {}
 config["unconditioned"] = {}
 config["pretrained"] = {}
 
-files = [
-        file
-        for file in os.listdir("./datasets/02691156_pc")
-    ]
+files = [file for file in os.listdir("./datasets/02691156_pc")]
 
 
 from vector_quantize_pytorch import VectorQuantize
@@ -52,13 +51,13 @@ model_config = {
 }
 
 # settings
-idx_range = None
+idx_range = range(0, 2500)
 save_during_epochs = None  # 1
-skip_existing_models = False
+skip_existing_models = True
 skip_unconditioned = True
 
 config_file = "./datasets/shapenet_nefs/overview.json"
-device = torch.device("cpu")  # get_default_device()
+device = torch.device("cuda")  # get_default_device()
 
 print("Using device", device)
 
@@ -86,6 +85,9 @@ def update_config(config, entry):
     First match the type of the entry, then use the idx to set the config
     """
 
+    # try to reload the config first
+    config = load_config()
+
     if entry["type"] == "pretrained":
         config["pretrained"][entry["idx"]] = entry
     else:
@@ -99,8 +101,7 @@ def save_config(config):
         json.dump(config, f)
 
 
-def fit_single_batch(i: int, init_model_path=None, batch_size=2048):
-
+def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
 
     # Create dataset and dataloader
     dataset = PointCloud("./datasets/02691156_pc/" + files[i], batch_size, strategy="")
@@ -113,7 +114,7 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2048):
 
     model.to(device)
 
-    #loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
+    # loss_fn = torch.nn.functional.binary_cross_entropy_with_logits
     loss_fn = torch.nn.functional.mse_loss
 
     subfoldername = "pretrained" if init_model_path else "unconditioned"
@@ -175,7 +176,6 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2048):
         config=model_config | train_config | cfg,
     )
 
-
     total_loss, output_name = training.train(
         model,
         train_dataloader=dataloader,
@@ -219,29 +219,26 @@ def train_unconditioned_single(i):
 
 
 def train_unconditioned():
-    
+
     for i in range(len(files)):
         train_unconditioned_single(i)
 
 
 def lookup_pretrained(config):
     # config[unconditioned] is a dictionary with keys as indices and values as dictionaries
-    for key, entry in (
-        config["unconditioned"].items()
-    ):
+    for key, entry in config["unconditioned"].items():
         return entry
     return None
 
 
 def train_pretrained_single(i):
     if (idx_range is not None) and (i not in idx_range):
+        print(f"Invalid index {i}")
         return
 
     global config
     pretrained_entry = lookup_pretrained(config)
-    print(
-        f"Training image {i} with pretrained model {pretrained_entry['output']}"
-    )
+    print(f"Training image {i} with pretrained model {pretrained_entry['output']}")
     entry = fit_single_batch(i, init_model_path=pretrained_entry["output"])
 
     # update config
@@ -249,9 +246,11 @@ def train_pretrained_single(i):
     save_config(config)
 
 
-def train_pretrained():
+def train_pretrained(backward=False):
 
     for i in tqdm(range(len(files))):
+        if backward:
+            i = len(files) - i - 1
         train_pretrained_single(i)
 
 

@@ -111,6 +111,7 @@ def train(
     vq_config: dict = None,
     early_stop: EarlyStopper = None,
     token_dict: dict = None,
+    custom_eval: callable = lambda logits, split, k: None,
 ):
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
@@ -196,6 +197,7 @@ def train(
                 X, Y, idx = get_batch(split)
                 with ctx:
                     logits, loss = model(X, Y, idx)
+                    custom_eval(logits, split, k)
                 losses[k] = loss.item()
             out[split] = losses.mean()
         model.train()
@@ -250,7 +252,7 @@ def train(
                     checkpoint = {
                         "model": model.state_dict(),
                         "optimizer": optimizer.state_dict(),
-                        "c": model_config,
+                        "model_config": model_config,
                         "iter_num": iter_num,
                         "best_val_loss": best_val_loss,
                         "config": config,

@@ -193,7 +193,9 @@ class ShapeNetDataset(Dataset):
     def __init__(self, mlps_folder, transform=None):
         self.mlps_folder = mlps_folder
 
-        if hasattr(transform, "__iter__"):
+        if transform is None:
+            self.transform = None
+        elif hasattr(transform, "__iter__"):
             self.transform = transform
         else:
             self.transform = [transform]
@@ -211,8 +213,9 @@ class ShapeNetDataset(Dataset):
         out = torch.load(file, map_location=self.device)
         y = "plane"
 
-        for t in self.transform:
-            out, y = t(out, y)
+        if self.transform is not None:
+            for t in self.transform:
+                out, y = t(out, y)
 
         return out, y
 
@@ -247,7 +250,7 @@ class FlattenTransform3D(torch.nn.Module):
 class TokenTransform3D(nn.Module):
     def __init__(self, vq: VectorQuantize):
         super().__init__()
-        self.flatten = FlattenTransform3D()
+        self.flatten = ImageTransform3D()
         self.vq = vq
         self.eval()
 
@@ -255,10 +258,16 @@ class TokenTransform3D(nn.Module):
         # Apply min-max normalization
         weigths, y = self.flatten(weights_dict, y)
         with torch.no_grad():
+            flattened_weights = weigths.view(-1, self.vq.layers[0].dim)
             _x, indices, _commit_loss = self.vq(
-                weigths.unsqueeze(-1), freeze_codebook=True
+                flattened_weights, freeze_codebook=True
             )
             return indices, y
+
+    def inverse(self, indices):
+        quantized = self.vq.get_codes_from_indices(indices)
+        #quantized_reshaped = quantized.view(-1, self.vq.dim)
+        return self.flatten.inverse(quantized)
 
     def backproject(self, indices):
         return self.vq.get_codes_from_indices(indices)
@@ -370,14 +379,21 @@ class ImageTransform3D(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, state_dict, y):
+    def forward(self, state_dict, y, dim=32):
         # Store reference to original state_dict (for inverse)
+        if "state_dict" in state_dict:
+            state_dict = state_dict["state_dict"]
+
         self.original_state_dict = state_dict
+
+        # random tensor from state_dict
+        t = state_dict[list(state_dict.keys())[0]]
 
         # Apply min-max normalization
         cat = torch.cat([state_dict[key].view(-1) for key in state_dict], dim=0)
-        cat = torch.cat([cat, torch.zeros(128 - cat.shape[0] % 128)])
-        cat = cat.view(1, 128, -1)
+        if cat.shape[0] % dim != 0:
+            cat = torch.cat([cat, torch.zeros(dim - cat.shape[0] % dim).to(t)])
+        cat = cat.view(1, dim, -1)
         return cat, y
 
     def inverse(self, cat, model_dict=None):

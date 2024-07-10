@@ -17,7 +17,7 @@ def render_mesh(obj):
     if isinstance(obj, trimesh.Trimesh):
         # Handle mesh rendering
         mesh = pyrender.Mesh.from_trimesh(
-            obj,
+            obj,    
             material=pyrender.MetallicRoughnessMaterial(
                 alphaMode="BLEND",
                 baseColorFactor=[1, 0.3, 0.3, 1.0],
