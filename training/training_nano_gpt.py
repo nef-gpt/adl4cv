@@ -203,9 +203,11 @@ def train(
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
                 
-                X, Y, idx, _ = get_batch(split, losses=losses_over_dataset)
+                X, Y, idx, dataset_indices = get_batch(split, losses=losses_over_dataset)
                 with ctx:
                     logits, loss = model(X, Y, idx)
+                    if losses_over_dataset:
+                        losses_over_dataset[dataset_indices] = loss
                     custom_eval(logits, split, k)
                 losses[k] = loss.item()
             out[split] = losses.mean()
@@ -288,7 +290,8 @@ def train(
                 loss = (
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
-                losses_over_dataset[dataset_indices] = loss
+                if losses_over_dataset:
+                    losses_over_dataset[dataset_indices] = loss
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
             X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
             # backward pass, with gradient scaling if training in fp16
