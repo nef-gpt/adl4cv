@@ -205,9 +205,11 @@ def train(
                 
                 X, Y, idx, dataset_indices = get_batch(split, losses=losses_over_dataset)
                 with ctx:
-                    logits, loss = model(X, Y, idx)
                     if losses_over_dataset:
-                        losses_over_dataset[dataset_indices] = loss
+                        logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
+                        losses_over_dataset[dataset_indices] = loss_per_sample
+                    else:
+                        logits, loss = model(X, Y, idx)
                     custom_eval(logits, split, k)
                 losses[k] = loss.item()
             out[split] = losses.mean()
@@ -286,12 +288,16 @@ def train(
         # and using the GradScaler if data type is float16
         for micro_step in range(config.gradient_accumulation_steps):
             with ctx:
-                logits, loss = model(X, Y, idx)
+                if losses_over_dataset:
+                        logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
+                        losses_over_dataset[dataset_indices] = loss_per_sample
+                else:
+                    logits, loss = model(X, Y, idx)
+                    
                 loss = (
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
-                if losses_over_dataset:
-                    losses_over_dataset[dataset_indices] = loss
+
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
             X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
             # backward pass, with gradient scaling if training in fp16
