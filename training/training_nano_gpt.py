@@ -9,6 +9,7 @@ TODO:
 """
 
 from contextlib import nullcontext
+from data.neural_field_datasets_shapenet import ShapeNetDataset
 from training.mnist_classifier_score import compute_mnist_score
 from vector_quantize_pytorch import VectorQuantize
 from dataclasses import asdict, dataclass
@@ -112,7 +113,13 @@ def train(
     early_stop: EarlyStopper = None,
     token_dict: dict = None,
     custom_eval: callable = lambda logits, split, k, x, y: None,
+    important_sampling: bool = True,
 ):
+    if important_sampling:
+        losses_over_dataset = torch.cat([100]*len(ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"))))
+
+        
+        
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -194,10 +201,16 @@ def train(
         for split in ["train", "val"]:
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
-                X, Y, idx = get_batch(split)
+                
                 with ctx:
-                    logits, loss = model(X, Y, idx)
-                    # custom_eval(logits, split, k, X, Y)
+                    if important_sampling:
+                        X, Y, idx, dataset_indices = get_batch(split, losses=losses_over_dataset)
+                        logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
+                        losses_over_dataset[dataset_indices] = loss_per_sample
+                    else:
+                        X, Y, idx = get_batch(split)
+                        logits, loss = model(X, Y, idx)
+                    custom_eval(logits, split, k)
                 losses[k] = loss.item()
             out[split] = losses.mean()
         model.train()
@@ -211,7 +224,10 @@ def train(
     )
 
     # training loop
-    X, Y, idx = get_batch("train")  # fetch the very first batch
+    if important_sampling:
+        X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+    else:
+        X, Y, idx = get_batch("train")
     t0 = time.time()
     local_iter_num = 0  # number of iterations in the lifetime of this process
     raw_model = model  # unwrap DDP container if needed
@@ -275,14 +291,23 @@ def train(
         # and using the GradScaler if data type is float16
         for micro_step in range(config.gradient_accumulation_steps):
             with ctx:
-                logits, loss = model(X, Y, idx)
+                if losses_over_dataset:
+                        X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+                        logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
+                        losses_over_dataset[dataset_indices] = loss_per_sample
+                else:
+                    X, Y, idx = get_batch("train")
+                    logits, loss = model(X, Y, idx)
+                    
                 loss = (
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
+
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
-            X, Y, idx = get_batch("train")
-            if iter_num % config.eval_interval == 0:
-                custom_eval(logits, "train", 1, X, Y)
+            if important_sampling:
+                X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+            else:
+                X, Y, idx = get_batch("train")
             # backward pass, with gradient scaling if training in fp16
             scaler.scale(loss).backward()
         # clip the gradient

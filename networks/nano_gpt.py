@@ -244,7 +244,7 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None, offset=None):
+    def forward(self, idx, targets=None, offset=None, reduction="mean"):
         device = idx.device
         b, t = idx.size()
         assert (
@@ -270,9 +270,15 @@ class GPT(nn.Module):
         if targets is not None:
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)
-            loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
-            )
+            if reduction=="none":
+                loss = F.cross_entropy(
+                    logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1, reduction=reduction
+                )
+                mean_loss = loss.mean()
+            else:
+                loss = F.cross_entropy(
+                    logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
+                )
         else:
             # inference-time mini-optimization: only forward the lm_head on the very last position
             logits = self.lm_head(
@@ -280,7 +286,10 @@ class GPT(nn.Module):
             )  # note: using list [-1] to preserve the time dim
             loss = None
 
-        return logits, loss
+        if reduction == "none":
+            return logits, mean_loss, loss
+        
+        return logits, mean_loss
 
     def crop_block_size(self, block_size):
         # model surgery to decrease the block size if necessary
