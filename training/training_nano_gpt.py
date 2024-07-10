@@ -9,6 +9,7 @@ TODO:
 """
 
 from contextlib import nullcontext
+from data.neural_field_datasets_shapenet import ShapeNetDataset
 from training.mnist_classifier_score import compute_mnist_score
 from vector_quantize_pytorch import VectorQuantize
 from dataclasses import asdict, dataclass
@@ -112,7 +113,14 @@ def train(
     early_stop: EarlyStopper = None,
     token_dict: dict = None,
     custom_eval: callable = lambda logits, split, k: None,
+    important_sampling: bool = True,
 ):
+    if important_sampling:
+        losses_over_dataset = torch.cat([100]*len(ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"))))
+    else:
+        losses_over_dataset=None
+        
+        
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -194,7 +202,8 @@ def train(
         for split in ["train", "val"]:
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
-                X, Y, idx = get_batch(split)
+                
+                X, Y, idx, _ = get_batch(split, losses=losses_over_dataset)
                 with ctx:
                     logits, loss = model(X, Y, idx)
                     custom_eval(logits, split, k)
@@ -211,7 +220,7 @@ def train(
     )
 
     # training loop
-    X, Y, idx = get_batch("train")  # fetch the very first batch
+    X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
     t0 = time.time()
     local_iter_num = 0  # number of iterations in the lifetime of this process
     raw_model = model  # unwrap DDP container if needed
@@ -279,8 +288,9 @@ def train(
                 loss = (
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
+                losses_over_dataset[dataset_indices] = loss
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
-            X, Y, idx = get_batch("train")
+            X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
             # backward pass, with gradient scaling if training in fp16
             scaler.scale(loss).backward()
         # clip the gradient
