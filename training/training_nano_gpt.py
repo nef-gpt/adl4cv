@@ -117,8 +117,7 @@ def train(
 ):
     if important_sampling:
         losses_over_dataset = torch.cat([100]*len(ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"))))
-    else:
-        losses_over_dataset=None
+
         
         
     os.makedirs(config.out_dir, exist_ok=True)
@@ -203,12 +202,13 @@ def train(
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
                 
-                X, Y, idx, dataset_indices = get_batch(split, losses=losses_over_dataset)
                 with ctx:
-                    if losses_over_dataset:
+                    if important_sampling:
+                        X, Y, idx, dataset_indices = get_batch(split, losses=losses_over_dataset)
                         logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
                         losses_over_dataset[dataset_indices] = loss_per_sample
                     else:
+                        X, Y, idx = get_batch(split)
                         logits, loss = model(X, Y, idx)
                     custom_eval(logits, split, k)
                 losses[k] = loss.item()
@@ -224,7 +224,10 @@ def train(
     )
 
     # training loop
-    X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+    if important_sampling:
+        X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+    else:
+        X, Y, idx = get_batch("train")
     t0 = time.time()
     local_iter_num = 0  # number of iterations in the lifetime of this process
     raw_model = model  # unwrap DDP container if needed
@@ -289,9 +292,11 @@ def train(
         for micro_step in range(config.gradient_accumulation_steps):
             with ctx:
                 if losses_over_dataset:
+                        X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
                         logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
                         losses_over_dataset[dataset_indices] = loss_per_sample
                 else:
+                    X, Y, idx = get_batch("train")
                     logits, loss = model(X, Y, idx)
                     
                 loss = (
@@ -299,7 +304,10 @@ def train(
                 )  # scale the loss to account for gradient accumulation
 
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
-            X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+            if important_sampling:
+                X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+            else:
+                X, Y, idx = get_batch("train")
             # backward pass, with gradient scaling if training in fp16
             scaler.scale(loss).backward()
         # clip the gradient
