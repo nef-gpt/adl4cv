@@ -112,11 +112,12 @@ def train(
     vq_config: dict = None,
     early_stop: EarlyStopper = None,
     token_dict: dict = None,
-    custom_eval: callable = lambda logits, split, k, x, y: None,
+    custom_eval: callable = lambda logits, split, k, x, y, loss: None,
     important_sampling: bool = True,
+    dataset: ShapeNetDataset = None,
 ):
     if important_sampling:
-        losses_over_dataset = torch.cat([100]*len(ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"))))
+        losses_over_dataset = 100.0*torch.ones((len(dataset),)).to(config.device)
 
         
         
@@ -146,9 +147,9 @@ def train(
     elif config.init_from == "resume":
         print(f"Resuming training from {config.out_dir}")
         # resume training from a checkpoint.
-        ckpt_path = os.path.join(config.out_dir, "funktioniert_okeisch.pt")
+        ckpt_path = os.path.join(config.out_dir, "ckpt.pt")
         checkpoint = torch.load(ckpt_path, map_location=device)
-        checkpoint_model_args = checkpoint["model_args"]
+        checkpoint_model_args = checkpoint["model_config"]
         # force these config attributes to be equal otherwise we can't even resume training
         # the rest of the attributes (e.g. dropout) can stay as desired from command line
         # for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]:
@@ -178,8 +179,8 @@ def train(
         config.device.type,
     )
 
-    if config.init_from == "resume":
-        optimizer.load_state_dict(checkpoint["optimizer"])
+    # if config.init_from == "resume":
+        # optimizer.load_state_dict(checkpoint["optimizer"])
     checkpoint = None  # free up memory
 
     # compile the model
@@ -210,7 +211,7 @@ def train(
                     else:
                         X, Y, idx = get_batch(split)
                         logits, loss = model(X, Y, idx)
-                    custom_eval(logits, split, k)
+                    custom_eval(logits, split, k, X, Y, loss_per_sample)
                 losses[k] = loss.item()
             out[split] = losses.mean()
         model.train()
@@ -220,7 +221,8 @@ def train(
     # merge the two dataclasses into a single dict (with defaults from the model config)
     super_config = asdict(config) | asdict(model_config)
     wandb.init(
-        project=config.wandb_project, name=config.wandb_run_name, config=super_config
+        project=config.wandb_project, name=config.wandb_run_name, config=super_config,
+        mode="online"
     )
 
     # training loop
@@ -291,7 +293,7 @@ def train(
         # and using the GradScaler if data type is float16
         for micro_step in range(config.gradient_accumulation_steps):
             with ctx:
-                if losses_over_dataset:
+                if important_sampling:
                         X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
                         logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
                         losses_over_dataset[dataset_indices] = loss_per_sample

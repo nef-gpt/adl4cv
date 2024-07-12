@@ -51,13 +51,14 @@ model_config = {
 }
 
 # settings
-idx_range = range(0, 2500)
+idx_range = None  # Srange(0, 2500)
 save_during_epochs = None  # 1
 skip_existing_models = True
 skip_unconditioned = True
 
 config_file = "./datasets/shapenet_nefs/overview.json"
-device = torch.device("cuda")  # get_default_device()
+cpu_mode = True
+device = torch.device("cpu" if cpu_mode else "cuda")  # get_default_device()
 
 print("Using device", device)
 
@@ -121,7 +122,7 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
     foldername = f"./datasets/shapenet_nefs/{subfoldername}"
 
     train_config = {
-        "epochs": 200,
+        "epochs": 300,
         "lr": 1e-2,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
@@ -242,13 +243,13 @@ def train_pretrained_single(i):
     entry = fit_single_batch(i, init_model_path=pretrained_entry["output"])
 
     # update config
-    config = update_config(config, entry)
-    save_config(config)
+    # config = update_config(config, entry)
+    # save_config(config)
 
 
-def train_pretrained(backward=False):
+def train_pretrained(backward=cpu_mode):
 
-    for i in tqdm(range(len(files))):
+    for i in tqdm(range(int(len(files) / 2))):
         if backward:
             i = len(files) - i - 1
         train_pretrained_single(i)

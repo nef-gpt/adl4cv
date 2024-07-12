@@ -15,6 +15,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import wandb
 
 
 class LayerNorm(nn.Module):
@@ -244,6 +245,32 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
+    def entropy_loss(self, logits, reduction="mean"):
+        """
+        Computes the entropy loss for a batch of logits.
+
+        Enforcing high entropy in the model's predictions across a batch can help to prevent overfitting
+        
+        Args:
+            logits (torch.Tensor): The input logits with shape (batch_size, num_classes).
+            
+        Returns:
+            torch.Tensor: The entropy loss.
+        """
+
+        # compute crossentropy for each item in the batch, against all others
+        b, s, v = logits.shape
+
+        if b == 1:
+            return 0
+
+        entropy = torch.stack([torch.nn.functional.cross_entropy(logits[i].repeat((3, 1, 1)), torch.softmax(logits[[j for j in range(b) if j != i]], dim=2)) for i in range(b)]).mean()
+
+        # get residual loss between entropy and target
+        target = 140
+
+        return (entropy - target) ** 2
+
     def forward(self, idx, targets=None, offset=None, reduction="mean"):
         device = idx.device
         b, t = idx.size()
@@ -271,20 +298,28 @@ class GPT(nn.Module):
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)
             if reduction=="none":
+                b, s, l = logits.size()
                 loss = F.cross_entropy(
                     logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1, reduction=reduction
                 )
-                mean_loss = loss.mean()
+
+                # calculate entropy loss across the batch
+                entropy_loss = self.entropy_loss(logits)
+                wandb.log({"entropy_loss": entropy_loss})
+                loss = loss.view(b, -1).mean(dim=-1)
+                mean_loss = loss.mean() + entropy_loss
             else:
-                loss = F.cross_entropy(
+                mean_loss = F.cross_entropy(
                     logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
-                )
+                ) + self.entropy_loss(logits)
+                loss = None
         else:
             # inference-time mini-optimization: only forward the lm_head on the very last position
             logits = self.lm_head(
                 x[:, [-1], :]
             )  # note: using list [-1] to preserve the time dim
             loss = None
+            mean_loss = None
 
         if reduction == "none":
             return logits, mean_loss, loss

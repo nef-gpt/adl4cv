@@ -24,6 +24,8 @@ import os
 from data.neural_field_datasets_shapenet import AllWeights3D, FlattenTransform3D, ImageTransform3D, ShapeNetDataset, ZScore3D, get_neuron_mean_n_std, get_total_mean_n_std
 from utils import get_default_device
 
+condition = None
+
 def uniform_init(*shape):
     t = torch.empty(shape)
     torch.nn.init.kaiming_uniform_(t)
@@ -70,8 +72,8 @@ def find_best_rq_dataset(
     if kmean_iters:
         print("Performing kMean for Vector Quantize")
         for _ in tqdm(range(trials)):
-            all_weights = torch.cat([batch[0] for batch in dataloader])
-            batch = all_weights[:2048, :, :].view(-1, vec_dim)
+            all_weights = torch.cat([(batch[0] - condition) for batch in iter(dataloader)])
+            batch = all_weights[:100, :, :].view(-1, vec_dim)
             rq = None
             if get_default_device() == "cuda":
                 torch.cuda.empty_cache()
@@ -114,9 +116,9 @@ def find_best_rq_dataset(
     for _ in tqdm(range(training_iters)):
         if track_process:
             rq_parameters.append(copy.deepcopy(rq.state_dict()))
-        bar = tqdm(dataloader)
+        bar = tqdm(iter(dataloader))
         for batch in bar:
-            batch = batch[0].view(-1, vec_dim)
+            batch = (batch[0] - condition).view(-1, vec_dim)
             weights_quantized, indices, loss = rq(batch)
             bar.set_description(f"Loss: {loss[0][-1].item()}")
             # log loss wandb
@@ -239,7 +241,15 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
 if __name__ == "__main__":
     
     dataset_model = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"), transform=ImageTransform3D())
-    main(dataset_model, dims=[2], vocab_sizes=[2048 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
+    #dataset_model = ZScore3D(dataset_model, get_total_mean_n_std(dataset_model, dim=1, dim_over_dim=0))
+    dataset_model_unconditioned = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "unconditioned"), transform=ImageTransform3D())
+
+    condition = dataset_model_unconditioned[0][0]
+
+
+
+
+    main(dataset_model, dims=[1], vocab_sizes=[256 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
 
 
 
