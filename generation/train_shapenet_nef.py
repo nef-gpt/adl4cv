@@ -34,6 +34,7 @@ def train(
     summary_fn,
     wandb,
     model_config,
+    l1_loss_lambda=0.0,
     val_dataloader=None,
     double_precision=False,
     clip_grad=False,
@@ -143,8 +144,9 @@ def train(
 
                 model_output = model(model_input)
                 losses = loss_fn(model_output.float(), gt.float())
-
-                train_loss = losses
+                
+                all_params = torch.cat([x.view(-1) for x in model.parameters()])
+                train_loss = losses + l1_loss_lambda*torch.norm(all_params, 1)
                 # for loss_name, loss in losses.items():
 
                 #     single_loss = loss.mean()

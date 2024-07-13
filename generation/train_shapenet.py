@@ -34,7 +34,8 @@ config = {}
 config["unconditioned"] = {}
 config["pretrained"] = {}
 
-files = [file for file in os.listdir("./datasets/02691156_pc")]
+files = [] # [file for file in os.listdir("./datasets/02691156_pc")]
+file_unconditioned = "5d7c2f1b6ed0d02aa4684be4f9cb3c1d.obj"
 
 
 from vector_quantize_pytorch import VectorQuantize
@@ -56,12 +57,11 @@ save_during_epochs = None  # 1
 skip_existing_models = True
 skip_unconditioned = True
 
-config_file = "./datasets/shapenet_nefs/overview.json"
+config_file = "./datasets/shapenet_nef_2/overview.json"
 cpu_mode = True
 device = torch.device("cpu" if cpu_mode else "cuda")  # get_default_device()
 
 print("Using device", device)
-
 
 def load_config():
     # create config file if it does not exist
@@ -105,7 +105,11 @@ def save_config(config):
 def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
 
     # Create dataset and dataloader
-    dataset = PointCloud("./datasets/02691156_pc/" + files[i], batch_size, strategy="")
+    if init_model_path:
+        dataset = PointCloud("./datasets/02691156_pc/" + files[i], batch_size, strategy="")
+    else:
+        dataset = PointCloud(file_unconditioned, batch_size, strategy="")
+        
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     model = MLP3D(**model_config)
@@ -119,14 +123,14 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
     loss_fn = torch.nn.functional.mse_loss
 
     subfoldername = "pretrained" if init_model_path else "unconditioned"
-    foldername = f"./datasets/shapenet_nefs/{subfoldername}"
+    foldername = f"./datasets/shapenet_nef_2/{subfoldername}"
 
     train_config = {
         "epochs": 300,
         "lr": 1e-2,
         "steps_til_summary": 100,
         "epochs_til_checkpoint": 100,
-        "model_dir": "datasets/shapenet_nefs",
+        "model_dir": "datasets/shapenet_nef_2",
         "double_precision": False,
         "clip_grad": False,
         "use_lbfgs": False,
@@ -189,6 +193,7 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
         save_epoch_interval=save_during_epochs,
         device=device,
         disable_tqdm=False,
+        l1_loss_lambda=0.0
     )
 
     return {
@@ -221,7 +226,7 @@ def train_unconditioned_single(i):
 
 def train_unconditioned():
 
-    for i in range(len(files)):
+    for i in range(1):
         train_unconditioned_single(i)
 
 
