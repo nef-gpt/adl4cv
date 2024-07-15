@@ -273,7 +273,8 @@ class ImageTransform3D(nn.Module):
 
     def inverse(self, cat, model_dict=None):
         # flatten
-        cat = cat.view(-1)
+        #cat = cat.view(-1)
+        cat = cat.flatten()
         if model_dict is None:
             model_dict = self.original_state_dict
         i = 0
