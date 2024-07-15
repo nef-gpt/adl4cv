@@ -1,0 +1,15 @@
+% Literature Review
+\section{Proposed Methods}
+\label{sec:method}
+% explanation of your planned methods
+Firstly, the training Neural Fields will be fitted on a dataset of images and 3D structures. The resulting weights will then have to be transformed to be usable as a transformer input such that they can be used to unconditionally and autoregressively generate novel weights. To deal with the unstructured nature of NeFs we investigate the following approaches:\\
+\noindent \textbf{Naive Approach: }
+Directly perform a regression task on the MLP-weights of the NeF and use a continuous loss function.
+Additionally, we also want to investigate the possibility to use positional encoding to inform the model about the structure within the MLP.
+\\
+\textbf{Learned Embedding: }
+Since the MLP is a fully connected graph, we want to propose an encoder-decoder architecture that captures the underlying structure in the latent space, by for example using Graph-CNNs. This representation is then used to train the transformer on a regression task.
+\\
+\textbf{Learned Vocabulary: }
+Since transformers usually excel with predicting tokenized sequences we also want to investigate methods to quantize the input, either directly from the weights or the learned embedding. Instead of a regression task the transformer would predict the probability distribution of the most likely next token.
+
