@@ -9,7 +9,7 @@ font = {'size'   : 14}
 
 matplotlib.rc('font', **font)
 
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 
 # Create a 2x2 plot with transparent background
 fig, axs = plt.subplots(2, 2, figsize=(15, 10), facecolor='none')

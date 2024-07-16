@@ -54,8 +54,8 @@ model_config = {
 # settings
 idx_range = None  # Srange(0, 2500)S
 save_during_epochs = None  # 1
-skip_existing_models = True
-skip_unconditioned = True
+skip_existing_models = False
+skip_unconditioned = False
 
 config_file = "./datasets/shapenet_nef_2/overview.json"
 cpu_mode = False

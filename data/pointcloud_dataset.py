@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
 from tqdm import tqdm
 import trimesh
@@ -5,6 +6,11 @@ import igl
 import numpy as np
 import os
 import torch
+from PIL import Image
+import io
+
+from utils.hd_utils import render_mesh
+
 
 
 class PointCloud(Dataset):
@@ -28,6 +34,8 @@ class PointCloud(Dataset):
             if strategy == "save_pc":
                 obj: trimesh.Trimesh = trimesh.load(path, process=False)
 
+                #obj.show()
+
                 vertices = obj.vertices
 
                 vertices -= np.mean(vertices, axis=0, keepdims=True)
@@ -36,6 +44,20 @@ class PointCloud(Dataset):
                 vertices *= 0.5 * 0.95 / (max(abs(v_min), abs(v_max)))
                 obj.vertices = vertices
                 self.obj = obj
+                
+                color, depth = render_mesh(obj, res=(3600,3600))
+                
+                fig = plt.figure()
+                ax = fig.add_subplot()
+                ax.set_xlim((500, 3000))
+                ax.set_ylim((4250, 1250))
+                ax.grid(False)
+                ax.axis("off")
+                ax.imshow(color)
+                
+                plt.show()
+                
+                
 
                 n_points_uniform = n_points
                 n_points_surface = n_points
@@ -112,8 +134,7 @@ class PointCloud(Dataset):
         }
 
 
-def get_pc():
-    files = [file for file in os.listdir("./datasets/02691156_watertight_mesh")]
+def get_pc(files: list = [file for file in os.listdir("./datasets/02691156_watertight_mesh")]):
 
     for i, file in tqdm(enumerate(files), "File"):
         PointCloud(
@@ -146,52 +167,52 @@ def plot_image(
     )
     print("filtered_coord_out.shape: ", filtered_coord_out.shape)
     print("filtered_coord_in.shape: ", filtered_coord_in.shape)
-    print("Checking contains")
-    num_to_check = 10000
-    interval = 100
-    is_inside = torch.cat(
-        [
-            torch.from_numpy(
-                mesh.contains(filtered_coord_out[slice : slice + interval])
-            )
-            for slice in tqdm(range(0, num_to_check, interval))
-        ]
-    )
-    print(torch.where(is_inside))
-
-    filtered_coord_out_but_in = filtered_coord_out[:num_to_check][is_inside]
+    
+        
+    
 
     # Extract x, y, z coordinates
-    x_in = filtered_coord_in[:, 0].numpy()
-    y_in = filtered_coord_in[:, 1].numpy()
-    z_in = filtered_coord_in[:, 2].numpy()
+    x_in = filtered_coord_in[:20000, 0].numpy()
+    y_in = filtered_coord_in[:20000, 1].numpy()
+    z_in = filtered_coord_in[:20000, 2].numpy()
+    
+    x_out = torch.cat((filtered_coord_out[:1000, 0], filtered_coord_out[-20000:, 0])).numpy()
+    y_out = torch.cat((filtered_coord_out[:1000, 1], filtered_coord_out[-20000:, 1])).numpy()
+    z_out = torch.cat((filtered_coord_out[:1000, 2], filtered_coord_out[-20000:, 2])).numpy()
+    
+    print(x_out.shape)
+    
+    plt.rcParams["text.usetex"] = True
 
-    x_out = filtered_coord_out_but_in[:, 0].numpy()
-    y_out = filtered_coord_out_but_in[:, 1].numpy()
-    z_out = filtered_coord_out_but_in[:, 2].numpy()
 
     # Create a scatter plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
-    scatter = ax.scatter(x_in, z_in, y_in, c="green", s=0.005)
-    scatter = ax.scatter(x_out, z_out, y_out, c="blue", s=2)
+    scatter = ax.scatter(x_in, z_in, y_in, c="green", s=0.1)
+    scatter = ax.scatter(x_out, z_out, y_out, c="blue", s=0.05)
+    
+    scatter = ax.scatter([], [], [], c="green", s=1000, label=r'$SDF(x) < 0$')
+    scatter = ax.scatter([], [], [], c="blue", s=1000, label=r'$SDF(x) > 0$')
 
     # Set labels
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_zlabel("")
     ax.set_xlim((-0.5, 0.5))
     ax.set_ylim((-0.5, 0.5))
     ax.set_zlim((-0.5, 0.5))
 
     # Show plot
+    plt.grid(False)
+    plt.axis("off")
+    plt.legend(fontsize="30", loc ="lower left")
     plt.show()
 
 
 if __name__ == "__main__":
-
-    get_pc()
-
+    
     files = [file for file in os.listdir("./datasets/02691156_pc")]
 
-    plot_image("./datasets/02691156_pc/" + files[0])
+    #get_pc([files[0].split(".")[0] + ".obj"])
+
+    plot_image("./datasets/02691156_pc/" + files[9])
