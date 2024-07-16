@@ -38,4 +38,5 @@ generation/frames
 
 *.zip
 
-models/vq_search_results
+models/vq_search_result
+models/meshes

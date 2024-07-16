@@ -25,7 +25,7 @@ outliers_set = ["nef-5f9b4ffc555c9915a3451bc89763f63c_model_final.pth", "nef-e4e
 
 
 class ShapeNetDataset(Dataset):
-    def __init__(self, mlps_folder, transform=None):
+    def __init__(self, mlps_folder, transform=None, cpu=False):
         self.mlps_folder = mlps_folder
 
         if transform is None:
@@ -40,7 +40,7 @@ class ShapeNetDataset(Dataset):
             file for i, file in enumerate(self.mlp_files) if file not in outliers_set
         ]
 
-        self.device = torch.device(get_default_device())
+        self.device = torch.device(get_default_device(cpu))
         self.mlp_kwargs = mlp_kwargs
 
     def __getitem__(self, index):
@@ -139,7 +139,7 @@ class TokenTransform3D(nn.Module):
     def forward(self, weights_dict, y):
         # Apply min-max normalization
         weights, y = self.flatten(weights_dict, y)
-        weights = weights - condition
+        weights = weights - condition.to(weights)
         self.target_shape = weights.shape
         with torch.no_grad():
             flattened_weights = weights.view(-1, self.vq.layers[0].dim)
@@ -154,7 +154,7 @@ class TokenTransform3D(nn.Module):
 
         quantized = quantized.reshape(self.target_shape)
 
-        return self.flatten.inverse(quantized + condition)
+        return self.flatten.inverse(quantized + condition.to(quantized))
 
     def backproject(self, indices):
         return self.vq.get_codes_from_indices(indices)
