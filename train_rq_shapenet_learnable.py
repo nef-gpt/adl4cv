@@ -161,7 +161,7 @@ def train_on_shape_net(
     training_iters=1,
     force=False
 ):   
-    path = f"./models/rq_search_results/learnable_rq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}_num_quantizers_{num_quantizers}_use_init_{use_init}.pth"
+    path = f"./models/rq_search_results/shapenet_retrained_learnable_rq_model_dim_{dim}_vocab_{vocab_size}_batch_size_{batch_size}_threshold_ema_dead_code_{threshold_ema_dead_code}_kmean_iters_{kmean_iters}_num_quantizers_{num_quantizers}_use_init_{use_init}.pth"
     label = f"Vocab size: {vocab_size}, Dim: {dim}, Batch Size: {batch_size}, Treshhold: {threshold_ema_dead_code}, kmean iters: {kmean_iters}, num quantizers: {num_quantizers}, use_init: {use_init}"
    
     if not os.path.exists(path) or force:
@@ -240,16 +240,16 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
 
 if __name__ == "__main__":
     
-    dataset_model = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "pretrained"), transform=ImageTransform3D())
+    dataset_model = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nef_2", "pretrained"), transform=ImageTransform3D())
     #dataset_model = ZScore3D(dataset_model, get_total_mean_n_std(dataset_model, dim=1, dim_over_dim=0))
-    dataset_model_unconditioned = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "unconditioned"), transform=ImageTransform3D())
+    dataset_model_unconditioned = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nef_2", "unconditioned"), transform=ImageTransform3D())
 
     condition = dataset_model_unconditioned[0][0]
 
 
 
 
-    main(dataset_model, dims=[1], vocab_sizes=[256 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
+    main(dataset_model, dims=[1], vocab_sizes=[64 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
 
 
 

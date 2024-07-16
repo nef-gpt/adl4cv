@@ -15,6 +15,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from tqdm import tqdm
 import wandb
 
 
@@ -250,10 +251,10 @@ class GPT(nn.Module):
         Computes the entropy loss for a batch of logits.
 
         Enforcing high entropy in the model's predictions across a batch can help to prevent overfitting
-        
+
         Args:
             logits (torch.Tensor): The input logits with shape (batch_size, num_classes).
-            
+
         Returns:
             torch.Tensor: The entropy loss.
         """
@@ -261,10 +262,21 @@ class GPT(nn.Module):
         # compute crossentropy for each item in the batch, against all others
         b, s, v = logits.shape
 
+        if True:
+            return 0
+
         if b == 1:
             return 0
 
-        entropy = torch.stack([torch.nn.functional.cross_entropy(logits[i].repeat((3, 1, 1)), torch.softmax(logits[[j for j in range(b) if j != i]], dim=2)) for i in range(b)]).mean()
+        entropy = torch.stack(
+            [
+                torch.nn.functional.cross_entropy(
+                    logits[i].repeat((3, 1, 1)),
+                    torch.softmax(logits[[j for j in range(b) if j != i]], dim=2),
+                )
+                for i in range(b)
+            ]
+        ).mean()
 
         # get residual loss between entropy and target
         target = 140
@@ -282,7 +294,9 @@ class GPT(nn.Module):
         tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
         # pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
         pos_emb = (
-            self.global_pos_emb.get_pe(self.config.block_size, offset)[:, 0:t].squeeze(-2)
+            self.global_pos_emb.get_pe(self.config.block_size, offset)[:, 0:t].squeeze(
+                -2
+            )
             if self.config.max_len is not None
             else self.transformer.wpe(
                 torch.arange(0, t, dtype=torch.long, device=device)
@@ -297,10 +311,13 @@ class GPT(nn.Module):
         if targets is not None:
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)
-            if reduction=="none":
+            if reduction == "none":
                 b, s, l = logits.size()
                 loss = F.cross_entropy(
-                    logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1, reduction=reduction
+                    logits.view(-1, logits.size(-1)),
+                    targets.view(-1),
+                    ignore_index=-1,
+                    reduction=reduction,
                 )
 
                 # calculate entropy loss across the batch
@@ -323,7 +340,7 @@ class GPT(nn.Module):
 
         if reduction == "none":
             return logits, mean_loss, loss
-        
+
         return logits, mean_loss
 
     def crop_block_size(self, block_size):
@@ -479,7 +496,7 @@ class GPT(nn.Module):
         the sequence max_new_tokens times, feeding the predictions back into the model each time.
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
-        for _ in range(max_new_tokens):
+        for _ in tqdm(range(max_new_tokens), desc="Autoregressive Generation"):
             # if the sequence context is growing too long we must crop it at block_size
             idx_cond = (
                 idx
@@ -488,8 +505,14 @@ class GPT(nn.Module):
             )
             # forward the model to get the logits for the index in the sequence
             # offset = torch.arange(idx.size(1))[-self.config.block_size :].to(idx.device).int()
-            offset = torch.Tensor([max(0, idx.size(1) - self.config.block_size)]).int().unsqueeze(0).to(idx.device)
-            logits, _ = self(idx_cond, offset=offset)
+            offset = (
+                torch.Tensor([max(0, idx.size(1) - self.config.block_size)])
+                .int()
+                .unsqueeze(0)
+                .to(idx.device)
+            )
+            # TODO: Offset is currently not passed down
+            logits, _ = self(idx_cond)
             # pluck the logits at the final step and scale by desired temperature
             logits = logits[:, -1, :] / temperature
             # optionally crop the logits to only the top k options
@@ -502,5 +525,10 @@ class GPT(nn.Module):
             idx_next = torch.multinomial(probs, num_samples=1)
             # append sampled index to the running sequence and continue
             idx = torch.cat((idx, idx_next), dim=1)
+
+            # free everything but index
+            del probs
+            del logits
+            del idx_next
 
         return idx
