@@ -249,7 +249,7 @@ if __name__ == "__main__":
 
 
 
-    main(dataset_model, dims=[1], vocab_sizes=[256 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
+    main(dataset_model, dims=[1], vocab_sizes=[128 - 1], batch_sizes=[16], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[1], use_inits=[False], training_iters=10, force=True)
 
 
 

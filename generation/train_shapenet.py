@@ -4,7 +4,6 @@ import sys
 from torch.multiprocessing import Pool, Process, set_start_method
 from tqdm import tqdm
 
-from utils import get_default_device
 
 try:
     set_start_method("spawn")
@@ -35,7 +34,7 @@ config["unconditioned"] = {}
 config["pretrained"] = {}
 
 files = [] # [file for file in os.listdir("./datasets/02691156_pc")]
-file_unconditioned = "5d7c2f1b6ed0d02aa4684be4f9cb3c1d.obj"
+file_unconditioned = "./datasets/02691156_pc/5d7c2f1b6ed0d02aa4684be4f9cb3c1d.npy"
 
 
 from vector_quantize_pytorch import VectorQuantize
@@ -54,8 +53,8 @@ model_config = {
 # settings
 idx_range = None  # Srange(0, 2500)
 save_during_epochs = None  # 1
-skip_existing_models = True
-skip_unconditioned = True
+skip_existing_models = False
+skip_unconditioned = False
 
 config_file = "./datasets/shapenet_nef_2/overview.json"
 cpu_mode = True

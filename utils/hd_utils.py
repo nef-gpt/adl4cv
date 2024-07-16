@@ -1,5 +1,6 @@
 from math import ceil
 
+from matplotlib import pyplot as plt
 import numpy as np
 import pyrender
 import trimesh
@@ -12,8 +13,21 @@ def render_meshes(meshes):
         out_imgs.append(img)
     return out_imgs
 
+def render_image(obj, res=(3600,3600)):
+    color, depth = render_mesh(obj, res=(3600,3600))
+                
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.set_xlim((500, 3000))
+    ax.set_ylim((4250, 1250))
+    ax.grid(False)
+    ax.axis("off")
+    ax.imshow(color)
+    
+    plt.show()
 
-def render_mesh(obj):
+
+def render_mesh(obj, res=(800, 800)):
     if isinstance(obj, trimesh.Trimesh):
         # Handle mesh rendering
         mesh = pyrender.Mesh.from_trimesh(
@@ -37,7 +51,7 @@ def render_mesh(obj):
     scene = pyrender.Scene()
     scene.add(mesh)
     camera = pyrender.PerspectiveCamera(yfov=np.pi / 3.0, aspectRatio=1.0)
-    eye = np.array([2, 1.4, -2])
+    eye = np.array([1, 1.0, -1])#np.array([2, 1.4, -2])
     target = np.array([0, 0, 0])
     up = np.array([0, 1, 0])
 
@@ -45,7 +59,7 @@ def render_mesh(obj):
     scene.add(camera, pose=camera_pose)
     light = pyrender.DirectionalLight(color=[1, 1, 1], intensity=1e3)
     scene.add(light, pose=camera_pose)
-    r = pyrender.OffscreenRenderer(800, 800)
+    r = pyrender.OffscreenRenderer(*res)
     color, depth = r.render(scene)
     r.delete()
     return color, depth
