@@ -13,12 +13,12 @@ def decorator_timer(some_function):
     return wrapper
 
 
-def get_default_device():
+def get_default_device(cpu_only=False):
     """
     Return either mps or cuda depending on the availability of the GPU
     Fall back to cpu if no GPU is available
     """
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and not cpu_only:
         return torch.device("cuda")
     # elif torch.backends.mps.is_available():
     #    return torch.device("mps")

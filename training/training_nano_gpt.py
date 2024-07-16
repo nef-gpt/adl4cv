@@ -113,14 +113,12 @@ def train(
     early_stop: EarlyStopper = None,
     token_dict: dict = None,
     custom_eval: callable = lambda logits, split, k, x, y, loss: None,
-    important_sampling: bool = True,
+    important_sampling: bool = False,
     dataset: ShapeNetDataset = None,
 ):
     if important_sampling:
-        losses_over_dataset = 100.0*torch.ones((len(dataset),)).to(config.device)
+        losses_over_dataset = 100.0 * torch.ones((len(dataset),)).to(config.device)
 
-        
-        
     os.makedirs(config.out_dir, exist_ok=True)
     ptdtype = {
         "float32": torch.float32,
@@ -138,6 +136,7 @@ def train(
     # init these up here, can override if init_from='resume' (i.e. from a checkpoint)
     iter_num = 0
     best_val_loss = 1e9
+    best_train_loss = 1e9
 
     if config.init_from == "scratch":
         # init a new model from scratch
@@ -147,7 +146,7 @@ def train(
     elif config.init_from == "resume":
         print(f"Resuming training from {config.out_dir}")
         # resume training from a checkpoint.
-        ckpt_path = os.path.join(config.out_dir, "ckpt.pt")
+        ckpt_path = os.path.join(config.out_dir, "ckpt_best_train.pt")
         checkpoint = torch.load(ckpt_path, map_location=device)
         checkpoint_model_args = checkpoint["model_config"]
         # force these config attributes to be equal otherwise we can't even resume training
@@ -164,8 +163,9 @@ def train(
             if k.startswith(unwanted_prefix):
                 state_dict[k[len(unwanted_prefix) :]] = state_dict.pop(k)
         model.load_state_dict(state_dict)
-        iter_num = checkpoint["iter_num"]
+        # iter_num = checkpoint["iter_num"]
         best_val_loss = checkpoint["best_val_loss"]
+        # best_train_loss = checkpoint["best_train_loss"]
 
     model.to(device)
     # initialize a GradScaler. If enabled=False scaler is a no-op
@@ -179,8 +179,8 @@ def train(
         config.device.type,
     )
 
-    # if config.init_from == "resume":
-        # optimizer.load_state_dict(checkpoint["optimizer"])
+    if config.init_from == "resume":
+        optimizer.load_state_dict(checkpoint["optimizer"])
     checkpoint = None  # free up memory
 
     # compile the model
@@ -192,7 +192,7 @@ def train(
     # compute mnist metric score
     @torch.no_grad()
     def compute_metrics():
-        pass # return compute_mnist_score(model, vq, device, token_dict)
+        pass  # return compute_mnist_score(model, vq, device, token_dict)
 
     # helps estimate an arbitrarily accurate loss over either split using many batches
     @torch.no_grad()
@@ -202,15 +202,20 @@ def train(
         for split in ["train", "val"]:
             losses = torch.zeros(config.eval_iters)
             for k in range(config.eval_iters):
-                
+
                 with ctx:
                     if important_sampling:
-                        X, Y, idx, dataset_indices = get_batch(split, losses=losses_over_dataset)
-                        logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
+                        X, Y, idx, dataset_indices = get_batch(
+                            split, losses=losses_over_dataset
+                        )
+                        logits, loss, loss_per_sample = model(
+                            X, Y, idx, reduction="none"
+                        )
                         losses_over_dataset[dataset_indices] = loss_per_sample
                     else:
                         X, Y, idx = get_batch(split)
                         logits, loss = model(X, Y, idx)
+                        loss_per_sample = None
                     custom_eval(logits, split, k, X, Y, loss_per_sample)
                 losses[k] = loss.item()
             out[split] = losses.mean()
@@ -221,8 +226,10 @@ def train(
     # merge the two dataclasses into a single dict (with defaults from the model config)
     super_config = asdict(config) | asdict(model_config)
     wandb.init(
-        project=config.wandb_project, name=config.wandb_run_name, config=super_config,
-        mode="online"
+        project=config.wandb_project,
+        name=config.wandb_run_name,
+        config=super_config,
+        mode="online",
     )
 
     # training loop
@@ -278,8 +285,30 @@ def train(
                         "vq_config": vq_config if vq_config else {},
                         "token_dict": token_dict if token_dict else {},
                     }
-                    print(f"saving checkpoint to {config.out_dir}")
-                    torch.save(checkpoint, os.path.join(config.out_dir, "ckpt.pt"))
+                    print(f"NEW BEST VAL: saving checkpoint to {config.out_dir}")
+                    torch.save(
+                        checkpoint, os.path.join(config.out_dir, "ckpt_best_val.pt")
+                    )
+
+            if losses["train"] < best_train_loss or config.always_save_checkpoint:
+                best_train_loss = losses["train"]
+                if iter_num > 0:
+                    checkpoint = {
+                        "model": model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "model_config": model_config,
+                        "iter_num": iter_num,
+                        "best_val_loss": best_val_loss,
+                        "best_train_loss": best_train_loss,
+                        "config": config,
+                        "vq_state_dict": vq.state_dict() if vq else {},
+                        "vq_config": vq_config if vq_config else {},
+                        "token_dict": token_dict if token_dict else {},
+                    }
+                    print(f"NEW BEST TRAIN: saving checkpoint to {config.out_dir}")
+                    torch.save(
+                        checkpoint, os.path.join(config.out_dir, "ckpt_best_train.pt")
+                    )
 
             if early_stop:
                 if early_stop(losses["val"]):
@@ -294,20 +323,24 @@ def train(
         for micro_step in range(config.gradient_accumulation_steps):
             with ctx:
                 if important_sampling:
-                        X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
-                        logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
-                        losses_over_dataset[dataset_indices] = loss_per_sample
+                    X, Y, idx, dataset_indices = get_batch(
+                        "train", losses=losses_over_dataset
+                    )
+                    logits, loss, loss_per_sample = model(X, Y, idx, reduction="none")
+                    losses_over_dataset[dataset_indices] = loss_per_sample
                 else:
                     X, Y, idx = get_batch("train")
                     logits, loss = model(X, Y, idx)
-                    
+
                 loss = (
                     loss / config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
 
             # immediately async prefetch next batch while model is doing the forward pass on the GPU
             if important_sampling:
-                X, Y, idx, dataset_indices = get_batch("train", losses=losses_over_dataset)
+                X, Y, idx, dataset_indices = get_batch(
+                    "train", losses=losses_over_dataset
+                )
             else:
                 X, Y, idx = get_batch("train")
             # backward pass, with gradient scaling if training in fp16
