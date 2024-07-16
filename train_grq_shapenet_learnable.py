@@ -143,8 +143,6 @@ def save_rq_dict(
         path,
     )
 
-    # Define the transform to convert the images to tensors
-
 
 def train_on_shape_net(
     weights,
@@ -225,8 +223,6 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
    
 
 if __name__ == "__main__":
-    # dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
-    # weights = cat_weights(dataset, n=len(dataset))
     
     dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=AllWeights3D())
     means_neurons, _ = get_neuron_mean_n_std(dataset)
@@ -235,7 +231,6 @@ if __name__ == "__main__":
     shapeNetData_normalized = ShapeNetDataset("./datasets/plane_mlp_weights", transform=[AllWeights3D(), ZScore3D(means_neurons, 1), ZScore3D(mean_total, std_total)])
 
 
-    #main(shapeNetData_normalized, dims=[128], vocab_sizes=[128], batch_sizes=[2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[16], use_inits=[False], training_iters=10, force=True)
     main(shapeNetData_normalized, dims=[128], vocab_sizes=[128], batch_sizes=[256], threshold_ema_dead_codes=[0], kmean_iters_list=[1], groups_list=[2], num_quantizers_list=[16], use_inits=[False], training_iters=5, force=True)
 
 

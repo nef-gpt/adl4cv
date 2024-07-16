@@ -3,8 +3,8 @@ import wandb
 
 api = wandb.Api()
 wandb.login()
-entity, project = "adl-for-cv", "naive_token_transformer"
-run_name = "run-2024-06-22-00-23-47"
+entity, project = "adl-for-cv", "shapenet_token_transformer"
+run_name = "run-2024-07-14-11-42-04"
 
 runs = api.runs(entity + "/" + project)
 
@@ -29,6 +29,6 @@ config_df = pd.DataFrame(
     {"config": config_list, "name": name_list}
 )
 
-summery_df.to_csv("wandb_summery.csv")
-config_df.to_csv("wandb_config_df.csv")
+summery_df.to_csv("run_large.csv")
+#config_df.to_csv("wandb_config_df.csv")
 
