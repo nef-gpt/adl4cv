@@ -19,6 +19,8 @@
 % (Or just hit 'q' on the first LaTeX run, let it finish, and you should be clear).
 \definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,citecolor=cvprblue]{hyperref}
+\usepackage{longtable}
+\usepackage{multirow}
 
 %%%%%%%%% PAPER ID  - PLEASE UPDATE
 \def\paperID{*****} % *** Enter the Paper ID here
@@ -50,6 +52,12 @@ TUM Munich\\
 \input{sec/2_literature.tex}
 \input{sec/3_method.tex}
 \input{sec/4_experiments.tex}
+
+\input{results/train_metrics_z_score.tex}
+\input{results/val_metrics_z_score.tex}
+
+
+\input{results/train_results.tex}
 
 
 {
