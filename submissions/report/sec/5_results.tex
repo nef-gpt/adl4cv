@@ -6,7 +6,7 @@
 \subsection*{Metrics: }
 
 The ShapeNet medium model was evaluated using the Minimum Matching Distance(MMD), Coverage (COV), and 1-Nearest-Neighbor Accuracy (1-NNA) metrics, and the Frechet PointNet++ Distance as proposed by HyperDiffusion to enable qualitative comparison \cite{erkoç2023hyperdiffusion}.
-While for COV higher is better, indicating a full coverage of the reference space, for 1-NNA 50\% is the best possible score, as it indicates that the reference and generated sets are equally distributed among each other.
+While for COV higher is better, indicating a full coverage of the reference space, for 1-NNA 50\% is the best possible score.
 
 \begin{gather*}
   \mathrm{MMD}(S_g,S_r) =\frac{1}{|S_{r}|}\sum_{Y\in S_{r}}\min_{X\in S_{g}}D(X,Y)\\

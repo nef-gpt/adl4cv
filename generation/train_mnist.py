@@ -19,7 +19,7 @@ from PIL import Image
 import json
 import numpy as np
 import torch
-import generation.train_nerf as training
+import generation.train_mnist_nef as training
 import wandb
 import time
 from torch.utils.data import DataLoader, Dataset
@@ -31,7 +31,7 @@ config["unconditioned"] = {}
 config["pretrained"] = {}
 
 from vector_quantize_pytorch import VectorQuantize
-from data.neural_field_datasets import quantize_model
+from data.nef_mnist_dataset import quantize_model
 
 vq = VectorQuantize(
     dim=1,

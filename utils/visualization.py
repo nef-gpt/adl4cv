@@ -1,5 +1,5 @@
-from animation.util import backtransform_weights, reconstruct_image
-from data.neural_field_datasets import MnistNeFDataset
+from animation.animation_util import backtransform_weights, reconstruct_image
+from data.nef_mnist_dataset import MnistNeFDataset
 from networks.mlp_models import MLP3D
 from networks.nano_gpt import GPT
 from vector_quantize_pytorch import VectorQuantize

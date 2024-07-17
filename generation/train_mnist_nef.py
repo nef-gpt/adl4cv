@@ -33,7 +33,6 @@ def train(
     summary_fn,
     wandb,
     model_config,
-    l2_loss_lambda=0.0,
     val_dataloader=None,
     double_precision=False,
     clip_grad=False,
@@ -44,13 +43,18 @@ def train(
     cfg=None,
     disable_tqdm=False,
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    vq=None,
 ):
     # Check for GPU
     print(f"Using device: {device}")
 
     model.to(device)
-
-    optim = torch.optim.Adam(lr=lr, params=model.parameters())
+    if vq:
+        vq.to(device)
+    optim = torch.optim.Adam(
+        lr=lr,
+        params=chain(model.parameters(), vq.parameters()) if vq else model.parameters(),
+    )
     if cfg.scheduler.type == "step":
         scheduler = StepLR(
             optim,
@@ -73,7 +77,9 @@ def train(
     if use_lbfgs:
         optim = torch.optim.LBFGS(
             lr=lr,
-            params=model.parameters(),
+            params=(
+                chain(model.parameters(), vq.parameters()) if vq else model.parameters()
+            ),
             max_iter=50000,
             max_eval=50000,
             history_size=50,
@@ -115,9 +121,6 @@ def train(
             total_loss, total_items = 0, 0
 
             for step, (model_input, gt) in enumerate(train_dataloader):
-                model_input = model_input["coords"].squeeze(0)
-                gt = gt["sdf"].squeeze(0)
-
                 start_time = time.time()
 
                 model_input = model_input.to(device)
@@ -134,21 +137,18 @@ def train(
                     def closure():
                         optim.zero_grad()
                         model_output = model(model_input)
-                        losses = loss_fn(model_output.float(), gt.float())
+                        losses = loss_fn(model_output, gt)
                         train_loss = losses
                         train_loss.backward()
                         return train_loss
 
                     optim.step(closure)
-
+                if vq:
+                    model = quantize_model(model, vq)
                 model_output = model(model_input)
-                losses = loss_fn(model_output.float(), gt.float())
+                losses = loss_fn(model_output, gt.unsqueeze(-1))
 
-                all_params = torch.cat([x.view(-1) for x in model.parameters()])
-                l2_loss = (
-                    l2_loss_lambda * torch.norm(all_params, 2) / all_params.shape[0]
-                )
-                train_loss = losses + l2_loss
+                train_loss = losses
                 # for loss_name, loss in losses.items():
 
                 #     single_loss = loss.mean()
@@ -194,7 +194,7 @@ def train(
                     optim.step()
 
                 pbar.update(1)
-                wandb.log({"loss": train_loss, "l2_loss": l2_loss})
+                wandb.log({"loss": train_loss})
                 pbar.set_description(
                     "Epoch %d, Total loss %0.6f, iteration time %0.6f"
                     % (epoch, train_loss, time.time() - start_time)
@@ -209,7 +209,7 @@ def train(
                             val_losses = []
                             for model_input, gt in val_dataloader:
                                 model_output = model(model_input)
-                                val_loss = loss_fn(model_output.float(), gt.float())
+                                val_loss = loss_fn(model_output, gt)
                                 val_losses.append(val_loss)
 
                             # writer.add_scalar("val_loss", np.mean(val_losses), total_steps)
@@ -272,6 +272,7 @@ def train(
                 {
                     "state_dict": model.state_dict(),
                     "model_config": copied_dict,
+                    "vq_state_dict": vq.state_dict() if vq else {},
                 },
                 f"{filename}_model_final.pth",
             )

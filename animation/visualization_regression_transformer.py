@@ -6,14 +6,24 @@ import torch
 from torchvision import datasets
 import matplotlib.pyplot as plt
 import cv2
-from networks.regression_transformer import RegressionTransformerConfig, RegressionTransformer
-from data.neural_field_datasets import MnistNeFDataset, MinMaxTransform, FlattenTransform
-from animation.util import ensure_folder_exists, backtransform_weights, reconstruct_image
+from networks.regression_transformer import (
+    RegressionTransformerConfig,
+    RegressionTransformer,
+)
+from data.nef_mnist_dataset import (
+    MnistNeFDataset,
+    MinMaxTransform,
+    FlattenTransform,
+)
+from animation.animation_util import (
+    ensure_folder_exists,
+    backtransform_weights,
+    reconstruct_image,
+)
 from tqdm import tqdm
 from PIL import Image
 
 from utils import get_default_device
-
 
 
 # Add the parent directory to the Python path
@@ -21,33 +31,48 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from networks.mlp_models import MLP3D
 
-class FlattenMinMaxTransform(torch.nn.Module):
-  def __init__(self, min_max: tuple = None):
-    super().__init__()
-    self.flatten = FlattenTransform()
-    if min_max:
-      self.minmax = MinMaxTransform(*min_max)
-    else:
-      self.minmax = MinMaxTransform()
 
-  def forward(self, x, y):
-    x, _ = self.flatten(x, y)
-    x, _ = self.minmax(x, y)
-    return x, y
-  
+class FlattenMinMaxTransform(torch.nn.Module):
+    def __init__(self, min_max: tuple = None):
+        super().__init__()
+        self.flatten = FlattenTransform()
+        if min_max:
+            self.minmax = MinMaxTransform(*min_max)
+        else:
+            self.minmax = MinMaxTransform()
+
+    def forward(self, x, y):
+        x, _ = self.flatten(x, y)
+        x, _ = self.minmax(x, y)
+        return x, y
+
+
 dir_path = os.path.dirname(os.path.abspath(os.getcwd()))
 data_root_ours = os.path.join(dir_path, "adl4cv", "datasets", "mnist-nerfs")
 
 
-
-
-def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, video_name: str = "learning_process", fps=10, iter_step=100, dataset_kwargs={"fixed_label": None, "type": "pretrained"}, regression_config=None):
+def visualize_learning_process(
+    image_idx: int,
+    num_iters: int,
+    foldername: str,
+    video_name: str = "learning_process",
+    fps=10,
+    iter_step=100,
+    dataset_kwargs={"fixed_label": None, "type": "pretrained"},
+    regression_config=None,
+):
 
     device = get_default_device()
 
-    dataset_wo_min_max = MnistNeFDataset(data_root_ours, transform=FlattenTransform(), **dataset_kwargs)
+    dataset_wo_min_max = MnistNeFDataset(
+        data_root_ours, transform=FlattenTransform(), **dataset_kwargs
+    )
     min_ours, max_ours = dataset_wo_min_max.min_max()
-    dataset_with_transform = MnistNeFDataset(data_root_ours, transform=FlattenMinMaxTransform((min_ours, max_ours)), **dataset_kwargs)
+    dataset_with_transform = MnistNeFDataset(
+        data_root_ours,
+        transform=FlattenMinMaxTransform((min_ours, max_ours)),
+        **dataset_kwargs,
+    )
     dataset_no_transform = MnistNeFDataset(data_root_ours, **dataset_kwargs)
 
     # Initialize model configuration
@@ -70,10 +95,10 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
     original_dict = dataset_no_transform[image_idx][0]
     sample = dataset_with_transform[image_idx][0]
 
-    with tqdm(total=num_iters/iter_step) as pbar:
+    with tqdm(total=num_iters / iter_step) as pbar:
 
         for iter in range(0, num_iters, iter_step):
-            
+
             model_path = f"./models/{foldername}/iter_{iter}.pt"
             assert os.path.exists(model_path), f"File {model_path} does not exist"
             with torch.no_grad():
@@ -81,33 +106,44 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
                 transformer.load_state_dict(torch.load(model_path)["model"])
                 transformer.eval()
                 transformer.to(device)
-                X, Y = (sample[:regression_config.block_size].unsqueeze(-1).unsqueeze(0).to(device), sample[1: 1 + regression_config.block_size].unsqueeze(-1).unsqueeze(0).to(device))
-                
+                X, Y = (
+                    sample[: regression_config.block_size]
+                    .unsqueeze(-1)
+                    .unsqueeze(0)
+                    .to(device),
+                    sample[1 : 1 + regression_config.block_size]
+                    .unsqueeze(-1)
+                    .unsqueeze(0)
+                    .to(device),
+                )
+
                 # autoregressive process
                 seq = torch.zeros((1, 593, 1)).to(device)
                 seq[0][0][0] = X[0][0][0]
                 for i in range(0, regression_config.block_size):
                     pred, _loss = transformer(seq[:, :-1], Y)
-                    seq[0][i + 1][0] = pred[0][i][0] 
+                    seq[0][i + 1][0] = pred[0][i][0]
 
                 pred = seq
 
-                minmax_transformer = MinMaxTransform(min_value=min_ours, max_value=max_ours)
+                minmax_transformer = MinMaxTransform(
+                    min_value=min_ours, max_value=max_ours
+                )
                 pred_flattened = minmax_transformer.reverse(seq[0]).unsqueeze(0)
 
                 # Backtransform weights
-                reconstructed_dict = backtransform_weights(pred_flattened, original_dict)
+                reconstructed_dict = backtransform_weights(
+                    pred_flattened, original_dict
+                )
 
                 nef.load_state_dict(reconstructed_dict)
                 reconstructed_tensor = reconstruct_image(nef)
-
-
 
                 # Save the frame as a PNG image
                 fig, axes = plt.subplots(1, 1, figsize=(10, 5))
 
                 axes.imshow(reconstructed_tensor, cmap="gray", aspect="equal")
-                axes.axis('off')
+                axes.axis("off")
 
                 plt.tight_layout()
 
@@ -123,10 +159,7 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
                 plt.savefig(frame_path, format="png")
                 plt.close(fig)
                 pbar.update(1)
-                pbar.set_description(
-                        "Finished creating frame for epoch %d"
-                        % (iter)
-                    )
+                pbar.set_description("Finished creating frame for epoch %d" % (iter))
 
     # Compile the images into a video
     frame_paths = [
@@ -136,11 +169,13 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
     ]
     frame = cv2.imread(frame_paths[0])
     height, width, layers = frame.shape
-    
+
     video_path = "./animation/" + foldername + "/" + video_name + ".mp4"
     gif_path = "./animation/" + foldername + "/" + video_name + ".gif"
     ensure_folder_exists("./animation/" + foldername)
-    out = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
+    out = cv2.VideoWriter(
+        video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
+    )
 
     for frame_path in frame_paths:
         frame = cv2.imread(frame_path)
@@ -156,10 +191,10 @@ def visualize_learning_process(image_idx: int, num_iters: int, foldername: str, 
         gif_path,
         save_all=True,
         append_images=images[1:],
-        duration=1/fps,  # duration in milliseconds
+        duration=1 / fps,  # duration in milliseconds
         loop=0,
         transparency=0,  # specify the transparency color (usually 0 for black)
-        disposal=2  # ensures that each frame is replaced, not drawn on top of the previous one
+        disposal=2,  # ensures that each frame is replaced, not drawn on top of the previous one
     )
     print(f"GIF saved to {gif_path}")
 
@@ -171,7 +206,9 @@ def main():
     foldername = "training_sample_5"
 
     for image_idx in range(5):
-        visualize_learning_process(image_idx, num_iters, foldername, video_name=f"image_{image_idx}")
+        visualize_learning_process(
+            image_idx, num_iters, foldername, video_name=f"image_{image_idx}"
+        )
 
 
 if __name__ == "__main__":

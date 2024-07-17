@@ -14,14 +14,14 @@ from tqdm import tqdm
 from PIL import Image
 import glob
 from networks.mlp_models import MLP3D
-from animation.util import (
+from animation.animation_util import (
     make_coordinates,
     ensure_folder_exists,
     reconstruct_image,
     get_vmin_vmax,
     get_model_difference,
 )
-from animation.util import (
+from animation.animation_util import (
     make_coordinates,
     ensure_folder_exists,
     reconstruct_image,
@@ -37,12 +37,12 @@ model_config = {
     "input_dims": 2,
     "multires": 4,
 }
-    
-
 
 
 def save_colorbar(save_path: str, vmin: torch.Tensor, vmax: torch.Tensor):
-    fig, ax = plt.subplots(figsize=(6, 1))  # Adjusted figsize for horizontal orientation
+    fig, ax = plt.subplots(
+        figsize=(6, 1)
+    )  # Adjusted figsize for horizontal orientation
     fig.subplots_adjust(bottom=0.5)  # Adjusted the subplot for horizontal orientation
 
     norm = plt.Normalize(vmin=vmin, vmax=vmax)
@@ -51,20 +51,18 @@ def save_colorbar(save_path: str, vmin: torch.Tensor, vmax: torch.Tensor):
     cmap = plt.cm.viridis
 
     cb1 = plt.colorbar(
-        plt.cm.ScalarMappable(norm=norm, cmap=cmap),
-        cax=ax, orientation='horizontal'
+        plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation="horizontal"
     )
-    
-    cb1.set_label('', color='white')
-    cb1.ax.xaxis.set_tick_params(color='white')
+
+    cb1.set_label("", color="white")
+    cb1.ax.xaxis.set_tick_params(color="white")
     cb1.outline.set_edgecolor((0, 0, 0, 0))
 
     # Set the color of the tick labels
-    plt.setp(plt.getp(cb1.ax.axes, 'xticklabels'), color='white')
-    
-    plt.savefig(save_path, transparent=True, bbox_inches='tight', pad_inches=0)
-    plt.close()
+    plt.setp(plt.getp(cb1.ax.axes, "xticklabels"), color="white")
 
+    plt.savefig(save_path, transparent=True, bbox_inches="tight", pad_inches=0)
+    plt.close()
 
 
 def get_figure(
@@ -238,7 +236,6 @@ def visualize_learning_process(
     frame = cv2.imread(frame_paths[0])
     height, width, layers = frame.shape
 
-
     video_path = video_name + ".mp4"
     gif_path = video_name + ".gif"
     out = cv2.VideoWriter(
@@ -253,7 +250,6 @@ def visualize_learning_process(
         frame = cv2.imread(frame_path)
         frames.append(frame)
         out.write(frame)
-
 
     out.release()
     print(f"Video saved to {video_path}")
@@ -359,7 +355,6 @@ def create_all_videos():
         )
 
 
-
 def compare_different_runs(
     image_idxs: List[int],
     num_epoch: int,
@@ -401,8 +396,6 @@ def compare_different_runs(
     vmax = 1
     vmin = -1
 
-     
-
     if comparison_model:
         save_folder = f"./animation/comparison_with_comparison_model_{'_'.join(map(str, image_idxs))}"
     else:
@@ -410,19 +403,25 @@ def compare_different_runs(
 
     for idx in image_idxs:
         for subfoldername in subfoldernames:
-            foldername =  f"./datasets/mnist-nerfs/{subfoldername}"
+            foldername = f"./datasets/mnist-nerfs/{subfoldername}"
             video_name = save_folder + f"/{subfoldername}_{idx}"
 
             ensure_folder_exists(save_folder)
-            visualize_learning_process(idx, num_epoch, model_config, foldername,  video_name=video_name, v= (vmin, vmax), comparison_model=comparison_model)
+            visualize_learning_process(
+                idx,
+                num_epoch,
+                model_config,
+                foldername,
+                video_name=video_name,
+                v=(vmin, vmax),
+                comparison_model=comparison_model,
+            )
 
     save_colorbar(save_folder + "/colorbar.png", vmin, vmax)
 
 
-
 if __name__ == "__main__":
     comparison_model = MLP3D(**model_config)
-
 
     model_path = "./datasets/mnist-nerfs/unconditioned/image-0_model_final.pth"
     assert os.path.exists(model_path), f"File {model_path} does not exist"

@@ -1,6 +1,6 @@
 from utils.hd_utils import render_image
 from utils.visualization3d import model_to_mesh
-from data.neural_field_datasets_shapenet import (
+from data.nef_shapenet_dataset import (
     ModelTransform3D,
     ShapeNetDataset,
     TokenTransform3D,

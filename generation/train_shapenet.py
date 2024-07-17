@@ -39,7 +39,7 @@ file_unconditioned = ["5d7c2f1b6ed0d02aa4684be4f9cb3c1d.npy"]
 
 
 from vector_quantize_pytorch import VectorQuantize
-from data.neural_field_datasets import quantize_model
+from data.nef_mnist_dataset import quantize_model
 
 model_config = {
     "out_size": 1,

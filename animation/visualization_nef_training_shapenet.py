@@ -14,14 +14,14 @@ from tqdm import tqdm
 from PIL import Image
 import glob
 from networks.mlp_models import MLP3D
-from animation.util import (
+from animation.animation_util import (
     make_coordinates,
     ensure_folder_exists,
     reconstruct_image,
     get_vmin_vmax,
     get_model_difference,
 )
-from animation.util import (
+from animation.animation_util import (
     make_coordinates,
     ensure_folder_exists,
     reconstruct_image,
@@ -39,12 +39,12 @@ model_config = {
     "input_dims": 2,
     "multires": 4,
 }
-    
-
 
 
 def save_colorbar(save_path: str, vmin: torch.Tensor, vmax: torch.Tensor):
-    fig, ax = plt.subplots(figsize=(6, 1))  # Adjusted figsize for horizontal orientation
+    fig, ax = plt.subplots(
+        figsize=(6, 1)
+    )  # Adjusted figsize for horizontal orientation
     fig.subplots_adjust(bottom=0.5)  # Adjusted the subplot for horizontal orientation
 
     norm = plt.Normalize(vmin=vmin, vmax=vmax)
@@ -53,20 +53,20 @@ def save_colorbar(save_path: str, vmin: torch.Tensor, vmax: torch.Tensor):
     cmap = plt.cm.viridis
 
     cb1 = plt.colorbar(
-        plt.cm.ScalarMappable(norm=norm, cmap=cmap),
-        cax=ax, orientation='horizontal'
+        plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation="horizontal"
     )
-    
-    cb1.set_label('', color='white')
-    cb1.ax.xaxis.set_tick_params(color='white')
+
+    cb1.set_label("", color="white")
+    cb1.ax.xaxis.set_tick_params(color="white")
     cb1.outline.set_edgecolor((0, 0, 0, 0))
 
     # Set the color of the tick labels
-    plt.setp(plt.getp(cb1.ax.axes, 'xticklabels'), color='white')
-    
-    plt.savefig(save_path, transparent=True, bbox_inches='tight', pad_inches=0)
+    plt.setp(plt.getp(cb1.ax.axes, "xticklabels"), color="white")
+
+    plt.savefig(save_path, transparent=True, bbox_inches="tight", pad_inches=0)
     plt.close()
-    
+
+
 def state_dict_to_min_max(state_dict):
     weights = []
 
@@ -109,7 +109,7 @@ def get_figure(
     gs = gridspec.GridSpec(
         6, 2, height_ratios=[28, 16, 16, 16, 16, 0.5], width_ratios=[18, 1]
     )
-    
+
     gs.update(wspace=0.1, hspace=0.3)
 
     # First row: Image
@@ -171,26 +171,27 @@ def get_figure(
     return fig
 
 
-
-
-
 if __name__ == "__main__":
-    
-    model_dict = torch.load("./datasets/shapenet_nef_2/unconditioned/nef-5d7c2f1b6ed0d02aa4684be4f9cb3c1d_model_final.pth")    
-    files = [file for file in os.listdir("./datasets/shapenet_nef_2/pretrained/")]
-    files =["nef-51ebcde47b4c29d81a62197a72f89474_model_final.pth", "nef-56ba815f883279b462b600da24e0965_model_final.pth", "nef-e5abd988cb34ed9cdc82b8fee1057b30_model_final.pth", "nef-f97fa7329969bcd0ebf1d9fd44798b9b_model_final.pth"]
 
-    
-    
+    model_dict = torch.load(
+        "./datasets/shapenet_nef_2/unconditioned/nef-5d7c2f1b6ed0d02aa4684be4f9cb3c1d_model_final.pth"
+    )
+    files = [file for file in os.listdir("./datasets/shapenet_nef_2/pretrained/")]
+    files = [
+        "nef-51ebcde47b4c29d81a62197a72f89474_model_final.pth",
+        "nef-56ba815f883279b462b600da24e0965_model_final.pth",
+        "nef-e5abd988cb34ed9cdc82b8fee1057b30_model_final.pth",
+        "nef-f97fa7329969bcd0ebf1d9fd44798b9b_model_final.pth",
+    ]
+
     model_config = model_dict["model_config"]
     model = MLP3D(**model_config)
     model.load_state_dict(model_dict["state_dict"])
-    
+
     vmin, vmax = state_dict_to_min_max(model.state_dict())
     vmins = [vmin]
     vmaxs = [vmax]
-    
-    
+
     for file in files:
         model_dict_vminmax = torch.load("./datasets/shapenet_nef_2/pretrained/" + file)
         model_config_vminmax = model_dict_vminmax["model_config"]
@@ -199,24 +200,28 @@ if __name__ == "__main__":
         vmin, vmax = state_dict_to_min_max(model_vminmax.state_dict())
         vmins.append(vmin)
         vmaxs.append(vmax)
-        
+
     vmin = torch.Tensor(vmins).min()
     vmax = torch.Tensor(vmaxs).max()
-    
-    #fig = get_figure(model, vmin, vmax)
-    #fig.savefig("./submissions/poster/shapenet_training_visualization/unconditioned_plane.png")
-    
-    print("saved unconditioned")
-    
-    files =["nef-56ba815f883279b462b600da24e0965_model_final.pth", "nef-e5abd988cb34ed9cdc82b8fee1057b30_model_final.pth", "nef-f97fa7329969bcd0ebf1d9fd44798b9b_model_final.pth"]
 
-    
-    
+    # fig = get_figure(model, vmin, vmax)
+    # fig.savefig("./submissions/poster/shapenet_training_visualization/unconditioned_plane.png")
+
+    print("saved unconditioned")
+
+    files = [
+        "nef-56ba815f883279b462b600da24e0965_model_final.pth",
+        "nef-e5abd988cb34ed9cdc82b8fee1057b30_model_final.pth",
+        "nef-f97fa7329969bcd0ebf1d9fd44798b9b_model_final.pth",
+    ]
+
     for file in files:
         model_dict = torch.load("./datasets/shapenet_nef_2/pretrained/" + file)
         model_config = model_dict["model_config"]
         model = MLP3D(**model_config)
         model.load_state_dict(model_dict["state_dict"])
         fig = get_figure(model, vmin, vmax)
-        fig.savefig(f"./submissions/poster/shapenet_training_visualization/{file.split(".")[0]}.png")
+        fig.savefig(
+            f"./submissions/poster/shapenet_training_visualization/{file.split(".")[0]}.png"
+        )
         print(f"saved {file.split(".")[0]}")

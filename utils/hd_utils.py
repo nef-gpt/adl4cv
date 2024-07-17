@@ -10,7 +10,7 @@ import torch
 from Pointnet_Pointnet2_pytorch.log.classification.pointnet2_ssg_wo_normals import (
     pointnet2_cls_ssg,
 )
-from torchmetrics_fid import FrechetInceptionDistance
+from utils.torchmetrics_fid import FrechetInceptionDistance
 
 # Using edited 2D-FID code of torch_metrics
 fid = FrechetInceptionDistance(reset_real_features=True)
