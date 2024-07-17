@@ -2,6 +2,18 @@
 
 This repository contains the code for the project "NeF-GPT" for the course "Advanced Deep Learning for Computer Vision" at the Technical University of Munich.
 
+## Environment
+
+This project uses poetry and Python 3.10. To install the dependencies, run the following command:
+
+```bash
+poetry install
+```
+
+Refer to the poetry documentation for more information on how to install and setup the environment.
+
+Additionally, a `requirements.txt` file is provided for compatibility with other package managers.
+
 ## Structure
 The main entry points to the project are as follows:
 
@@ -41,3 +53,11 @@ This folder contains the generative models used in the project. Please download 
 For script execution, the `dataset` folder is expected to contain the NeF models for the ShapeNet dataset. The models can be built using the provided scripts or found in the link provided on the GitHub repository.
 
 [adl4cv.git](https://github.com/nef-gpt/adl4cv.git)
+
+## Other Folders
+
+- `animation`: Contains the code for the animations used in the submissions
+- `data`: Contains the code for the custom data sets
+- `networks`: Implementation of the Transformer architectures and MLPs
+- `training`: Main training scripts for the Jupyter notebooks
+- `utils`: Various reusable code components used across the project
