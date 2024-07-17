@@ -12,27 +12,27 @@ The Neural fields (NeF) were first trained to resemble the pixel-brightness from
 
 \noindent
 \textbf{Regression Transformer }\\
-Due to the continuous nature of the NeF-weights as a first experiment a transformer architecture was adapted to work with continuous weights of the trained NeF. The process involved flattening MLP-weights which resulted in a sequence length of 561, adjusting the Transformer output by changing the head to output a one-dimensional weight prediciton and using L2-loss instead of cross-entropy loss to optimize the architecture.
+Due to the continuous nature of the NeF-weights as a first experiment a transformer architecture was adapted to work with continuous weights of the trained NeF. The process involved flattening MLP-weights which resulted in a sequence length of 561, adjusting the Transformer output by changing the head to output a one-dimensional weight prediction and using MSE-loss instead of cross-entropy loss to optimize the architecture.
 \vspace{1em}
 
 \noindent
 \textbf{Permutation Invariance}\\
-One of the first issues that were encountered is the unstructured nature on neural networks which can result in different MLP-functions that resemble the same underlying function \cite{HechtNielsen1990ONTA}. Making it difficult to transform them to consistently ordered sequences. To enforce a similar struture the neural fields are conditioned using weight initialization. Hereby an already fitted NeF is used to initialise all weights that are then fitted and later used to train the transformer.
+One of the first issues that were encountered is the unstructured nature on neural networks which can result in different MLP-functions that resemble the same underlying function \cite{HechtNielsen1990ONTA} making it difficult to transform them to consistently ordered sequences. To enforce a similar structure the neural fields are conditioned using weight initialization. Hereby an already fitted NeF is used to initialise all weights that are then fitted and later used to train the transformer.
 \vspace{1em}
 
 \noindent
 \textbf{Tokenization}\\
-Additionally due to the deterministic nature of the deployed regression transformer and the absence of special tokens we were not able to generate novel NeFs. To introduce the possibility of generating novel sequences the weights are discretized and special tokens are introduced. The flattened weights are discretized using vector quantize and a vocabulary size of 245. To accelerate and improve the training the codebook are initialized using kMeans, and optimized with an L2-loss. Furthermore, eleven special tokens are introduced. A SOS-token to indicate the start of seqence and ten different conditioning token to indicate the MNIST-NeF label of the infered NeF-weights.
+Additionally due to the deterministic nature of the deployed regression transformer and the absence of special tokens we were not able to generate novel NeFs. To introduce the possibility of generating novel sequences the weights are discretized, and special tokens are introduced. The flattened weights are discretized using vector quantize and a vocabulary size of 245. To accelerate and improve the training the codebook are initialized using kMeans, and optimized with an MSE-loss. Furthermore, eleven special tokens are introduced. An SOS-token to indicate the start of sequence and ten different conditioning token to indicate the MNIST-NeF label of the inferred NeF-weights.
 \vspace{1em}
 
 \noindent
 \textbf{Traditional Transformer}\\
-The final transformer was based on a decoder-only GPT implementation \cite{Karpathy2022} and trained using an embedding size of 240, 20 heads, 12 attention block layers and a context length of 562. The flattened, tokenized sequence is fed in as a whole. The start of sequence token is followed by the conditioning token and then the MLP-weight sequence. The transformer was trained for 40000 iterations with a batch size of 64 and a learning rate of 3e-3. To improve training cosine learning rate schedular was used.
+The final transformer was based on a decoder-only GPT implementation \cite{Karpathy2022} and trained using an embedding size of 240, 20 heads, 12 attention block layers and a context length of 562. The flattened, tokenized sequence is fed in as a whole. The start of sequence token is followed by the conditioning token and then the MLP-weight sequence. The transformer was trained for 40000 iterations with a batch size of 64 and a learning rate of 3e-3. To improve training cosine learning rate scheduler was used.
 \vspace{1em}
 
 \noindent
 \textbf{Preliminary Results on MNIST}\\
-In Figure \ref{fig:mnist} the final results of the MNIST transformer are shown. For the visualization the images were generated using the ten different conditioning tokens. They are shown next to their three nearest neighbors from the MNIST dataset. These results demonstrated the feaseability of proposed pipeline to approach the 3D generation task.
+In Figure \ref{fig:mnist} the final results of the MNIST transformer are shown. For the visualization the images were generated using the ten different conditioning tokens. They are shown next to their three nearest neighbors from the MNIST dataset. These results demonstrated the feasibility of proposed pipeline to approach the 3D generation task.
 
 % subfigure with two figures side by side
 \definecolor{mnistbg}{HTML}{101010}
@@ -61,7 +61,7 @@ The approach was extended to 3D meshes from the ShapeNet dataset. A subset of ar
 
 \noindent
 \textbf{Training Neural Fields}\\
-To handle the higher complexity of the 3D shapes in comparison to the 2D MNIST images, the neural network architecure of the implicit neural fields was extended. The hidden layers were increased to 32 neurons and two additional hidden layers were added. The input of x, y, z coordinates is again encoded using a sinusoidal positional encoding to 15 inputs. The output of the neural network is a single neuron with a tanh activation function.
+To handle the higher complexity of the 3D shapes in comparison to the 2D MNIST images, the neural network architecture of the implicit neural fields was extended. The hidden layers were increased to 32 neurons and two additional hidden layers were added. The input of x, y, z coordinates is again encoded using a sinusoidal positional encoding to 15 inputs. The output of the neural network is a single neuron with a tanh activation function.
 
 
 % \begin{figure}[H]
@@ -81,17 +81,17 @@ To handle the higher complexity of the 3D shapes in comparison to the 2D MNIST i
 
 \noindent
 \textbf{Tokenization:}\\
-To enable the generation of novel 3D shapes, a learned vocabulary was implemented. The MLP-weights were flattened to a sequence length of 3712 and a 1D Vector Quantization was applied. The codebook was initialized using kMeans and optimized with L2 loss. As with MNIST a SOS token was introduced to enable the generation of novel shapes.
+To enable the generation of novel 3D shapes, a learned vocabulary was implemented. The MLP-weights were flattened to a sequence length of 3712 and a 1D Vector Quantization was applied. The codebook was initialized using kMeans and optimized with L2 loss. As with MNIST a SOS-token was introduced to enable the generation of novel shapes.
 \vspace{1em}
 
 \noindent
 \textbf{Mode Collapse: }\\
-During early training of the Transformer Model we experienced mode collapse where a local minimum to the Cross Entropy Loss formulation of the Transformer training was found in predicting only a single mode of the true distribution. Mode collapse is a phenomenon that is known to happen in GANs. The single mode that was generated by the model corresponded with the initializing weights of the neural field, resulting in stagnating cross-entropy. Additionally, the initialization neural field happened to be a data sample that is very similar to a larger portion of the airplanes in the dataset. Therefore, the initialization was changed to represent a less frequent type in the dataset and additionally trained using L2-Regularization, to enforce that the neural field learns more diverse features.
+During early training of the Transformer Model we experienced mode collapse where a local minimum to the Cross Entropy Loss formulation of the Transformer training was found in predicting only a single mode of the true distribution. Mode collapse is a phenomenon that is known to happen in GANs \cite{9312049}. The single mode that was generated by the model corresponded with the initializing weights of the neural field, resulting in stagnating cross-entropy. Additionally, the initialization neural field happened to be a data sample that is very similar to a larger portion of the airplanes in the dataset. Therefore, the initialization was changed to represent a less frequent type in the dataset and additionally trained using L2-Regularization, to enforce that the neural field learns more diverse features.
 \vspace{1em}
 
 \noindent
 \textbf{Transformer}\\
-Using the newly trained dataset of neural fields multiple transformer models were trained. Three different architectures of a decoder only GPT model were trained, whose implementation was also inspired by NanoGPT \cite{Karpathy2022}. The model hyperparameters are shown in Table \ref{tab:architecture}.
+Using the newly created dataset of neural fields multiple transformer models were trained. Three different architectures of a decoder only GPT model were tested, whose implementation was also inspired by NanoGPT \cite{Karpathy2022}. The model hyperparameters are shown in Table \ref{tab:architecture}.
 
 \input{results/architecture-table.tex}
 
@@ -141,7 +141,7 @@ All models were trained for 1750 iterations, with an effective batch size of 32,
     \includegraphics[width=\linewidth]{./figures/generation/7.png}
   \end{subfigure}
 
-  \caption{\label{fig:generation} Autoregressive Generation of Neural Field Weights for Shapenet}
+  \caption{\label{fig:generation} Autoregressive Generation of Neural Field Weights for ShapeNet}
 
 \end{figure*}
 

@@ -16,13 +16,13 @@ While for COV higher is better, indicating a full coverage of the reference spac
   N_X = \underset{Y\in S_r \cup S_g}{\text{argmin}} \, D(X,Y) \\
 \end{gather*}
 
-Similar to the reference work, the Chamfer Distance (CD) for 3D point clouds was used as a distance measure $D(X, Y)$ and also multiplied by a constant $10^2$ to enable a comparison with the other methods.
+Similar to the reference work, the Chamfer Distance (CD) for 3D point clouds was used as a distance measure $D(X, Y)$ and also multiplied by a constant $10^2$ to enable a comparison with the metrics present by the HyperDiffusion paper.
 
-Additionally, a perceptual metric was also adapted based on the Frechet PointNet++ Distance (FPD) \cite{qi2017pointnetdeephierarchicalfeature}, which is an extension to Point Clouds based on the Frechet Inception Distance (FID) metric \cite{NIPS2017_8a1d6947} typically used to evaluate fidelity. For the FPD lower values are better.
+Additionally, a perceptual metric was also adapted, the Frechet PointNet++ Distance (FPD) \cite{qi2017pointnetdeephierarchicalfeature}, which is an extension to the domain of Point Clouds to the Frechet Inception Distance (FID) metric \cite{NIPS2017_8a1d6947} typically used to evaluate fidelity. For the FPD lower values are better.
 
 \subsection*{Model Evaluation}
-In Figure \ref{fig:generation} novel generated airplanes are shown. For this the SOS toke is fed into the transformer and the tokens are generated in an autoregressive fashion. The tokens are then backtransformed to MLP-weights using the learned codebooks, the reconstructed NeF is used to calculate a pointcloud containing SDF-values and the marching cube algorithm is deployed to transform the pointcloud to a valid mesh.
-A comparison regarding the performance of the model against different diffusion models was conducted as there is no direct comparison model available for other autoregressive techniques in this context. The Results are shown in Table \ref{tab:shapenet}.
+In Figure \ref{fig:generation} novel generated airplanes are shown. For this the SOS-token is fed into the transformer and the tokens are generated in an autoregressive fashion. The tokens are then back transformed to MLP-weights using the learned codebooks, the reconstructed NeF is used to calculate a point cloud containing SDF-values and the marching cube algorithm is deployed to transform the point cloud to a valid mesh.
+A comparison regarding the performance of the model against different diffusion models was conducted as there is no direct comparison model available for other autoregressive techniques in this context. The results are shown in Table \ref{tab:shapenet}.
 
 \input{results/train_results.tex}
 

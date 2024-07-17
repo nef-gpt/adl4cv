@@ -1,0 +1,3 @@
+NeF
+MNIST
+ShapeNet

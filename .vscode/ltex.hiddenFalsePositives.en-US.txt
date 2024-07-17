@@ -1,0 +1,1 @@
+{"rule":"EN_WORD_COHERENCY","sentence":"^\\QAs with the MNIST Data a single sample from the dataset was overfitted and then used to initialize the other samples.\\E$"}

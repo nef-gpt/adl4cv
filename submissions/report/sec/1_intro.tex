@@ -7,15 +7,15 @@
 Recent successes in neural fields for compressed scene representation and autoregressive transformer models have been remarkable.
 Additionally, first approaches towards generating novel neural fields using diffusion models \cite{erkoç2023hyperdiffusion} and unconditional triangle-mesh generation using transformers \cite{siddiqui2023meshgpt} have been proposed.
 % and problem statement
-% However, the absence of a clear structure of implicit neural fields (NeF) makes it difficult to apply to an autoregressive process, which assumes sequence data. Another Problem is the continuous nature of MLP weights, while transformers typically use a small to medium sized vocabulary.
+% However, the absence of a clear structure of implicit neural fields (NeF) makes it difficult to apply to an autoregressive process, which assumes sequence data. Another Problem is the continuous nature of MLP-weights, while transformers typically use a small to medium sized vocabulary.
 Challenges persist, however, due to the unstructured nature of implicit neural fields and the mismatch between the continuous MLP-weights and the discrete vocabulary typically used by transformers.
-Therefore, the main problem lies in finding a representation of the MLP weights that can be used to train sequence-to-sequence architectures.
+Therefore, the main problem lies in finding a representation of the MLP-weights that can be used to train sequence-to-sequence architectures.
 The challenge therefore is two-fold: (1) finding a strategy to reduce the structural difference between neural fields to make them interpretable as sequences, and (2) find a discretization method to transform the generation task into a token prediction task.
 % contribution bullet points
 % FEEDBACK: Introduction should end with our proposed method
 % To address this challenge, we investigate embedding techniques for neural fields that are well-suited for integration with transformer architectures. We propose a naive approach with positional encoding, learned continuous embedding, as well as a learned vocabulary and use them in conjunction with popular transformer architectures.
 
-Do address these challenges, we propose a novel pipeline to handle the training of neural fields, the tokenization of these weights and the generation of novel neural fields from the same distribution using an autoregressive transformer-based model.
+To address these challenges, we propose a novel pipeline to handle the training of neural fields, the tokenization of these weights and the generation of novel neural fields from the same distribution using an autoregressive transformer-based model.
 
 %We aim to investigate neural field embedding strategies compatible with transformer models, proposing methods including positional encoding, learned continuous embedding, and a learned vocabulary integrated with established transformer architectures.
 
