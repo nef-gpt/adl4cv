@@ -214,8 +214,6 @@ def main(weights, dims =[17], vocab_sizes=[1024], batch_sizes = [2**15], thresho
    
 
 if __name__ == "__main__":
-    # dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=FlattenTransform3D())
-    # weights = cat_weights(dataset, n=len(dataset))
     
     # Instantiate the dataset and dataloader
     dataset = ShapeNetDataset("./datasets/plane_mlp_weights", transform=AllWeights3D())
@@ -224,9 +222,6 @@ if __name__ == "__main__":
     mean_total, std_total = get_total_mean_n_std(shapeNetData_normalized)
     shapeNetData_normalized = ShapeNetDataset("./datasets/plane_mlp_weights", transform=[AllWeights3D(), ZScore3D(means_neurons, 1), ZScore3D(mean_total, std_total)])
 
-    #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0, 2, 4, 8, 16], kmean_iters_list=[0], num_quantizers_list=[4], use_inits=[True], training_iters=10, force=True)
-    #main(dataset, dims=[128], vocab_sizes=[287], batch_sizes=[512], threshold_ema_dead_codes=[0], kmean_iters_list=[1], num_quantizers_list=[4], use_inits=[False], training_iters=10)
-    #main(dataset, dims=[128], vocab_sizes=[512, 1048], batch_sizes=[512, 1024, 2048], threshold_ema_dead_codes=[0], kmean_iters_list=[0], num_quantizers_list=[1, 2, 3, 4], use_inits=[False], training_iters=3)
     main(shapeNetData_normalized, dims=[128], vocab_sizes=[256], batch_sizes=[2048], threshold_ema_dead_codes=[0], kmean_iters_list=[1], groups_list=[2], num_quantizers_list=[8], use_inits=[False], training_iters=10, force=True)
     
 
