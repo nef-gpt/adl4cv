@@ -42,6 +42,10 @@ Under the `submissions` folder, you can find the main deliverables of the course
 
 Please note that the presentation slides, because of their interactive nature, the exported pdf's might not be as informative as the actual slides. Please refer to GitHub for a hosted version of the actual slides.
 
+Hosted versions of the presentations can be found at the following links:
+- Presentation 1 - TBD
+- [Presentation 2](https://adl4cv-presentation-2.vercel.app)
+
 ## Models folder
 
 This folder contains the generative models used in the project. Please download the current state of the models from the link provided in the GitHub repository:
