@@ -5,8 +5,8 @@
 
 \subsection*{Metrics: }
 
-The ShapeNet medium model was evaluated using the Minimum Matching Distance(MMD), Coverage (COV), and 1-Nearest-Neighbor Accuracy (1-NNA) metrics, and the Frechet PointNet++ Distance  as proposed by the reference  works \cite{erkoç2023hyperdiffusion}.
-While for COV higher is better, indicating a full coverage of the reference space, for 1-NNA 50\% is the best possible score, as it indicates that the nearest neighbor of each point is in the other set.
+The ShapeNet medium model was evaluated using the Minimum Matching Distance(MMD), Coverage (COV), and 1-Nearest-Neighbor Accuracy (1-NNA) metrics, and the Frechet PointNet++ Distance as proposed by HyperDiffusion to enable qualitative comparison \cite{erkoç2023hyperdiffusion}.
+While for COV higher is better, indicating a full coverage of the reference space, for 1-NNA 50\% is the best possible score, as it indicates that the reference and generated sets are equally distributed among each other.
 
 \begin{gather*}
   \mathrm{MMD}(S_g,S_r) =\frac{1}{|S_{r}|}\sum_{Y\in S_{r}}\min_{X\in S_{g}}D(X,Y)\\
@@ -18,14 +18,14 @@ While for COV higher is better, indicating a full coverage of the reference spac
 
 Similar to the reference work, the Chamfer Distance (CD) for 3D point clouds was used as a distance measure $D(X, Y)$ and also multiplied by a constant $10^2$ to enable a comparison with the other methods.
 
-Additionally, a perceptual metric was also adapted based on the Frechet PointNet++ Distance (FPD) \cite{qi2017pointnetdeephierarchicalfeature}, which is an extension to Point Clouds based on the Frechet Inception Distance (FID) \cite{NIPS2017_8a1d6947} typically used to evaluate fidelity. For the FPD lower values are better.
+Additionally, a perceptual metric was also adapted based on the Frechet PointNet++ Distance (FPD) \cite{qi2017pointnetdeephierarchicalfeature}, which is an extension to Point Clouds based on the Frechet Inception Distance (FID) metric \cite{NIPS2017_8a1d6947} typically used to evaluate fidelity. For the FPD lower values are better.
 
 \subsection*{Model Evaluation}
-
-A comparison regarding the performance of the model against the diffusion models was conducted on the Airplane category as there is no direct comparison model available for other autoregressive techniques in this context. The Results are shown in Table \ref{tab:shapenet}.
+In Figure \ref{fig:generation} novel generated airplanes are shown. For this the SOS toke is fed into the transformer and the tokens are generated in an autoregressive fashion. The tokens are then backtransformed to MLP-weights using the learned codebooks, the reconstructed NeF is used to calculate a pointcloud containing SDF-values and the marching cube algorithm is deployed to transform the pointcloud to a valid mesh.
+A comparison regarding the performance of the model against different diffusion models was conducted as there is no direct comparison model available for other autoregressive techniques in this context. The Results are shown in Table \ref{tab:shapenet}.
 
 \input{results/train_results.tex}
 
-The results show that in principle the generation of neural field weights using this novel approach is feasible, as we outperform the diffusion based voxel baseline in Coverage, 1-NNA and output fidelity. We suspect that the performance of the method could be further improved by increasing the model size and training time, as shown in Figure \ref{fig:loss} the training loss is still decreasing after the full training, but this was not possible due to time and compute constraints.
+The results show that in principle the generation of neural field weights using this novel approach is feasible, as we outperform the diffusion based voxel baseline in Coverage, 1-NNA and output fidelity. We suspect that the performance of the method could be further improved by increasing the model size and training time, as shown in Figure \ref{fig:loss} the training loss is still decreasing after the full training, but this investigation was not feasible due to time and compute limitations.
 
 
