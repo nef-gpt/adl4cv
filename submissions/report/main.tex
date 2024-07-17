@@ -2,6 +2,7 @@
 
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+
 %%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
 % \usepackage{cvpr}              % To produce the CAMERA-READY version
 \usepackage[final]{cvpr}      % To produce the REVIEW version
@@ -20,7 +21,15 @@
 \definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,citecolor=cvprblue]{hyperref}
 \usepackage{longtable}
+
+
+
 \usepackage{multirow}
+\usepackage{float}
+\usepackage{mdframed}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage{bbm}
 
 %%%%%%%%% PAPER ID  - PLEASE UPDATE
 \def\paperID{*****} % *** Enter the Paper ID here
@@ -28,7 +37,7 @@
 \def\confYear{2024}
 
 %%%%%%%%% TITLE - PLEASE UPDATE
-\title{Autoregressive Generation of Neural Field Weights}
+\title{NeF-GPT: Autoregressive Generation of Neural Field Weights with Decoder-Only Transformer}
 
 %%%%%%%%% AUTHORS - PLEASE UPDATE
 \author{Luca Fanselau\\
@@ -50,23 +59,25 @@ TUM Munich\\
 \input{sec/0_abstract}
 \input{sec/1_intro}
 \input{sec/2_literature.tex}
+
+\clearpage
 \input{sec/3_method.tex}
 \input{sec/4_experiments.tex}
 
-\input{results/train_metrics_z_score.tex}
-<<<<<<< HEAD
-\input{results/val_metrics_z_score.tex}
+\input{sec/5_results.tex}
 
+\input{sec/6_limitations.tex}
 
-\input{results/train_results.tex}
-=======
->>>>>>> origin/main
+\input{sec/7_conclusions.tex}
+
+% \input{results/train_metrics_z_score.tex}
+
 
 
 {
-    \small
-    \bibliographystyle{ieeenat_fullname}
-    \bibliography{../bibliography.bib}
+  \small
+  \bibliographystyle{ieeenat_fullname}
+  \bibliography{../bibliography.bib}
 }
 
 % WARNING: do not forget to delete the supplementary pages from your submission 

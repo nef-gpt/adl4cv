@@ -1,15 +1,18 @@
 % Literature Review
 \section{Related Works}
 \label{sec:literature}
-% In \cite{erkoç2023hyperdiffusion} it was shown that HyperDiffusion can be
-% used to generate novel MLP-weights for NeF. Furthermore, in \cite{siddiqui2023meshgpt} a autoregressive transformer-based approach
-% was used for the generation of novel 3D structure. For our approach we want to use a similar approach
-% as in \cite{siddiqui2023meshgpt} on a different domain, eg. polygon meshes vs. MLP-weights.
-% Furthermore, different attempts have been made that leverages the natural permutation symmetries in weight matrices to enable effective learning \cite{navon2023equivariant, navon2024equivariant}
-% and there has also been research into using the structure of neural networks to uncover underlying structures and find embeddings \cite{lim2023graph,andreis2023setbased}.
-% There have also been extensions to use transformers for graph-based \cite{diao2023relational} and for continuous data \cite{born2023regression,mao2022poseur}.
+
+\subsection*{Neural Implicit Fields and Diffusion Models}
+Recent advancements have demonstrated the effectiveness of neural implicit fields in representing high-fidelity 3D geometries and radiance fields. For instance, DeepSDF \cite{park2019deepsdflearningcontinuoussigned} encodes the shapes of objects as signed distance functions using a multi-layer neural network, and NeRF uses MLPs to encode radiance fields for photorealistic rendering from novel views \cite{mildenhall2020nerfrepresentingscenesneural}. Additionally, methods like Fourier features and periodic activation functions have been proposed to improve the representation of complex signals by addressing the bias towards learning low-frequency details in standard MLP \cite{tancik2020fourierfeaturesletnetworks, sitzmann2020implicitneuralrepresentationsperiodic}.
 
 
+\subsection*{Transformer-Based 3D Structure Generation}
+Transformer architectures have shown promise in generating 3D structures. MeshGPT \cite{siddiqui2023meshgpt}, for example, uses a decoder-only transformer to autoregressively generate triangle meshes, representing them as sequences of geometric embeddings. This approach has demonstrated improvements in mesh generation quality, emphasizing the capability of transformers to handle complex geometric data efficiently.
 
-HyperDiffusion \cite{erkoç2023hyperdiffusion} demonstrated the generation of novel MLP-weights for NeF, while MeshGPT \cite{siddiqui2023meshgpt} employed an autoregressive transformer-based approach for novel 3D structure generation. We aim to adapt the general transformer architecture from MeshGPT \cite{siddiqui2023meshgpt} to a different domain, namely from polygon meshes to MLP-weights.
-Additionally, relevant literature includes research on equivariant weight space representations \cite{navon2023equivariant, navon2024equivariant} which leveraged permutation symmetries in weight matrices for effective learning, utilizing neural network structure to uncover underlying patterns and embeddings \cite{lim2023graph,andreis2023setbased}. To handle the different domains extensions of transformers have been proposed for graph-based \cite{diao2023relational} and continuous data \cite{born2023regression,mao2022poseur}.
+
+\subsection*{Generative Adversarial Networks (GANs)}
+GANs \cite{goodfellow2014generativeadversarialnetworks} have been widely used for generating high-resolution images and 3D structures. However, they often suffer from training instability. This has led researchers to explore diffusion models as alternatives, which offer more stable training dynamics and improved generative performance.
+
+
+\subsection*{Diffusion Models in Generative Modeling}
+Diffusion probabilistic models have emerged as powerful alternatives to GANs and energy-based models for generative tasks. Specifically, HyperDiffusion \cite{erkoç2023hyperdiffusion} operates directly on the MLP weights of neural fields, enabling high-fidelity synthesis of 3D and 4D shapes. This method leverages a transformer-based architecture to model the diffusion process, achieving state-of-the-art performance in generating compact and coherent neural implicit fields.
