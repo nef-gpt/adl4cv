@@ -24,7 +24,7 @@ mlp_kwargs = {
 
 
 class ShapeNetDataset(Dataset):
-    def __init__(self, mlps_folder, transform=None):
+    def __init__(self, mlps_folder, transform=None, cpu=False):
         self.mlps_folder = mlps_folder
 
         if transform is None:
@@ -39,7 +39,7 @@ class ShapeNetDataset(Dataset):
             file for i, file in enumerate(self.mlp_files)
         ]
 
-        self.device = torch.device(get_default_device())
+        self.device = torch.device(get_default_device(cpu))
         self.mlp_kwargs = mlp_kwargs
 
     def __getitem__(self, index):
@@ -121,7 +121,7 @@ class ImageTransform3D(nn.Module):
 
 
 # condition loading 
-dataset_model_unconditioned = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nefs", "unconditioned"), transform=ImageTransform3D())
+dataset_model_unconditioned = ShapeNetDataset(os.path.join("./", "datasets", "shapenet_nef_2", "unconditioned"), transform=ImageTransform3D())
 condition = dataset_model_unconditioned[0][0]
 
 
@@ -138,7 +138,7 @@ class TokenTransform3D(nn.Module):
     def forward(self, weights_dict, y):
         # Apply min-max normalization
         weights, y = self.flatten(weights_dict, y)
-        weights = weights - condition
+        weights = weights - condition.to(weights)
         self.target_shape = weights.shape
         with torch.no_grad():
             flattened_weights = weights.view(-1, self.vq.layers[0].dim)
@@ -153,7 +153,7 @@ class TokenTransform3D(nn.Module):
 
         quantized = quantized.reshape(self.target_shape)
 
-        return self.flatten.inverse(quantized + condition)
+        return self.flatten.inverse(quantized + condition.to(quantized))
 
     def backproject(self, indices):
         return self.vq.get_codes_from_indices(indices)

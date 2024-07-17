@@ -1,6 +1,7 @@
 from torchmetrics.image.ssim import StructuralSimilarityIndexMeasure
 import torch
 from einops import rearrange
+from tqdm import tqdm
 
 ssim = StructuralSimilarityIndexMeasure(data_range=1.0, reduction="none")
 
@@ -119,3 +120,171 @@ def compute_all_metrics(generated, reference):
     # compute lgan_mmd_cov
     result.update(lgan_mmd_cov(distances))
     return result
+
+
+def emd_approx(sample, ref):
+    emd_val = torch.zeros([sample.size(0)]).to(sample)
+    return emd_val
+
+
+# Borrow from https://github.com/ThibaultGROUEIX/AtlasNet
+def distChamfer(a, b):
+    x, y = a, b
+    bs, num_points, points_dim = x.size()
+    xx = torch.bmm(x, x.transpose(2, 1))
+    yy = torch.bmm(y, y.transpose(2, 1))
+    zz = torch.bmm(x, y.transpose(2, 1))
+    diag_ind = torch.arange(0, num_points).to(a).long()
+    rx = xx[:, diag_ind, diag_ind].unsqueeze(1).expand_as(xx)
+    ry = yy[:, diag_ind, diag_ind].unsqueeze(1).expand_as(yy)
+    P = rx.transpose(2, 1) + ry - 2 * zz
+    return P.min(1)[0], P.min(2)[0]
+
+
+def EMD_CD(ref_pcs, batch_size, diff_module, n_points, reduced=True):
+    N_ref = ref_pcs.shape[0]
+
+    cd_lst = []
+    iterator = range(0, N_ref, batch_size)
+
+    for b_start in tqdm(iterator, desc="EMD-CD"):
+        b_end = min(N_ref, b_start + batch_size)
+        ref_batch = ref_pcs[b_start:b_end]
+        sample_x_0s = diff_module.diff.sample(len(ref_batch))
+        sample_meshes, _ = diff_module.generate_meshes(sample_x_0s, None)
+        sample_batch = []
+        for mesh in sample_meshes:
+            pc = torch.tensor(mesh.sample(n_points))
+            sample_batch.append(pc)
+        sample_batch = torch.stack(sample_batch)
+        # sample_batch = torch.randn(*ref_batch.shape).double()
+        dl, dr = distChamfer(sample_batch, ref_batch)
+        cd_lst.append(dl.mean(dim=1) + dr.mean(dim=1))
+
+    if reduced:
+        cd = torch.cat(cd_lst).mean()
+    else:
+        cd = torch.cat(cd_lst)
+
+    results = {
+        "MMD-CD": cd,
+    }
+    return results
+
+
+def _pairwise_EMD_CD_(sample_pcs, ref_pcs, batch_size, verbose=True):
+    N_sample = sample_pcs.shape[0]
+    N_ref = ref_pcs.shape[0]
+    all_cd = []
+    all_emd = []
+    iterator = range(N_sample)
+    if verbose:
+        iterator = tqdm(iterator, desc="Pairwise EMD-CD")
+    for sample_b_start in iterator:
+        sample_batch = sample_pcs[sample_b_start]
+
+        cd_lst = []
+        emd_lst = []
+        sub_iterator = range(0, N_ref, batch_size)
+        # if verbose:
+        #     sub_iterator = tqdm(sub_iterator, leave=False)
+        for ref_b_start in sub_iterator:
+            ref_b_end = min(N_ref, ref_b_start + batch_size)
+            ref_batch = ref_pcs[ref_b_start:ref_b_end]
+
+            batch_size_ref = ref_batch.size(0)
+            point_dim = ref_batch.size(2)
+            sample_batch_exp = sample_batch.view(1, -1, point_dim).expand(
+                batch_size_ref, -1, -1
+            )
+            sample_batch_exp = sample_batch_exp.contiguous()
+
+            dl, dr = distChamfer(sample_batch_exp, ref_batch)
+            cd_lst.append((dl.mean(dim=1) + dr.mean(dim=1)).view(1, -1))
+
+            emd_batch = emd_approx(sample_batch_exp, ref_batch)
+            emd_lst.append(emd_batch.view(1, -1))
+
+        cd_lst = torch.cat(cd_lst, dim=1)
+        emd_lst = torch.cat(emd_lst, dim=1)
+        all_cd.append(cd_lst)
+        all_emd.append(emd_lst)
+
+    all_cd = torch.cat(all_cd, dim=0)  # N_sample, N_ref
+    all_emd = torch.cat(all_emd, dim=0)  # N_sample, N_ref
+
+    return all_cd, all_emd
+
+
+def compute_all_metrics_3D(sample_pcs, ref_pcs, batch_size):
+    results = {}
+
+    print("Pairwise EMD CD")
+    M_rs_cd, M_rs_emd = _pairwise_EMD_CD_(ref_pcs, sample_pcs, batch_size)
+
+    ## EMD
+    res_emd = lgan_mmd_cov(M_rs_emd.t())
+    # results.update({
+    #     "%s-EMD" % k: v for k, v in res_emd.items()
+    # })
+
+    ## CD
+    res_cd = lgan_mmd_cov(M_rs_cd.t())
+
+    # We use the below code to visualize some goodly&badly performing shapes
+    # you can uncomment if you want to analyze that
+
+    # if len(sample_pcs) > 60:
+    #     r = Rotation.from_euler('x', 90, degrees=True)
+    #     min_dist, min_dist_sample_idx = torch.min(M_rs_cd.t(), dim=0)
+    #     min_dist_sorted_idx = torch.argsort(min_dist)
+    #     orig_meshes_dir = f"orig_meshes/run_{wandb.run.name}"
+    #
+    #     for i, ref_id in enumerate(min_dist_sorted_idx):
+    #         ref_id = ref_id.item()
+    #         matched_sample_id = min_dist_sample_idx[ref_id].item()
+    #         mlp_pc = trimesh.points.PointCloud(sample_pcs[matched_sample_id].cpu())
+    #         mlp_pc.export(f"{orig_meshes_dir}/mlp_top{i}.obj")
+    #         mlp_pc = trimesh.points.PointCloud(ref_pcs[ref_id].cpu())
+    #         mlp_pc.export(f"{orig_meshes_dir}/mlp_top{i}ref.obj")
+    #
+    #     for i, ref_id in enumerate(min_dist_sorted_idx[:4]):
+    #         ref_id = ref_id.item()
+    #         matched_sample_id = min_dist_sample_idx[ref_id].item()
+    #         logger.experiment.log({f'pc/top_{i}': [
+    #             wandb.Object3D(r.apply(sample_pcs[matched_sample_id].cpu())),
+    #             wandb.Object3D(r.apply(ref_pcs[ref_id].cpu()))]})
+    #     for i, ref_id in enumerate(reversed(min_dist_sorted_idx[-4:])):
+    #         ref_id = ref_id.item()
+    #         matched_sample_id = min_dist_sample_idx[ref_id].item()
+    #         logger.experiment.log({f'pc/bottom_{i}': [
+    #             wandb.Object3D(r.apply(sample_pcs[matched_sample_id].cpu())),
+    #             wandb.Object3D(r.apply(ref_pcs[ref_id].cpu()))]})
+    #     print(min_dist, min_dist_sample_idx, min_dist_sorted_idx)
+    #     torch.save(min_dist, f"{orig_meshes_dir}/min_dist.pth")
+    #     torch.save(min_dist_sample_idx, f"{orig_meshes_dir}/min_dist_sample_idx.pth")
+    #     torch.save(min_dist_sorted_idx, f"{orig_meshes_dir}/min_dist_sorted_idx.pth")
+    #     torch.save(min_dist[min_dist_sorted_idx], f"{orig_meshes_dir}/min_dist_sorted.pth")
+    #     print("Sorted:", min_dist[min_dist_sorted_idx])
+
+    results.update({"%s-CD" % k: v for k, v in res_cd.items()})
+    for k, v in results.items():
+        print("[%s] %.8f" % (k, v.item()))
+
+    M_rr_cd, M_rr_emd = _pairwise_EMD_CD_(ref_pcs, ref_pcs, batch_size)
+    M_ss_cd, M_ss_emd = _pairwise_EMD_CD_(sample_pcs, sample_pcs, batch_size)
+
+    # 1-NN results
+    ## CD
+    one_nn_cd_res = knn(M_rr_cd, M_rs_cd, M_ss_cd, 1, sqrt=False)
+    results.update(
+        {"1-NN-CD-%s" % k: v for k, v in one_nn_cd_res.items() if "acc" in k}
+    )
+
+    ## EMD
+    one_nn_emd_res = knn(M_rr_emd, M_rs_emd, M_ss_emd, 1, sqrt=False)
+    # results.update({
+    #     "1-NN-EMD-%s" % k: v for k, v in one_nn_emd_res.items() if 'acc' in k
+    # })
+
+    return results

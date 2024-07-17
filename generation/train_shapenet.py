@@ -4,6 +4,7 @@ import sys
 from torch.multiprocessing import Pool, Process, set_start_method
 from tqdm import tqdm
 
+# from utils import get_default_device
 
 try:
     set_start_method("spawn")
@@ -33,8 +34,8 @@ config = {}
 config["unconditioned"] = {}
 config["pretrained"] = {}
 
-files = [] # [file for file in os.listdir("./datasets/02691156_pc")]
-file_unconditioned = "./datasets/02691156_pc/5d7c2f1b6ed0d02aa4684be4f9cb3c1d.npy"
+files = [file for file in os.listdir("./datasets/02691156_pc")]
+file_unconditioned = ["5d7c2f1b6ed0d02aa4684be4f9cb3c1d.npy"]
 
 
 from vector_quantize_pytorch import VectorQuantize
@@ -51,16 +52,17 @@ model_config = {
 }
 
 # settings
-idx_range = None  # Srange(0, 2500)
+idx_range = None  # Srange(0, 2500)S
 save_during_epochs = None  # 1
 skip_existing_models = False
 skip_unconditioned = False
 
 config_file = "./datasets/shapenet_nef_2/overview.json"
-cpu_mode = True
+cpu_mode = False
 device = torch.device("cpu" if cpu_mode else "cuda")  # get_default_device()
 
 print("Using device", device)
+
 
 def load_config():
     # create config file if it does not exist
@@ -105,10 +107,12 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
 
     # Create dataset and dataloader
     if init_model_path:
-        dataset = PointCloud("./datasets/02691156_pc/" + files[i], batch_size, strategy="")
+        files = [file for file in os.listdir("./datasets/02691156_pc")]
     else:
-        dataset = PointCloud(file_unconditioned, batch_size, strategy="")
-        
+        files = file_unconditioned
+
+    dataset = PointCloud("./datasets/02691156_pc/" + files[i], batch_size, strategy="")
+
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     model = MLP3D(**model_config)
@@ -192,7 +196,7 @@ def fit_single_batch(i: int, init_model_path=None, batch_size=2 * 4096):
         save_epoch_interval=save_during_epochs,
         device=device,
         disable_tqdm=False,
-        l1_loss_lambda=0.0
+        l2_loss_lambda=5.0 if init_model_path is None else 0.0,
     )
 
     return {

@@ -1,0 +1,11 @@
+% Literature Review
+\section{Methods}
+
+% PIPELINE OVERVIEW
+NeF-GPT deployes a transformer-based architecture to autoregressively and unconditionally generate novel neural implicit fields encoded by MLPs. It operates on MLP-weights directly. The training process includes two steps, as illustrated below.
+
+In the first neural field overfitting step detailed in \ref{sec:exper} a collection of MLPs are optimized so that each MLP represents a faithful neural field of a data sample. This step involves training on either the MNIST or ShapeNet datasets. The optimized MLP weights are then processed into sequences and tokenized to work with a transformer-based architecture for generation.
+
+In the second step, the tokenized MLP weights are passed into a transformer network for training.
+
+After training, the transformer can generate new MLP weights by sampling from the trained model. These weights correspond to valid neural implicit fields. Generated 3D shapes can be visualized and further processed using techniques like Marching Cubes.

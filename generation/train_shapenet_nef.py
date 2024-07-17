@@ -34,7 +34,7 @@ def train(
     summary_fn,
     wandb,
     model_config,
-    l1_loss_lambda=0.0,
+    l2_loss_lambda=0.0,
     val_dataloader=None,
     double_precision=False,
     clip_grad=False,
@@ -146,7 +146,8 @@ def train(
                 losses = loss_fn(model_output.float(), gt.float())
                 
                 all_params = torch.cat([x.view(-1) for x in model.parameters()])
-                train_loss = losses + l1_loss_lambda*torch.norm(all_params, 1)
+                l2_loss = l2_loss_lambda*torch.norm(all_params, 2) / all_params.shape[0]
+                train_loss = losses + l2_loss
                 # for loss_name, loss in losses.items():
 
                 #     single_loss = loss.mean()
@@ -192,7 +193,7 @@ def train(
                     optim.step()
 
                 pbar.update(1)
-                wandb.log({"loss": train_loss})
+                wandb.log({"loss": train_loss, "l2_loss": l2_loss})
                 pbar.set_description(
                     "Epoch %d, Total loss %0.6f, iteration time %0.6f"
                     % (epoch, train_loss, time.time() - start_time)
