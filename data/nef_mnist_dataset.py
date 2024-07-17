@@ -9,8 +9,6 @@ import os
 import torch
 import torch.nn as nn
 from networks.mlp_models import MLP3D
-
-from networks.naive_rq_ae import RQAutoencoder
 from vector_quantize_pytorch import VectorQuantize
 
 
