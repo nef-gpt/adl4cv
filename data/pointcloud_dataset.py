@@ -12,7 +12,6 @@ import io
 from utils.hd_utils import render_mesh
 
 
-
 class PointCloud(Dataset):
     def __init__(
         self,
@@ -34,7 +33,7 @@ class PointCloud(Dataset):
             if strategy == "save_pc":
                 obj: trimesh.Trimesh = trimesh.load(path, process=False)
 
-                #obj.show()
+                # obj.show()
 
                 vertices = obj.vertices
 
@@ -44,9 +43,9 @@ class PointCloud(Dataset):
                 vertices *= 0.5 * 0.95 / (max(abs(v_min), abs(v_max)))
                 obj.vertices = vertices
                 self.obj = obj
-                
-                color, depth = render_mesh(obj, res=(3600,3600))
-                
+
+                color, depth = render_mesh(obj, res=(3600, 3600))
+
                 fig = plt.figure()
                 ax = fig.add_subplot()
                 ax.set_xlim((500, 3000))
@@ -54,10 +53,8 @@ class PointCloud(Dataset):
                 ax.grid(False)
                 ax.axis("off")
                 ax.imshow(color)
-                
+
                 plt.show()
-                
-                
 
                 n_points_uniform = n_points
                 n_points_surface = n_points
@@ -134,7 +131,9 @@ class PointCloud(Dataset):
         }
 
 
-def get_pc(files: list = [file for file in os.listdir("./datasets/02691156_watertight_mesh")]):
+def get_pc(
+    files: list = [file for file in os.listdir("./datasets/02691156_watertight_mesh")],
+):
 
     for i, file in tqdm(enumerate(files), "File"):
         PointCloud(
@@ -167,32 +166,34 @@ def plot_image(
     )
     print("filtered_coord_out.shape: ", filtered_coord_out.shape)
     print("filtered_coord_in.shape: ", filtered_coord_in.shape)
-    
-        
-    
 
     # Extract x, y, z coordinates
     x_in = filtered_coord_in[:20000, 0].numpy()
     y_in = filtered_coord_in[:20000, 1].numpy()
     z_in = filtered_coord_in[:20000, 2].numpy()
-    
-    x_out = torch.cat((filtered_coord_out[:1000, 0], filtered_coord_out[-20000:, 0])).numpy()
-    y_out = torch.cat((filtered_coord_out[:1000, 1], filtered_coord_out[-20000:, 1])).numpy()
-    z_out = torch.cat((filtered_coord_out[:1000, 2], filtered_coord_out[-20000:, 2])).numpy()
-    
-    print(x_out.shape)
-    
-    plt.rcParams["text.usetex"] = True
 
+    x_out = torch.cat(
+        (filtered_coord_out[:1000, 0], filtered_coord_out[-20000:, 0])
+    ).numpy()
+    y_out = torch.cat(
+        (filtered_coord_out[:1000, 1], filtered_coord_out[-20000:, 1])
+    ).numpy()
+    z_out = torch.cat(
+        (filtered_coord_out[:1000, 2], filtered_coord_out[-20000:, 2])
+    ).numpy()
+
+    print(x_out.shape)
+
+    plt.rcParams["text.usetex"] = True
 
     # Create a scatter plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     scatter = ax.scatter(x_in, z_in, y_in, c="green", s=0.1)
     scatter = ax.scatter(x_out, z_out, y_out, c="blue", s=0.05)
-    
-    scatter = ax.scatter([], [], [], c="green", s=1000, label=r'$SDF(x) < 0$')
-    scatter = ax.scatter([], [], [], c="blue", s=1000, label=r'$SDF(x) > 0$')
+
+    scatter = ax.scatter([], [], [], c="green", s=1000, label=r"$SDF(x) < 0$")
+    scatter = ax.scatter([], [], [], c="blue", s=1000, label=r"$SDF(x) > 0$")
 
     # Set labels
     ax.set_xlabel("")
@@ -205,14 +206,16 @@ def plot_image(
     # Show plot
     plt.grid(False)
     plt.axis("off")
-    plt.legend(fontsize="30", loc ="lower left")
+    plt.legend(fontsize="30", loc="lower left")
     plt.show()
 
 
+def main():
+    """
+    Expects *watertight* shapenet meshes to be present in ./datasets/02691156_watertight_mesh
+    """
+    get_pc()
+
+
 if __name__ == "__main__":
-    
-    files = [file for file in os.listdir("./datasets/02691156_pc")]
-
-    #get_pc([files[0].split(".")[0] + ".obj"])
-
-    plot_image("./datasets/02691156_pc/" + files[9])
+    main()

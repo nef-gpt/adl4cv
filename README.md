@@ -1,1 +1,43 @@
-# Advanced Deep Learning 4 Computer Vision - GPT for Neural Fields
+# NeF-GPT: Autoregressive Generation of Neural Field Weights using a decoder-only Transformer
+
+This repository contains the code for the project "NeF-GPT" for the course "Advanced Deep Learning for Computer Vision" at the Technical University of Munich.
+
+## Structure
+The main entry points to the project are as follows:
+
+- `generation`:
+  - `train_mnist.py`: Training script to overfit implicit neural fields on MNIST brightness data
+  - `train_shapenet.py`: Training script to overfit implicit neural fields on ShapeNet SDF 
+    - expects point clouds to be precomputed which can be done by executing `data/pointcloud_dataset.py`. 
+    - Meshes can be downloaded from Huggingface and are made watertight using the ManifoldPlus project
+- `quantization`
+  - Scripts used to train various quantization methods
+  - `train_rq_shapenet_learnable.py`: Training script to quantize the ShapeNet NeFs using the learnable quantization method
+    - Quantization schema used in the final pipeline with the correct hyperparameters
+- `train_regression_transformer.ipynb`: Training script to fit the described regression transformer on the MNIST NeFs
+- `train_transformer_mnist.ipynb`: Training script to fit the decoder-only Transformer on MNIST NeFs
+- `train_transformer_shapenet.ipynb`: Training script to fit the decoder-only Transformer on ShapeNet NeFs
+
+## Submissions
+
+Under the `submissions` folder, you can find the main deliverables of the course, they have the following structure:
+- `report`: LaTeX project containing the report of the project
+- `proposal`: LaTeX project containing the proposal of the project
+- `animation-factory`: A [motion-canvas](https://motioncanvas.io/) project containing visualizations for the presentations
+- `presentation_1`: [Slidev](https://sli.dev/) slides for the first presentation
+- `presentation_2`: [Slidev](https://sli.dev/) slides for the second presentation
+- `poster.pdf`: The exported poster slide
+
+Please note that the presentation slides, because of their interactive nature, the exported pdf's might not be as informative as the actual slides. Please refer to GitHub for a hosted version of the actual slides.
+
+## Models folder
+
+This folder contains the generative models used in the project. Please download the current state of the models from the link provided in the GitHub repository:
+
+[adl4cv.git](https://github.com/nef-gpt/adl4cv.git)
+
+## Datasets folder
+
+For script execution, the `dataset` folder is expected to contain the NeF models for the ShapeNet dataset. The models can be built using the provided scripts or found in the link provided on the GitHub repository.
+
+[adl4cv.git](https://github.com/nef-gpt/adl4cv.git)
