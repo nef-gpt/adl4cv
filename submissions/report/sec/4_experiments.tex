@@ -17,7 +17,7 @@ Due to the continuous nature of the NeF-weights as a first experiment a transfor
 
 \noindent
 \textbf{Permutation Invariance}\\
-One of the first issues that were encountered is the unstructured nature on neural networks which can result in different MLP-functions that resemble the same underlying function \cite{HechtNielsen1990ONTA} making it difficult to transform them to consistently ordered sequences. To enforce a similar structure the neural fields are conditioned using weight initialization. Hereby an already fitted NeF is used to initialise all weights that are then fitted and later used to train the transformer.
+One of the first issues that were encountered is the unstructured nature on neural networks which can result in different MLP-functions that resemble the same underlying function \cite{HechtNielsen1990ONTA} making it difficult to transform them to consistently ordered sequences. To enforce a similar structure the neural fields are conditioned using weight initialization. Hereby an already fitted NeF is used to initialise all weights that are then fitted and later used as flattened sequences to train the transformer.
 \vspace{1em}
 
 \noindent

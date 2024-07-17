@@ -1,13 +1,15 @@
 \begin{abstract}
 
-  % Discussion of problem definition:
-  The absence of a clear structure of implicit neural fields (NeF) makes it difficult to
-  apply generative modeling directly to synthesize new data. On the other hand they have shown a remarkable success in compressed scene representation.
-  % Proposed solution:
-  To this end, we propose a novel approach for generating Multi Layer Perceptron (MLP)-weights of neural
-  fields in an autoregressive transformer-based fashion.
-  % Experimental outcome
-  We demonstrate the effectiveness of our approach on the MNIST dataset as well as 3D meshes from ShapeNet and evaluate it against results of state-of-the-art diffusion-based methods.
+  % % Discussion of problem definition:
+  % The absence of a clear structure of implicit neural fields (NeF) makes it difficult to
+  % apply generative modeling directly to synthesize new data. On the other hand they have shown a remarkable success in compressed scene representation.
+  % % Proposed solution:
+  % To this end, we propose a novel approach for generating Multi Layer Perceptron (MLP)-weights of neural
+  % fields in an autoregressive transformer-based fashion.
+  % % Experimental outcome
+  % We demonstrate the effectiveness of our approach on the MNIST dataset as well as 3D meshes from ShapeNet and evaluate it against results of state-of-the-art diffusion-based methods.
 
+
+  Implicit neural fields (NeF) are continuous representations of data, typically encoded by Multi-Layer Perceptrons (MLPs), which have shown remarkable success in compressed scene representation and high-fidelity 3D geometry modeling. However, their unstructured nature makes it challenging to apply generative modeling directly for synthesizing new data. To address this, we propose NeF-GPT, a novel approach for generating MLP weights of neural fields using an autoregressive transformer-based model. Our method involves a pipeline for training neural fields, tokenizing these weights, and generating new neural fields from the same distribution. We demonstrate the effectiveness of our approach on the MNIST dataset and 3D meshes from ShapeNet, evaluating it against SOTA diffusion-based methods. The results highlight the potential of our method in advancing generative modeling of implicit neural fields.
 
 \end{abstract}

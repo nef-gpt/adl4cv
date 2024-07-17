@@ -31,7 +31,8 @@ generation/frames
 *.gz
 *.whl
 
-#*.gif
+
+*.gif
 *.mp4
 *.png
 *.pt
