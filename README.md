@@ -48,15 +48,15 @@ Hosted versions of the presentations can be found at the following links:
 
 ## Models folder
 
-This folder contains the generative models used in the project. Please download the current state of the models from the link provided in the GitHub repository:
+This folder contains the generative models used in the project. The models are hosted on Google Drive and can be downloaded from the following link:
 
-[adl4cv.git](https://github.com/nef-gpt/adl4cv.git)
+[models.zip](https://drive.google.com/file/d/1YOnKiq1GEGEQyidtgundzq1IQtTqXOO7/view?usp=sharing)
 
 ## Datasets folder
 
-For script execution, the `dataset` folder is expected to contain the NeF models for the ShapeNet dataset. The models can be built using the provided scripts or found in the link provided on the GitHub repository.
+For script execution, the `dataset` folder is expected to contain the NeF models for the ShapeNet and MNIST dataset. The models can be built using the provided scripts or can be downloaded from the following link:
 
-[adl4cv.git](https://github.com/nef-gpt/adl4cv.git)
+[datasets.zip](https://drive.google.com/file/d/1TS-dhVHQX-ggCM92qpaEm_zt-IqzJeka/view?usp=sharing)
 
 ## Other Folders
 
